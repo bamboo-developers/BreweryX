@@ -15,7 +15,7 @@ config:
     header: "-- 存储设置 --"
     type: |
       使用哪种类型的存储方式 [默认配置: SQLite]
-      可用选项: FlatFile, MySQL, SQLite, MongoDB
+      可用选项: FlatFile, MySQL, SQLite, PostgreSQL
     database: "数据库的名称. 当存储方式是FlatFile时, 这将是文件的名称 [默认配置: brewery-data]"
   enableHome: "喝高了的下线玩家会在家里醒来(需要/home等功能支持) [默认配置: true]"
   homeType: |

@@ -19,7 +19,7 @@ config:
     header: "-- Paramètres de stockage des données --"
     type: |
       Quel type de stockage à y utiliser [FLATFILE]
-      Types disponibles: FlatFile, MySQL, SQLite, MongoDB
+      Types disponibles: FlatFile, MySQL, SQLite, PostgreSQL
     database: "Le nom de la base de données.  Si la base est un fichier, ceci serait son nom. [brewery-data]"
   enableHome: "Si le joueur se réveille à son /home lors de sa connexion après un excès alcool (Un plugin de /home est nécessaire!) [true]"
   homeType: |

@@ -15,7 +15,7 @@ config:
     header: "-- Ajustes de almacenamiento --"
     type: |
       Tipo de almacenamiento a utilizar [FLATFILE]
-      Tipos disponibles: FlatFile, MySQL, SQLite, MongoDB
+      Tipos disponibles: FlatFile, MySQL, SQLite, PostgreSQL
     database: "El nombre de la base de datos. Cuando sea un archivo, será el nombre del archivo. [brewery-data]"
   enableHome: "Si el jugador debería despertar en /home al iniciar sesión después de beber demasiado (Un plugin de /home debe estar instalado) [true]"
   homeType: |

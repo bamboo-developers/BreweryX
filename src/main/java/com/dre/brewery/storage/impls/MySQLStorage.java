@@ -26,6 +26,7 @@ import com.dre.brewery.Barrel;
 import com.dre.brewery.Wakeup;
 import com.dre.brewery.configuration.sector.capsule.ConfiguredDataManager;
 import com.dre.brewery.storage.DataManager;
+import com.dre.brewery.storage.DataManagerType;
 import com.dre.brewery.storage.StorageInitException;
 import com.dre.brewery.storage.interfaces.SerializableThing;
 import com.dre.brewery.storage.records.BreweryMiscData;
@@ -40,7 +41,8 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.jetbrains.annotations.Nullable;
 
-import javax.sql.DataSource;
+import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -51,55 +53,100 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-// I don't write the greatest SQL, but I did my best ¯\_(ツ)_/¯ - Jsinco
-@SuppressWarnings({ "SqlSourceToSinkFlow", "Duplicates" }) // Dupe code from SQLiteStorage
+// Handles MySQL, SQLite and PostgreSQL through a shared HikariCP-pooled DataSource,
+// dispatching on the dialect only where the SQL actually differs.
+@SuppressWarnings({ "SqlSourceToSinkFlow", "Duplicates" })
 public class MySQLStorage extends DataManager {
 
-    private static final String URL = "jdbc:mysql://";
-    private static final String[] TABLES = {
+    private static final String[] TABLES_LONGTEXT = {
         "misc (id VARCHAR(4) PRIMARY KEY, data LONGTEXT);",
         "barrels (id VARCHAR(36) PRIMARY KEY, data LONGTEXT);",
         "cauldrons (id VARCHAR(36) PRIMARY KEY, data LONGTEXT);",
         "players (id VARCHAR(36) PRIMARY KEY, data LONGTEXT);",
         "wakeups (id VARCHAR(36) PRIMARY KEY, data LONGTEXT);"
     };
+    private static final String[] TABLES_TEXT = {
+        "misc (id VARCHAR(4) PRIMARY KEY, data TEXT);",
+        "barrels (id VARCHAR(36) PRIMARY KEY, data TEXT);",
+        "cauldrons (id VARCHAR(36) PRIMARY KEY, data TEXT);",
+        "players (id VARCHAR(36) PRIMARY KEY, data TEXT);",
+        "wakeups (id VARCHAR(36) PRIMARY KEY, data TEXT);"
+    };
 
+    private final DataManagerType dialect;
     private final String tablePrefix;
     private final SQLDataSerializer serializer;
-    private final DataSource source;
+    private final HikariDataSource source;
 
     public MySQLStorage(ConfiguredDataManager record) throws StorageInitException {
         super(record.getType());
-        String jdbcUrl = URL + record.getAddress()
-            + "/" + record.getDatabase();
-        HikariConfig config = new HikariConfig();
-        config.setPassword(record.getPassword());
-        config.setUsername(record.getUsername());
-        config.setJdbcUrl(jdbcUrl);
-        this.source = new HikariDataSource(config);
+        this.dialect = record.getType();
         this.tablePrefix = record.getTablePrefix();
         this.serializer = new SQLDataSerializer();
 
+        HikariConfig config = new HikariConfig();
+        switch (dialect) {
+            case MYSQL -> {
+                config.setJdbcUrl("jdbc:mysql://" + record.getAddress() + "/" + record.getDatabase());
+                config.setUsername(record.getUsername());
+                config.setPassword(record.getPassword());
+            }
+            case POSTGRESQL -> {
+                config.setJdbcUrl("jdbc:postgresql://" + record.getAddress() + "/" + record.getDatabase());
+                config.setUsername(record.getUsername());
+                config.setPassword(record.getPassword());
+            }
+            case SQLITE -> {
+                File rawFile = new File(plugin.getDataFolder(), record.getDatabase() + ".db");
+                if (!rawFile.exists()) {
+                    try {
+                        rawFile.createNewFile();
+                    } catch (IOException e) {
+                        throw new StorageInitException("Failed to create db file! " + rawFile.getName(), e);
+                    }
+                }
+                config.setJdbcUrl("jdbc:sqlite:" + rawFile.getAbsolutePath());
+                // SQLite only supports a single writer at a time
+                config.setMaximumPoolSize(1);
+            }
+            default -> throw new StorageInitException("Unsupported SQL dialect: " + dialect, null);
+        }
+        this.source = new HikariDataSource(config);
 
+        String[] tables = dialect == DataManagerType.MYSQL ? TABLES_LONGTEXT : TABLES_TEXT;
         try (Connection connection = source.getConnection()) {
-            for (String table : TABLES) {
+            for (String table : tables) {
                 try (PreparedStatement statement = connection.prepareStatement("CREATE TABLE IF NOT EXISTS " + tablePrefix + table)) {
                     statement.execute();
                 }
             }
         } catch (SQLException e) {
-            throw new StorageInitException("Failed to create tables!", e);
+            throw new StorageInitException("Failed to connect or create tables!", e);
         }
     }
 
     @Override
+    protected void closeConnection() {
+        source.close();
+    }
+
+    private String upsertSql(String table) {
+        return switch (dialect) {
+            case MYSQL -> "INSERT INTO " + tablePrefix + table + " (id, data) VALUES (?, ?) ON DUPLICATE KEY UPDATE data = VALUES(data)";
+            case SQLITE, POSTGRESQL -> "INSERT INTO " + tablePrefix + table + " (id, data) VALUES (?, ?) ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data";
+            default -> throw new IllegalStateException("Unsupported SQL dialect: " + dialect);
+        };
+    }
+
+    @Override
     public boolean createTable(String name, int maxIdLength) {
-        String sql = "CREATE TABLE IF NOT EXISTS " + tablePrefix + name + " (id VARCHAR(" + maxIdLength + ") PRIMARY KEY, data LONGTEXT);";
+        String columnType = dialect == DataManagerType.MYSQL ? "LONGTEXT" : "TEXT";
+        String sql = "CREATE TABLE IF NOT EXISTS " + tablePrefix + name + " (id VARCHAR(" + maxIdLength + ") PRIMARY KEY, data " + columnType + ");";
         try (Connection connection = source.getConnection()) {
             connection.prepareStatement(sql).execute();
             return true;
         } catch (SQLException e) {
-            Logging.errorLog("Failed to create table: " + name + " due to MySQL exception!", e);
+            Logging.errorLog("Failed to create table: " + name + " due to a database exception!", e);
             return false;
         }
     }
@@ -111,7 +158,7 @@ public class MySQLStorage extends DataManager {
             connection.prepareStatement(sql).execute();
             return true;
         } catch (SQLException e) {
-            Logging.errorLog("Failed to drop table: " + name + " due to MySQL exception!", e);
+            Logging.errorLog("Failed to drop table: " + name + " due to a database exception!", e);
             return false;
         }
     }
@@ -127,7 +174,7 @@ public class MySQLStorage extends DataManager {
                 }
             }
         } catch (SQLException e) {
-            Logging.errorLog("Failed to retrieve object from table: " + table + ", from: MySQL!", e);
+            Logging.errorLog("Failed to retrieve object from table: " + table + ", from database!", e);
         }
         return null;
     }
@@ -145,7 +192,7 @@ public class MySQLStorage extends DataManager {
                 objects.add(serializer.deserialize(data, type));
             }
         } catch (SQLException e) {
-            Logging.errorLog("Failed to retrieve objects from table: " + table + ", from: MySQL!", e);
+            Logging.errorLog("Failed to retrieve objects from table: " + table + ", from database!", e);
         }
         return objects;
     }
@@ -157,11 +204,18 @@ public class MySQLStorage extends DataManager {
     // Batch saving/deleting
     @Override
     public <T extends SerializableThing> void saveAllGeneric(List<T> serializableThings, String table, @Nullable Class<T> type) {
-        String createTempTableSql = "CREATE TEMPORARY TABLE temp_" + table + " (id VARCHAR(36), data LONGTEXT, PRIMARY KEY (id))";
-        String insertTempTableSql = "INSERT INTO temp_" + table + " (id, data) VALUES (?, ?) ON DUPLICATE KEY UPDATE data = VALUES(data)";
-        String replaceTableSql = "REPLACE INTO " + tablePrefix + table + " SELECT * FROM temp_" + table;
-        String dropTempTableSql = "DROP TEMPORARY TABLE temp_" + table;
+        String createTempTableSql = "CREATE TEMPORARY TABLE temp_" + table + " (id VARCHAR(36) PRIMARY KEY, data " + (dialect == DataManagerType.MYSQL ? "LONGTEXT" : "TEXT") + ")";
+        String insertTempTableSql = dialect == DataManagerType.MYSQL
+            ? "INSERT INTO temp_" + table + " (id, data) VALUES (?, ?) ON DUPLICATE KEY UPDATE data = VALUES(data)"
+            : "INSERT INTO temp_" + table + " (id, data) VALUES (?, ?) ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data";
         String deleteOldRecordsSql = "DELETE FROM " + tablePrefix + table + " WHERE id NOT IN (SELECT id FROM temp_" + table + ")";
+        String replaceTableSql = switch (dialect) {
+            case MYSQL -> "REPLACE INTO " + tablePrefix + table + " SELECT * FROM temp_" + table;
+            case SQLITE -> "INSERT OR REPLACE INTO " + tablePrefix + table + " (id, data) SELECT id, data FROM temp_" + table;
+            case POSTGRESQL -> "INSERT INTO " + tablePrefix + table + " (id, data) SELECT id, data FROM temp_" + table + " ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data";
+            default -> throw new IllegalStateException("Unsupported SQL dialect: " + dialect);
+        };
+        String dropTempTableSql = "DROP TABLE IF EXISTS temp_" + table;
 
         try (Connection connection = source.getConnection()) {
             connection.setAutoCommit(false);
@@ -180,34 +234,37 @@ public class MySQLStorage extends DataManager {
                     deleteStmt.executeUpdate();
                 }
 
-                try (PreparedStatement replaceTableStmt = connection.prepareStatement(replaceTableSql);
-                     PreparedStatement dropTempTableStmt = connection.prepareStatement(dropTempTableSql)) {
-
-                    replaceTableStmt.execute();
-                    dropTempTableStmt.execute();
+                try (PreparedStatement replaceTableStmt = connection.prepareStatement(replaceTableSql)) {
+                    replaceTableStmt.executeUpdate();
                 }
 
                 connection.commit();
             } catch (SQLException e) {
                 connection.rollback();
-                Logging.errorLog("Failed to save objects to: " + table + " due to MySQL exception!", e);
+                Logging.errorLog("Failed to save objects to: " + table + " due to a database exception!", e);
             } finally {
-                connection.setAutoCommit(true);
+                try (PreparedStatement dropTempTableStmt = connection.prepareStatement(dropTempTableSql)) {
+                    dropTempTableStmt.execute();
+                } catch (SQLException e) {
+                    Logging.errorLog("Failed to drop temporary table for saving objects to: " + table + " due to a database exception!", e);
+                } finally {
+                    connection.setAutoCommit(true);
+                }
             }
         } catch (SQLException e) {
-            Logging.errorLog("Failed to manage transaction for saving objects to: " + table + " due to MySQL exception!", e);
+            Logging.errorLog("Failed to manage transaction for saving objects to: " + table + " due to a database exception!", e);
         }
     }
 
     @Override
     public <T extends SerializableThing> void saveGeneric(T serializableThing, String table) {
-        String sql = "INSERT INTO " + tablePrefix + table + " (id, data) VALUES (?, ?) ON DUPLICATE KEY UPDATE data = VALUES(data)";
+        String sql = upsertSql(table);
         try (Connection connection = source.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, serializableThing.getId());
             statement.setString(2, serializer.serialize(serializableThing));
             statement.execute();
         } catch (SQLException e) {
-            Logging.errorLog("Failed to save object to:" + table + ", to: MySQL!", e);
+            Logging.errorLog("Failed to save object to:" + table + ", to database!", e);
         }
     }
 
@@ -218,7 +275,7 @@ public class MySQLStorage extends DataManager {
             statement.setString(1, id);
             statement.execute();
         } catch (SQLException e) {
-            Logging.errorLog("Failed to delete object from: " + table + ", from: MySQL!", e);
+            Logging.errorLog("Failed to delete object from: " + table + ", from database!", e);
         }
     }
 
@@ -370,19 +427,23 @@ public class MySQLStorage extends DataManager {
                 return serializer.deserialize(resultSet.getString("data"), BreweryMiscData.class);
             }
         } catch (SQLException e) {
-            Logging.errorLog("Failed to retrieve misc data from MySQL!", e);
+            Logging.errorLog("Failed to retrieve misc data from database!", e);
         }
         return new BreweryMiscData(System.currentTimeMillis(), 0, new ArrayList<>(), new ArrayList<>(), 0);
     }
 
     @Override
     public void saveBreweryMiscData(BreweryMiscData data) {
-        String sql = "INSERT INTO " + tablePrefix + "misc (id, data) VALUES ('misc', ?) ON DUPLICATE KEY UPDATE data = VALUES(data)";
+        String sql = switch (dialect) {
+            case MYSQL -> "INSERT INTO " + tablePrefix + "misc (id, data) VALUES ('misc', ?) ON DUPLICATE KEY UPDATE data = VALUES(data)";
+            case SQLITE, POSTGRESQL -> "INSERT INTO " + tablePrefix + "misc (id, data) VALUES ('misc', ?) ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data";
+            default -> throw new IllegalStateException("Unsupported SQL dialect: " + dialect);
+        };
         try (Connection connection = source.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, serializer.serialize(data));
             statement.execute();
         } catch (SQLException e) {
-            Logging.errorLog("Failed to save misc data to MySQL!", e);
+            Logging.errorLog("Failed to save misc data to database!", e);
         }
     }
 }

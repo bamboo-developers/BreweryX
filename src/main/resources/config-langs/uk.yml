@@ -15,7 +15,7 @@ config:
     header: "-- Налаштування зберігання --"
     type: |
       Який тип сховища використовувати [FLATFILE]
-      Доступні типи: FlatFile, MySQL, SQLite, MongoDB
+      Доступні типи: FlatFile, MySQL, SQLite, PostgreSQL
     database: "Ім'я бази даних. Якщо база даних є файлом, це буде ім’я файлу. [brewery-data]"
   enableHome: "Якщо гравець прокидається в /home під час входу в систему після надмірного вживання алкоголю (/home плагін повинен бути встановлений!) [true]"
   homeType: |

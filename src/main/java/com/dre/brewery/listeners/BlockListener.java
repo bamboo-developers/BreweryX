@@ -25,8 +25,6 @@ import com.dre.brewery.api.events.barrel.BarrelDestroyEvent;
 import com.dre.brewery.configuration.ConfigManager;
 import com.dre.brewery.configuration.files.Config;
 import com.dre.brewery.configuration.files.Lang;
-import com.dre.brewery.integration.BlockLockerHook;
-import com.dre.brewery.integration.barrel.BlockLockerBarrel;
 import com.dre.brewery.utility.BUtil;
 import com.dre.brewery.utility.MinecraftVersion;
 import org.bukkit.block.Block;
@@ -72,12 +70,6 @@ public class BlockListener implements Listener {
         if (config.isDistortSignText()) {
             if (BPlayer.hasPlayer(event.getPlayer())) {
                 DistortChat.signWrite(event);
-            }
-        }
-        if (BlockLockerHook.BLOCKLOCKER.isEnabled()) {
-            String[] lines = event.getLines();
-            if (hasBarrelLine(lines) || !config.isRequireKeywordOnSigns()) {
-                BlockLockerBarrel.createdBarrelSign(event.getBlock());
             }
         }
     }

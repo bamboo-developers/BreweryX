@@ -24,7 +24,7 @@ import com.dre.brewery.configuration.ConfigManager;
 import com.dre.brewery.configuration.files.Config;
 import com.dre.brewery.configuration.files.Lang;
 import com.dre.brewery.utility.MinecraftVersion;
-import com.github.Anon8281.universalScheduler.scheduling.tasks.MyScheduledTask;
+import com.tcoded.folialib.wrapper.task.WrappedTask;
 import io.papermc.lib.PaperLib;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -62,7 +62,7 @@ public class BSealer implements InventoryHolder {
     private final Player player;
     private final short[] slotTime = new short[9];
     private ItemStack[] contents = null;
-    private MyScheduledTask task;
+    private WrappedTask task;
 
     public BSealer(Player player) {
         this.player = player;
@@ -88,7 +88,7 @@ public class BSealer implements InventoryHolder {
     public void clickInv() {
         contents = null;
         if (task == null) {
-            task = BreweryPlugin.getScheduler().runTaskTimer(BreweryPlugin.getInstance(), this::itemChecking, 1, 1);
+            task = BreweryPlugin.getScheduler().runTimer(this::itemChecking, 1, 1);
         }
     }
 

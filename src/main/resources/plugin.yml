@@ -7,22 +7,8 @@ folia-supported: true
 website: 'https://brewery.lumamc.net/'
 authors: [Jsinco, Mitality, Nadwey, Szarkans, Vutka1, Thorinwasher, Tisawesomeness]
 softdepend:
-  - LWC
-  - LogBlock
-  - WorldGuard
-  - GriefPrevention
-  - ChestShop
-  - Shopkeepers
-  - Towny
-  - Lands
-  - BlockLocker
-  - Slimefun
   - PlaceholderAPI
-  - Oraxen
-  - ItemsAdder
   - Nexo
-  - Movecraft
-  - MMOItems
 commands:
   breweryx:
     description: Mostly admin commands to create/modify Brews and drunkenness

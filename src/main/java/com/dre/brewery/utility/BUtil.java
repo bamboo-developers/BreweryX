@@ -189,7 +189,7 @@ public final class BUtil {
      * @param onlyIfStronger Optionally only overwrite if the new one is stronger, i.e. has higher level or longer duration
      */
     public static void reapplyPotionEffect(Player player, PotionEffect effect, boolean onlyIfStronger) {
-        BreweryPlugin.getScheduler().execute(player, () -> {
+        BreweryPlugin.getScheduler().runAtEntityLater(player, () -> {
             final PotionEffectType type = effect.getType();
             if (player.hasPotionEffect(type)) {
                 PotionEffect plEffect;
@@ -208,7 +208,7 @@ public final class BUtil {
                 }
             }
             effect.apply(player);
-        });
+        }, 0);
     }
 
     /**

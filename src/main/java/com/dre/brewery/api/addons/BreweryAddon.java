@@ -24,7 +24,7 @@ import com.dre.brewery.BreweryPlugin;
 import com.dre.brewery.commands.CommandManager;
 import com.dre.brewery.storage.DataManager;
 import com.dre.brewery.utility.MinecraftVersion;
-import com.github.Anon8281.universalScheduler.scheduling.schedulers.TaskScheduler;
+import com.tcoded.folialib.impl.PlatformScheduler;
 import com.google.common.reflect.ClassPath;
 import io.papermc.lib.PaperLib;
 import org.bukkit.Bukkit;
@@ -239,7 +239,7 @@ public abstract class BreweryAddon {
      * @return The scheduler
      */
     @NotNull
-    public TaskScheduler getScheduler() {
+    public PlatformScheduler getScheduler() {
         return BreweryPlugin.getScheduler();
     }
 

@@ -23,8 +23,7 @@ package com.dre.brewery;
 import com.dre.brewery.lore.BrewLore;
 import com.dre.brewery.utility.Logging;
 import com.dre.brewery.utility.MinecraftVersion;
-import com.github.Anon8281.universalScheduler.UniversalRunnable;
-import com.github.Anon8281.universalScheduler.scheduling.tasks.MyScheduledTask;
+import com.tcoded.folialib.wrapper.task.WrappedTask;
 import io.papermc.lib.PaperLib;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -54,7 +53,7 @@ public class BDistiller {
     private static final int DISTILLTIME = 400;
     private static final Map<Block, BDistiller> trackedDistillers = new ConcurrentHashMap<>();
 
-    private MyScheduledTask task;
+    private WrappedTask task;
     private int runTime = -1;
     private int brewTime = -1;
     private final Block standBlock;
@@ -70,7 +69,7 @@ public class BDistiller {
     }
 
     public void start() {
-        task = new DistillRunnable().runTaskTimer(BreweryPlugin.getInstance(), 2L, 1L);
+        task = BreweryPlugin.getScheduler().runTimer(new DistillRunnable(), 2L, 1L);
     }
 
     public static void distillerClick(InventoryClickEvent event) {
@@ -192,18 +191,18 @@ public class BDistiller {
         }
     }
 
-    public class DistillRunnable extends UniversalRunnable {
+    public class DistillRunnable implements Runnable {
         private Brew[] contents = null;
 
         @Override
         public void run() {
             Location standLocation = standBlock.getLocation();
-            BreweryPlugin.getScheduler().runTask(standLocation, () -> {
+            BreweryPlugin.getScheduler().runAtLocationLater(standLocation, () -> {
                 if (!standLocation.getWorld().isChunkLoaded(standLocation.getChunk())) {
                     return;
                 }
                 if (standBlock.getType() != Material.BREWING_STAND) {
-                    this.cancel();
+                    task.cancel();
                     trackedDistillers.remove(standBlock);
                     Logging.debugLog("The block was replaced; not a brewing stand.");
                     return;
@@ -224,14 +223,14 @@ public class BDistiller {
                 stand.setBrewingTime(0);
                 stand.update();
                 if (!runDistill(stand.getInventory(), contents)) {
-                    this.cancel();
+                    task.cancel();
                     trackedDistillers.remove(standBlock);
                     Logging.debugLog("All done distilling");
                 } else {
                     brewTime = -1; // go again.
                     Logging.debugLog("Can distill more! Continuing.");
                 }
-            });
+            }, 0);
         }
 
         private boolean prepareForDistillables(BrewingStand stand) {
@@ -260,7 +259,7 @@ public class BDistiller {
                     }
                 case 0:
                     // No custom potion, cancel and ignore
-                    this.cancel();
+                    task.cancel();
                     trackedDistillers.remove(standBlock);
                     showAlc(inventory, contents);
                     Logging.debugLog("nothing to distill");

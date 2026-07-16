@@ -31,7 +31,7 @@ import com.dre.brewery.utility.BukkitConstants;
 import com.dre.brewery.utility.MaterialUtil;
 import com.dre.brewery.utility.MinecraftVersion;
 import com.dre.brewery.utility.Tuple;
-import com.github.Anon8281.universalScheduler.scheduling.tasks.MyScheduledTask;
+import com.tcoded.folialib.wrapper.task.WrappedTask;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Color;
@@ -82,7 +82,7 @@ public class BCauldron {
     private Color particleColor;
     private final Location particleLocation;
     private final UUID id;
-    private MyScheduledTask foliaParticleTask;
+    private WrappedTask foliaParticleTask;
 
     public BCauldron(Block block) {
         this.block = block;
@@ -286,7 +286,7 @@ public class BCauldron {
     }
 
     public void cookEffect() {
-        assert !VERSION.isFolia() || BreweryPlugin.getScheduler().isRegionThread(block.getLocation())
+        assert !VERSION.isFolia() || BreweryPlugin.getScheduler().isOwnedByCurrentRegion(block.getLocation())
             : "cookEffect must run on owning region thread";
         if (BUtil.isChunkLoaded(block) && MaterialUtil.isCauldronHeatSource(block.getRelative(BlockFace.DOWN))) {
             Color color = getParticleColor();
@@ -417,7 +417,7 @@ public class BCauldron {
 
         for (BCauldron cauldron : bcauldrons.values()) {
             if (ThreadLocalRandom.current().nextFloat() < chance) {
-                BreweryPlugin.getScheduler().runTask(cauldron.block.getLocation(), cauldron::cookEffect);
+                BreweryPlugin.getScheduler().runAtLocationLater(cauldron.block.getLocation(), cauldron::cookEffect, 0);
             }
         }
     }
@@ -434,7 +434,7 @@ public class BCauldron {
             return;
         }
         long delay = ThreadLocalRandom.current().nextLong(1, PARTICLEPAUSE + 1L);
-        foliaParticleTask = BreweryPlugin.getScheduler().runTaskTimer(block.getLocation(), () -> {
+        foliaParticleTask = BreweryPlugin.getScheduler().runAtLocationTimer(block.getLocation(), () -> {
             if (config.isMinimalParticles() && ThreadLocalRandom.current().nextFloat() > 0.5f) {
                 return;
             }
@@ -538,7 +538,7 @@ public class BCauldron {
                 if (event.getHand() == EquipmentSlot.HAND) {
                     final UUID id = player.getUniqueId();
                     plInteracted.add(id);
-                    BreweryPlugin.getScheduler().runTask(() -> plInteracted.remove(id));
+                    BreweryPlugin.getScheduler().runLater(() -> plInteracted.remove(id), 0);
                 } else if (event.getHand() == EquipmentSlot.OFF_HAND) {
                     if (!plInteracted.remove(player.getUniqueId())) {
                         item = player.getInventory().getItemInMainHand();
@@ -596,11 +596,11 @@ public class BCauldron {
             cauldron.particleRecipe = null;
             cauldron.particleColor = null;
 
-            scheduler.execute(cauldron.block.getLocation(), () -> {
+            scheduler.runAtLocationLater(cauldron.block.getLocation(), () -> {
                 if (BUtil.isChunkLoaded(cauldron.block) && MaterialUtil.isCauldronHeatSource(cauldron.block.getRelative(BlockFace.DOWN))) {
                     cauldron.getParticleColor();
                 }
-            });
+            }, 0);
         }
     }
 
@@ -679,7 +679,7 @@ public class BCauldron {
     // bukkit bug not updating the inventory while executing event, have to
     // schedule the give
     public static void giveItem(final Player player, final ItemStack item) {
-        BreweryPlugin.getScheduler().runTaskLater(() -> player.getInventory().addItem(item), 1L);
+        BreweryPlugin.getScheduler().runLater(() -> player.getInventory().addItem(item), 1L);
     }
 
 }

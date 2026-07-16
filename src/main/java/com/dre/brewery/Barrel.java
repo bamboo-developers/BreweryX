@@ -27,14 +27,12 @@ import com.dre.brewery.api.events.barrel.BarrelRemoveEvent;
 import com.dre.brewery.configuration.ConfigManager;
 import com.dre.brewery.configuration.files.Config;
 import com.dre.brewery.configuration.files.Lang;
-import com.dre.brewery.integration.Hook;
-import com.dre.brewery.integration.barrel.LogBlockBarrel;
 import com.dre.brewery.lore.BrewLore;
 import com.dre.brewery.utility.BoundingBox;
 import com.dre.brewery.utility.Logging;
 import com.dre.brewery.utility.MinecraftVersion;
-import com.github.Anon8281.universalScheduler.UniversalRunnable;
 import com.google.common.base.Preconditions;
+import com.tcoded.folialib.wrapper.task.WrappedTask;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
@@ -159,7 +157,8 @@ public class Barrel extends BarrelBody implements InventoryHolder {
                         randomInTheBack.checked = false;
                     }
                 }
-                new BarrelCheck().runTaskTimer(BreweryPlugin.getInstance(), 1, 1);
+                WrappedTask[] barrelCheckHandle = new WrappedTask[1];
+                barrelCheckHandle[0] = BreweryPlugin.getScheduler().runTimer(new BarrelCheck(barrelCheckHandle), 1, 1);
             }
         }
     }
@@ -193,7 +192,6 @@ public class Barrel extends BarrelBody implements InventoryHolder {
      * Ask for permission to destroy barrel
      */
     public boolean hasPermsDestroy(Player player, Block block, BarrelDestroyEvent.Reason reason) {
-        // Listened to by LWCBarrel (IntegrationListener)
         BarrelDestroyEvent destroyEvent = new BarrelDestroyEvent(this, block, reason, player);
         BreweryPlugin.getInstance().getServer().getPluginManager().callEvent(destroyEvent);
         return !destroyEvent.isCancelled();
@@ -231,13 +229,6 @@ public class Barrel extends BarrelBody implements InventoryHolder {
         // reset barreltime, potions have new age
         time = 0;
 
-        if (Hook.LOGBLOCK.isEnabled()) {
-            try {
-                LogBlockBarrel.openBarrel(player, inventory, spigot.getLocation());
-            } catch (Throwable e) {
-                Logging.errorLog("Failed to Log Barrel to LogBlock!", e);
-            }
-        }
         player.openInventory(inventory);
     }
 
@@ -458,7 +449,6 @@ public class Barrel extends BarrelBody implements InventoryHolder {
     @Override
     public void remove(@Nullable Block broken, @Nullable Player breaker, boolean dropItems) {
         BarrelRemoveEvent event = new BarrelRemoveEvent(this, dropItems);
-        // Listened to by LWCBarrel (IntegrationListener)
         BreweryPlugin.getInstance().getServer().getPluginManager().callEvent(event);
 
         if (inventory != null) {
@@ -469,13 +459,6 @@ public class Barrel extends BarrelBody implements InventoryHolder {
             }
             ItemStack[] items = inventory.getContents();
             inventory.clear();
-            if (Hook.LOGBLOCK.isEnabled() && breaker != null) {
-                try {
-                    LogBlockBarrel.breakBarrel(breaker, items, spigot.getLocation());
-                } catch (Throwable e) {
-                    Logging.errorLog("Failed to Log Barrel-break to LogBlock!", e);
-                }
-            }
             if (event.willDropItems()) {
                 if (getBounds() == null) {
                     Logging.debugLog("Barrel Body is null, can't drop items: " + this.id);
@@ -540,7 +523,7 @@ public class Barrel extends BarrelBody implements InventoryHolder {
      * @return true if this is a small barrel
      */
     private boolean computeSmall() {
-        Preconditions.checkState(BreweryPlugin.getScheduler().isRegionThread(spigot.getLocation()));
+        Preconditions.checkState(BreweryPlugin.getScheduler().isOwnedByCurrentRegion(spigot.getLocation()));
         return BarrelAsset.isBarrelAsset(BarrelAsset.SIGN, spigot.getType());
     }
 
@@ -554,8 +537,8 @@ public class Barrel extends BarrelBody implements InventoryHolder {
         }
 
         CompletableFuture<Boolean> output = new CompletableFuture<>();
-        BreweryPlugin.getScheduler().runTask(spigotPosition,
-            () -> output.complete(BarrelAsset.isBarrelAsset(BarrelAsset.SIGN, spigotPosition.getBlock().getType())));
+        BreweryPlugin.getScheduler().runAtLocationLater(spigotPosition,
+            () -> output.complete(BarrelAsset.isBarrelAsset(BarrelAsset.SIGN, spigotPosition.getBlock().getType())), 0);
         return output;
     }
 
@@ -592,7 +575,13 @@ public class Barrel extends BarrelBody implements InventoryHolder {
             .toList();
     }
 
-    public static class BarrelCheck extends UniversalRunnable {
+    public static class BarrelCheck implements Runnable {
+        private final WrappedTask[] handle;
+
+        public BarrelCheck(WrappedTask[] handle) {
+            this.handle = handle;
+        }
+
         @Override
         public void run() {
             barrels.keySet()
@@ -607,7 +596,7 @@ public class Barrel extends BarrelBody implements InventoryHolder {
 
                     List<Barrel> worldBarrels = barrels.get(worldUuid);
                     if (worldBarrels == null || worldBarrels.isEmpty()) {
-                        cancel();
+                        handle[0].cancel();
                         return;
                     }
 
@@ -617,7 +606,7 @@ public class Barrel extends BarrelBody implements InventoryHolder {
                         if (barrel.checked) {
                             continue;
                         }
-                        BreweryPlugin.getScheduler().runTask(barrel.getSpigot().getLocation(), () -> {
+                        BreweryPlugin.getScheduler().runAtLocationLater(barrel.getSpigot().getLocation(), () -> {
                             Block broken = barrel.getBrokenBlock(false);
                             if (broken != null) {
                                 Logging.debugLog("Barrel at "
@@ -631,10 +620,10 @@ public class Barrel extends BarrelBody implements InventoryHolder {
                                 // for example when removing it with some world editor
                                 barrel.checked = true;
                             }
-                        });
+                        }, 0);
                         return;
                     }
-                    cancel();
+                    handle[0].cancel();
                 });
         }
 

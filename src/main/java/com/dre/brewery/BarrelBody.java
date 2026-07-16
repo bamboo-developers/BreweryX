@@ -100,12 +100,12 @@ public abstract class BarrelBody {
         this.bounds = new BoundingBox(0, 0, 0, 0, 0, 0);
 
         if (MinecraftVersion.isFolia()) { // Issues#70
-            BreweryPlugin.getScheduler().runTask(spigot.getLocation(), () -> {
+            BreweryPlugin.getScheduler().runAtLocationLater(spigot.getLocation(), () -> {
                 Block broken = getBrokenBlock(true);
                 if (broken != null) {
                     this.remove(broken, null, true);
                 }
-            });
+            }, 0);
         }
     }
 
@@ -118,7 +118,7 @@ public abstract class BarrelBody {
         this.bounds = bounds;
         if (this.bounds == null || this.bounds.isBad()) {
             // Never load chunks on startup, therefore always scheduled
-            BreweryPlugin.getScheduler().runTask(spigot.getLocation(), this::regenerateBounds);
+            BreweryPlugin.getScheduler().runAtLocationLater(spigot.getLocation(), this::regenerateBounds, 0);
         }
     }
 

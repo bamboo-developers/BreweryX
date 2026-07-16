@@ -34,7 +34,7 @@ import com.dre.brewery.utility.BukkitConstants;
 import com.dre.brewery.utility.Logging;
 import com.dre.brewery.utility.MinecraftVersion;
 import com.dre.brewery.utility.PermissionUtil;
-import com.github.Anon8281.universalScheduler.scheduling.tasks.MyScheduledTask;
+import com.tcoded.folialib.wrapper.task.WrappedTask;
 import io.papermc.lib.PaperLib;
 import lombok.Getter;
 import lombok.Setter;
@@ -78,7 +78,7 @@ public class BPlayer {
 
     private static final ConcurrentHashMap<String, BPlayer> players = new ConcurrentHashMap<>();// Players uuid and BPlayer
     private static final ConcurrentHashMap<Player, Integer> pTasks = new ConcurrentHashMap<>();// Player and count
-    private static MyScheduledTask task;
+    private static WrappedTask task;
     private static Random pukeRand;
 
     private final String uuid;
@@ -257,8 +257,8 @@ public class BPlayer {
         try {
             // It this returns false, then the Action Bar is not supported. Do not repeat the message as it was sent into chat
             if (sendDrunkenessMessage(player)) {
-                BreweryPlugin.getScheduler().runTaskLater(() -> sendDrunkenessMessage(player), 40);
-                BreweryPlugin.getScheduler().runTaskLater(() -> sendDrunkenessMessage(player), 80);
+                BreweryPlugin.getScheduler().runLater(() -> sendDrunkenessMessage(player), 40);
+                BreweryPlugin.getScheduler().runLater(() -> sendDrunkenessMessage(player), 80);
             }
         } catch (Exception e) {
             Logging.errorLog("Failed to show drunkenness to " + player.getName(), e);
@@ -302,7 +302,7 @@ public class BPlayer {
 
         final String text = b.toString();
         if (hangover && VERSION.isOrLater(MinecraftVersion.V1_11)) {
-            BreweryPlugin.getScheduler().runTaskLater(() -> player.sendTitle("", text, 30, 100, 90), 160);
+            BreweryPlugin.getScheduler().runLater(() -> player.sendTitle("", text, 30, 100, 90), 160);
             return false;
         }
         try {
@@ -382,7 +382,7 @@ public class BPlayer {
         quality = getQuality() * 100;
         drunkenness = 100;
         if (config.isEnableKickOnOverdrink() && !player.hasPermission("brewery.bypass.overdrink")) {
-            BreweryPlugin.getScheduler().runTaskLater(() -> passOut(player), 1);
+            BreweryPlugin.getScheduler().runLater(() -> passOut(player), 1);
         } else {
             addPuke(player, 60 + (int) (Math.random() * 60.0));
             lang.sendEntry(player, "Player_CantDrink");
@@ -623,7 +623,7 @@ public class BPlayer {
         BUtil.reapplyPotionEffect(player, BukkitConstants.HUNGER.createEffect(80, 4), true);
 
         if (pTasks.isEmpty()) {
-            task = BreweryPlugin.getScheduler().runTaskTimer(player, BPlayer::pukeTask, 1L, 1L);
+            task = BreweryPlugin.getScheduler().runAtEntityTimer(player, BPlayer::pukeTask, 1L, 1L);
         }
         pTasks.put(player, event.getCount());
     }
@@ -726,7 +726,7 @@ public class BPlayer {
             return;
         }
         for (PotionEffect effect : l) {
-            BreweryPlugin.getScheduler().runTask(player, () -> effect.apply(player)); // Fix can't add effect to entities Async
+            BreweryPlugin.getScheduler().runAtEntityLater(player, () -> effect.apply(player), 0); // Fix can't add effect to entities Async
         }
     }
 

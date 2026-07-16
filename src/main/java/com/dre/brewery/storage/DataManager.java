@@ -32,9 +32,7 @@ import com.dre.brewery.configuration.files.Config;
 import com.dre.brewery.configuration.sector.capsule.ConfiguredDataManager;
 import com.dre.brewery.integration.bstats.BreweryStats;
 import com.dre.brewery.storage.impls.FlatFileStorage;
-import com.dre.brewery.storage.impls.MongoDBStorage;
 import com.dre.brewery.storage.impls.MySQLStorage;
-import com.dre.brewery.storage.impls.SQLiteStorage;
 import com.dre.brewery.storage.interfaces.ExternallyAutoSavable;
 import com.dre.brewery.storage.interfaces.SerializableThing;
 import com.dre.brewery.storage.records.BreweryMiscData;
@@ -178,12 +176,12 @@ public abstract class DataManager {
         Collection<Wakeup> wakeups = Wakeup.getWakeups();
 
         if (async) {
-            BreweryPlugin.getScheduler().runTaskAsynchronously(() -> {
+            BreweryPlugin.getScheduler().runLaterAsync(() -> {
                 doSave(barrels, cauldrons, bPlayers, wakeups);
                 if (callback != null) {
                     callback.run();
                 }
-            });
+            }, 0);
         } else {
             doSave(barrels, cauldrons, bPlayers, wakeups);
             if (callback != null) {
@@ -213,9 +211,7 @@ public abstract class DataManager {
     public static DataManager createDataManager(ConfiguredDataManager record) throws StorageInitException {
         DataManager dataManager = switch (record.getType()) {
             case FLATFILE -> new FlatFileStorage(record);
-            case MYSQL -> new MySQLStorage(record);
-            case SQLITE -> new SQLiteStorage(record);
-            case MONGODB -> new MongoDBStorage(record);
+            case MYSQL, SQLITE, POSTGRESQL -> new MySQLStorage(record);
         };
 
         // Legacy data migration

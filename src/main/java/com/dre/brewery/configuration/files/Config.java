@@ -183,19 +183,10 @@ public class Config extends AbstractOkaeriConfigFile {
 
 
     @LocalizedComment("config.useOtherPlugins")
-    private boolean useWorldGuard = true;
-    private boolean useLWC = true;
-    private boolean useGriefPrevention = true;
-    private boolean useTowny = true;
-    private boolean useLands = true;
-    private boolean useBlockLocker = true;
     private boolean useGMInventories = true;
 
     @LocalizedComment("config.useVirtualChestPerms")
     private boolean useVirtualChestPerms = false;
-
-    @LocalizedComment("config.useLogBlock")
-    private boolean useLogBlock = true;
 
     @LocalizedComment("config.useOffhandForCauldron")
     private boolean useOffhandForCauldron = false;

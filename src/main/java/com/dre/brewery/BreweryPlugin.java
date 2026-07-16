@@ -26,22 +26,10 @@ import com.dre.brewery.configuration.ConfigManager;
 import com.dre.brewery.configuration.configurer.TranslationManager;
 import com.dre.brewery.configuration.files.Config;
 import com.dre.brewery.configuration.files.Lang;
-import com.dre.brewery.integration.BlockLockerHook;
-import com.dre.brewery.integration.Hook;
-import com.dre.brewery.integration.LandsHook;
 import com.dre.brewery.integration.PlaceholderAPIHook;
-import com.dre.brewery.integration.barrel.BlockLockerBarrel;
 import com.dre.brewery.integration.bstats.BreweryStats;
 import com.dre.brewery.integration.bstats.BreweryXStats;
-import com.dre.brewery.integration.listeners.ChestShopListener;
 import com.dre.brewery.integration.listeners.IntegrationListener;
-import com.dre.brewery.integration.listeners.ShopKeepersListener;
-import com.dre.brewery.integration.listeners.SlimefunListener;
-import com.dre.brewery.integration.listeners.movecraft.CraftDetectListener;
-import com.dre.brewery.integration.listeners.movecraft.RotationListener;
-import com.dre.brewery.integration.listeners.movecraft.SinkListener;
-import com.dre.brewery.integration.listeners.movecraft.TranslationListener;
-import com.dre.brewery.integration.listeners.movecraft.properties.BreweryProperties;
 import com.dre.brewery.listeners.BlockListener;
 import com.dre.brewery.listeners.CauldronListener;
 import com.dre.brewery.listeners.EntityListener;
@@ -57,8 +45,8 @@ import com.dre.brewery.storage.StorageInitException;
 import com.dre.brewery.utility.Logging;
 import com.dre.brewery.utility.MinecraftVersion;
 import com.dre.brewery.utility.releases.ReleaseChecker;
-import com.github.Anon8281.universalScheduler.UniversalScheduler;
-import com.github.Anon8281.universalScheduler.scheduling.schedulers.TaskScheduler;
+import com.tcoded.folialib.FoliaLib;
+import com.tcoded.folialib.impl.PlatformScheduler;
 import io.papermc.lib.PaperLib;
 import lombok.Getter;
 import lombok.Setter;
@@ -85,7 +73,8 @@ import java.util.stream.Collectors;
 public final class BreweryPlugin extends JavaPlugin {
 
     private @Getter static AddonManager addonManager;
-    private @Getter static TaskScheduler scheduler;
+    private static FoliaLib foliaLib;
+    private @Getter static PlatformScheduler scheduler;
     private @Getter static BreweryPlugin instance;
     private @Getter static MinecraftVersion MCVersion;
     private @Getter @Setter static DataManager dataManager;
@@ -101,22 +90,13 @@ public final class BreweryPlugin extends JavaPlugin {
         instance = this;
         this.migrateBreweryDataFolder();
         MCVersion = MinecraftVersion.getIt();
-        scheduler = UniversalScheduler.getScheduler(this);
+        foliaLib = new FoliaLib(this);
+        scheduler = foliaLib.getScheduler();
         TranslationManager.newInstance(this.getDataFolder());
     }
 
     @Override
     public void onLoad() {
-
-        // movecraft properties must be registered in the onLoad
-        try {
-            Class.forName("net.countercraft.movecraft.craft.type.property.Property");
-            BreweryProperties.register();
-        } catch (Exception ignored) {
-        }
-
-        // Lands flags must be registered onLoad
-        if (getServer().getPluginManager().getPlugin("Lands") != null) LandsHook.load();
 
         if (getMCVersion().isOrLater(MinecraftVersion.V1_14)) {
             // Campfires are weird. Initialize once now, so it doesn't lag later when we check for campfires under Cauldrons
@@ -227,24 +207,12 @@ public final class BreweryPlugin extends JavaPlugin {
         pluginManager.registerEvents(new IntegrationListener(), this);
         if (getMCVersion().isOrLater(MinecraftVersion.V1_9))
             pluginManager.registerEvents(new CauldronListener(), this);
-        if (Hook.CHESTSHOP.isEnabled() && getMCVersion().isOrLater(MinecraftVersion.V1_13))
-            pluginManager.registerEvents(new ChestShopListener(), this);
-        if (Hook.SHOPKEEPERS.isEnabled())
-            pluginManager.registerEvents(new ShopKeepersListener(), this);
-        if (Hook.SLIMEFUN.isEnabled() && getMCVersion().isOrLater(MinecraftVersion.V1_14))
-            pluginManager.registerEvents(new SlimefunListener(), this);
-        if (Hook.MOVECRAFT.isEnabled()) {
-            pluginManager.registerEvents(new CraftDetectListener(), this);
-            pluginManager.registerEvents(new TranslationListener(), this);
-            pluginManager.registerEvents(new RotationListener(), this);
-            pluginManager.registerEvents(new SinkListener(), this);
-        }
 
         // Heartbeat
-        BreweryPlugin.getScheduler().runTaskTimer(new BreweryRunnable(), 650, 1200);
-        BreweryPlugin.getScheduler().runTaskTimer(new DrunkRunnable(), 120, 120);
+        BreweryPlugin.getScheduler().runTimer(new BreweryRunnable(), 650, 1200);
+        BreweryPlugin.getScheduler().runTimer(new DrunkRunnable(), 120, 120);
         if (getMCVersion().isOrLater(MinecraftVersion.V1_9) && !MinecraftVersion.isFolia())
-            BreweryPlugin.getScheduler().runTaskTimer(new CauldronParticles(), 1, 1);
+            BreweryPlugin.getScheduler().runTimer(new CauldronParticles(), 1, 1);
 
 
         // Register PlaceholderAPI Placeholders
@@ -276,7 +244,7 @@ public final class BreweryPlugin extends JavaPlugin {
         BCauldron.stopAllFoliaParticleTasks();
 
         // Stop schedulers
-        BreweryPlugin.getScheduler().cancelTasks(this);
+        BreweryPlugin.getScheduler().cancelAllTasks();
 
         // save Data to Disk
         if (dataManager != null) dataManager.exit(true, false);
@@ -332,18 +300,17 @@ public final class BreweryPlugin extends JavaPlugin {
             // runs every min to update cooking time
 
             for (BCauldron bCauldron : BCauldron.bcauldrons.values()) {
-                BreweryPlugin.getScheduler().runTask(bCauldron.getBlock().getLocation(), () -> {
+                BreweryPlugin.getScheduler().runAtLocationLater(bCauldron.getBlock().getLocation(), () -> {
                     if (!bCauldron.onUpdate()) {
                         BCauldron.remove(bCauldron.getBlock());
                     }
-                });
+                }, 0);
             }
 
 
             Barrel.onUpdate();// runs every min to check and update ageing time
 
             if (getMCVersion().isOrLater(MinecraftVersion.V1_14)) MCBarrel.onUpdate();
-            if (BlockLockerHook.BLOCKLOCKER.isEnabled()) BlockLockerBarrel.clearBarrelSign();
 
             BPlayer.onUpdate();// updates players drunkenness
 
