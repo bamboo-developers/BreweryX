@@ -30,10 +30,8 @@ import com.dre.brewery.lore.BrewLore;
 import com.dre.brewery.recipe.*;
 import com.dre.brewery.utility.BUtil;
 import com.dre.brewery.utility.Logging;
-import com.dre.brewery.utility.MinecraftVersion;
 import lombok.Getter;
 import org.bukkit.Material;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
@@ -53,13 +51,9 @@ import java.util.stream.Collectors;
 @Getter
 public final class BIngredients {
 
-    private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
     private static final BreweryPlugin plugin = BreweryPlugin.getInstance();
     private static final Config config = ConfigManager.getConfig(Config.class);
     private static final Lang lang = ConfigManager.getConfig(Lang.class);
-    private static int lastId = 0; // Legacy
-
-    private int id; // Legacy
     private List<Ingredient> ingredients = new ArrayList<>();
     private int cookedTime;
 
@@ -75,17 +69,6 @@ public final class BIngredients {
     public BIngredients(final List<Ingredient> ingredients, final int cookedTime) {
         this.ingredients = ingredients;
         this.cookedTime = cookedTime;
-    }
-
-    /**
-     * Load from legacy Brew section
-     */
-    public BIngredients(final List<Ingredient> ingredients, final int cookedTime, final boolean legacy) {
-        this(ingredients, cookedTime);
-        if (legacy) {
-            this.id = lastId;
-            lastId++;
-        }
     }
 
     public static BIngredients load(final DataInputStream in, final short dataVersion) throws IOException {
@@ -199,7 +182,7 @@ public final class BIngredients {
             lore.write();
 
             cookedName = cookRecipe.getName(quality);
-            cookRecipe.getColor().colorBrew(potionMeta, potion, false);
+            cookRecipe.getColor().colorBrew(potionMeta);
             brew.updateCustomModelData(potionMeta);
 
             if (cookRecipe.isGlint()) {
@@ -212,7 +195,7 @@ public final class BIngredients {
 
             if (state <= 0) {
                 cookedName = lang.getEntry("Brew_ThickBrew");
-                PotionColor.BLUE.colorBrew(potionMeta, potion, false);
+                PotionColor.BLUE.colorBrew(potionMeta);
             } else {
                 final var cauldronRecipe = this.getCauldronRecipe();
                 if (cauldronRecipe != null) {
@@ -223,8 +206,8 @@ public final class BIngredients {
                         lore.addCauldronLore(cauldronRecipe.getLore());
                         lore.write();
                     }
-                    cauldronRecipe.getColor().colorBrew(potionMeta, potion, true);
-                    if (VERSION.isOrLater(MinecraftVersion.V1_14) && cauldronRecipe.getCmData() != 0) {
+                    cauldronRecipe.getColor().colorBrew(potionMeta);
+                    if (cauldronRecipe.getCmData() != 0) {
                         potionMeta.setCustomModelData(cauldronRecipe.getCmData());
                     }
                 }
@@ -233,7 +216,7 @@ public final class BIngredients {
         if (cookedName == null) {
             // if no name could be found
             cookedName = lang.getEntry("Brew_Undefined");
-            PotionColor.CYAN.colorBrew(potionMeta, potion, true);
+            PotionColor.CYAN.colorBrew(potionMeta);
         }
 
         potionMeta.setDisplayName(BUtil.color("&f" + cookedName));
@@ -622,17 +605,6 @@ public final class BIngredients {
             ing.saveTo(out);
             out.writeShort(Math.min(ing.getAmount(), Short.MAX_VALUE));
         }
-    }
-
-    // saves data into main Ingredient section. Returns the save id
-    // Only needed for legacy potions
-    public final int saveLegacy(final ConfigurationSection config) {
-        final var path = "Ingredients." + this.id;
-        if (this.cookedTime != 0) {
-            config.set(path + ".cookedTime", this.cookedTime);
-        }
-        config.set(path + ".mats", this.serializeIngredients());
-        return this.id;
     }
 
     // Serialize Ingredients to String for storing in yml, ie for Cauldrons

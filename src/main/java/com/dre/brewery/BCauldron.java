@@ -33,7 +33,6 @@ import lombok.Setter;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -52,7 +51,6 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class BCauldron {
 
     public static final int PARTICLEPAUSE = 15;
-    private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
     private static final Config config = ConfigManager.getConfig(Config.class);
     private static final Lang lang = ConfigManager.getConfig(Lang.class);
     private static final Set<UUID> plInteracted = new HashSet<>(); // Interact Event helper
@@ -188,7 +186,7 @@ public final class BCauldron {
         if (materialInHand == Material.AIR || materialInHand == Material.BUCKET) {
             return;
 
-        } else if (materialInHand == MaterialUtil.CLOCK) {
+        } else if (materialInHand == Material.CLOCK) {
             printTime(player, clickedBlock);
             return;
 
@@ -214,16 +212,8 @@ public final class BCauldron {
             }
             return;
 
-            // Ignore Water Buckets
+            // Ignore Water Buckets, refills are handled in the Cauldron Listener
         } else if (materialInHand == Material.WATER_BUCKET) {
-            if (VERSION.isOrEarlier(MinecraftVersion.V1_9)) {
-                // reset < 1.9 cauldron when refilling to prevent unlimited source of potions
-                // We catch >=1.9 cases in the Cauldron Listener
-                if (MaterialUtil.getFillLevel(clickedBlock) == 1) {
-                    // will only remove when existing
-                    BCauldron.remove(clickedBlock);
-                }
-            }
             return;
         }
 
@@ -234,24 +224,22 @@ public final class BCauldron {
             event.setCancelled(true);
             var handSwap = false;
 
-            // Interact event is called twice!!!?? in 1.9, once for each hand.
+            // Interact event is called twice, once for each hand.
             // Certain Items in Hand cause one of them to be cancelled or not called at all sometimes.
             // We mark if a player had the event for the main hand
             // If not, we handle the main hand in the event for the offhand
-            if (VERSION.isOrLater(MinecraftVersion.V1_9)) {
-                if (event.getHand() == EquipmentSlot.HAND) {
-                    final var id = player.getUniqueId();
-                    plInteracted.add(id);
-                    BreweryPlugin.getScheduler().runLater(() -> plInteracted.remove(id), 0);
-                } else if (event.getHand() == EquipmentSlot.OFF_HAND) {
-                    if (!plInteracted.remove(player.getUniqueId())) {
-                        item = player.getInventory().getItemInMainHand();
-                        if (item.getType() != Material.AIR) {
-                            materialInHand = item.getType();
-                            handSwap = true;
-                        } else {
-                            item = config.isUseOffhandForCauldron() ? event.getItem() : null;
-                        }
+            if (event.getHand() == EquipmentSlot.HAND) {
+                final var id = player.getUniqueId();
+                plInteracted.add(id);
+                BreweryPlugin.getScheduler().runLater(() -> plInteracted.remove(id), 0);
+            } else if (event.getHand() == EquipmentSlot.OFF_HAND) {
+                if (!plInteracted.remove(player.getUniqueId())) {
+                    item = player.getInventory().getItemInMainHand();
+                    if (item.getType() != Material.AIR) {
+                        materialInHand = item.getType();
+                        handSwap = true;
+                    } else {
+                        item = config.isUseOffhandForCauldron() ? event.getItem() : null;
                     }
                 }
             }
@@ -451,58 +439,27 @@ public final class BCauldron {
         final var potion = this.ingredients.cook(this.state, player);
         if (potion == null) return false;
 
-        if (VERSION.isOrLater(MinecraftVersion.V1_13)) {
-            final var data = block.getBlockData();
-            if (!(data instanceof final Levelled cauldron)) {
-                remove(block);
-                return false;
-            }
-            if (cauldron.getLevel() <= 0) {
-                remove(block);
-                return false;
-            }
+        final var data = block.getBlockData();
+        if (!(data instanceof final Levelled cauldron)) {
+            remove(block);
+            return false;
+        }
+        if (cauldron.getLevel() <= 0) {
+            remove(block);
+            return false;
+        }
 
-            // If the Water_Cauldron type exists and the cauldron is on last level
-            if (MaterialUtil.WATER_CAULDRON != null && cauldron.getLevel() == 1) {
-                // Empty Cauldron
-                block.setType(Material.CAULDRON);
-                remove(block);
-            } else {
-                cauldron.setLevel(cauldron.getLevel() - 1);
-
-                // Update the new Level to the Block
-                // We have to use the BlockData variable "data" here instead of the casted "cauldron"
-                // otherwise < 1.13 crashes on plugin load for not finding the BlockData Class
-                block.setBlockData(data);
-
-                if (cauldron.getLevel() <= 0) {
-                    remove(block);
-                } else {
-                    this.changed = true;
-                }
-            }
-
+        if (cauldron.getLevel() == 1) {
+            // Empty Cauldron
+            block.setType(Material.CAULDRON);
+            remove(block);
         } else {
-            @SuppressWarnings("deprecation")
-            var data = block.getData();
-            if (data > 3) {
-                data = 3;
-            } else if (data <= 0) {
-                remove(block);
-                return false;
-            }
-            data -= 1;
-            MaterialUtil.setData(block, data);
+            cauldron.setLevel(cauldron.getLevel() - 1);
+            block.setBlockData(cauldron);
+            this.changed = true;
+        }
 
-            if (data == 0) {
-                remove(block);
-            } else {
-                this.changed = true;
-            }
-        }
-        if (VERSION.isOrLater(MinecraftVersion.V1_9)) {
-            block.getWorld().playSound(block.getLocation(), Sound.ITEM_BOTTLE_FILL, 1f, 1f);
-        }
+        block.getWorld().playSound(block.getLocation(), Sound.ITEM_BOTTLE_FILL, 1f, 1f);
         // Bukkit Bug, inventory not updating while in event so this
         // will delay the give
         // but could also just use deprecated updateInventory()
@@ -519,15 +476,7 @@ public final class BCauldron {
             // Configurable RGB color. The last parameter seems to control the hue and motion, but I couldn't find
             // how exactly in the client code. 1025 seems to be the best for color brightness and upwards motion
 
-            if (VERSION.isOrLater(MinecraftVersion.V1_21)) {
-                this.block.getWorld().spawnParticle(BukkitConstants.ENTITY_EFFECT, this.getRandParticleLoc(), 0, color);
-            } else {
-                this.block.getWorld().spawnParticle(BukkitConstants.ENTITY_EFFECT, this.getRandParticleLoc(), 0,
-                        ((double) color.getRed()) / 255.0,
-                        ((double) color.getGreen()) / 255.0,
-                        ((double) color.getBlue()) / 255.0,
-                        1025.0);
-            }
+            this.block.getWorld().spawnParticle(BukkitConstants.ENTITY_EFFECT, this.getRandParticleLoc(), 0, color);
 
             if (config.isMinimalParticles()) {
                 return;
@@ -543,7 +492,7 @@ public final class BCauldron {
                 this.block.getWorld().spawnParticle(BukkitConstants.SPLASH, this.particleLocation, 1, 0.2, 0, 0.2);
             }
 
-            if (VERSION.isOrLater(MinecraftVersion.V1_13) && ThreadLocalRandom.current().nextFloat() > 0.4f) {
+            if (ThreadLocalRandom.current().nextFloat() > 0.4f) {
                 // Two hovering pixely dust clouds, a bit of offset and with DustOptions to give some color and size
                 this.block.getWorld().spawnParticle(BukkitConstants.DUST, this.particleLocation, 2, 0.15, 0.2, 0.15, new Particle.DustOptions(color, 1.5f));
             }

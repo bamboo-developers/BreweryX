@@ -22,23 +22,17 @@ package com.dre.brewery.listeners;
 
 import com.dre.brewery.BCauldron;
 import com.dre.brewery.Barrel;
-import com.dre.brewery.Brew;
 import com.dre.brewery.BreweryPlugin;
 import com.dre.brewery.api.events.barrel.BarrelDestroyEvent;
 import com.dre.brewery.utility.BUtil;
-import com.dre.brewery.utility.MinecraftVersion;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Item;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
-import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.event.entity.ItemDespawnEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
@@ -46,28 +40,6 @@ import java.util.List;
 import java.util.ListIterator;
 
 public final class EntityListener implements Listener {
-
-    // Legacy Brew removal
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onItemDespawn(final ItemDespawnEvent event) {
-        if (Brew.noLegacy()) return;
-        final var item = event.getEntity().getItemStack();
-        if (item.getType() == Material.POTION) {
-            Brew.removeLegacy(item);
-        }
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onEntityCombust(final EntityCombustEvent event) {
-        if (Brew.noLegacy()) return;
-        final var entity = event.getEntity();
-        if (entity instanceof final Item itemEntity) {
-            final var item = itemEntity.getItemStack();
-            if (item.getType() == Material.POTION) {
-                Brew.removeLegacy(item);
-            }
-        }
-    }
 
     //  --- Barrel Breaking ---
 
@@ -124,13 +96,8 @@ public final class EntityListener implements Listener {
      * @return A boolean representing if the given event was caused by a wind charge
      */
     private boolean causedByWindCharge(final EntityExplodeEvent event) {
-
-        // Wind charges don't exist in versions below 1.21
-        if (!BreweryPlugin.getMCVersion().isOrLater(MinecraftVersion.V1_21)) return false;
-
         final var type = event.getEntityType();
-        return type == EntityType.valueOf("BREEZE_WIND_CHARGE") || type == EntityType.valueOf("WIND_CHARGE");
-        // Enum can't currently be used directly, because BX still uses Spigots 1.20.2 API
+        return type == EntityType.BREEZE_WIND_CHARGE || type == EntityType.WIND_CHARGE;
 
         /*
          * Note that, since WindCharges have the ability to modify BlockStates (e.g. flip trapdoors they hit), we sadly

@@ -20,14 +20,10 @@
 
 package com.dre.brewery.recipe;
 
-import com.dre.brewery.BreweryPlugin;
 import com.dre.brewery.utility.BukkitConstants;
-import com.dre.brewery.utility.ClassUtil;
-import com.dre.brewery.utility.MinecraftVersion;
 import lombok.Getter;
 import org.bukkit.Color;
 import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionType;
 
@@ -53,8 +49,7 @@ public final class PotionColor {
     public static final PotionColor TEAL = new PotionColor(Color.TEAL);
     public static final PotionColor YELLOW = new PotionColor(Color.YELLOW);
     private static final String HEX_STRING = "#%02x%02x%02x";
-    private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
-    public static final PotionColor WATER = new PotionColor(11, VERSION.isOrLater(MinecraftVersion.V1_9) ? BukkitConstants.POTION_WATER_BREATHING : null, Color.BLUE);
+    public static final PotionColor WATER = new PotionColor(11, BukkitConstants.POTION_WATER_BREATHING, Color.BLUE);
     private final int colorId;
     private final PotionType type;
     private final Color color;
@@ -113,43 +108,10 @@ public final class PotionColor {
         return new PotionColor(color);
     }
 
-    // gets the Damage Value, that sets a color on the potion
-    // offset +32 is not accepted by brewer, so not further destillable
-    // Only for minecraft pre 1.9
-    public final short getColorId(final boolean destillable) {
-        if (destillable) {
-            return (short) (this.colorId + 64);
-        }
-        return (short) (this.colorId + 32);
-    }
-
-    @SuppressWarnings("deprecation")
-    public final void colorBrew(final PotionMeta meta, final ItemStack potion, final boolean destillable) {
-        if (VERSION.isOrLater(MinecraftVersion.V1_9)) {
-            // We need to Hide Potion Effects even in 1.12, as it would otherwise show "No Effects"
-
-            // Hide potion effects but keep lore visible
-            this.hidePotionEffects(meta);
-            if (VERSION.isOrLater(MinecraftVersion.V1_11)) {
-                // BasePotionData was only used for the Color, so starting with 1.12 we can use setColor instead
-                meta.setColor(this.getColor());
-            } else {
-                meta.setBasePotionType(this.getType());
-            }
-        } else {
-            potion.setDurability(this.getColorId(destillable));
-            // To stop 1.8 from showing the potioneffect for the color id, add a dummy Effect
-            meta.addCustomEffect(BukkitConstants.REGENERATION.createEffect(0, 0), true);
-        }
-    }
-
-    private void hidePotionEffects(final PotionMeta meta) {
-        if (!ClassUtil.fieldExists("org.bukkit.inventory.ItemFlag", "HIDE_ADDITIONAL_TOOLTIP") ||
-                !ClassUtil.fieldExists("org.bukkit.inventory.ItemFlag", "HIDE_ATTRIBUTES")) {
-            meta.addItemFlags(ItemFlag.values());
-        } else {
-            meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
-        }
+    public final void colorBrew(final PotionMeta meta) {
+        // Hide potion effects but keep lore visible, it would otherwise show "No Effects"
+        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
+        meta.setColor(this.getColor());
     }
 
     @Override

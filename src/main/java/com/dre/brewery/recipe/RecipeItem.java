@@ -20,12 +20,10 @@
 
 package com.dre.brewery.recipe;
 
-import com.dre.brewery.BreweryPlugin;
 import com.dre.brewery.configuration.sector.capsule.ConfigCustomItem;
 import com.dre.brewery.utility.BUtil;
 import com.dre.brewery.utility.Logging;
 import com.dre.brewery.utility.MaterialUtil;
-import com.dre.brewery.utility.MinecraftVersion;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Contract;
@@ -45,7 +43,6 @@ import java.util.Objects;
  */
 public abstract class RecipeItem implements Cloneable, DebuggableItem {
 
-    private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
 
     private String cfgId;
     private int amount;
@@ -88,12 +85,7 @@ public abstract class RecipeItem implements Cloneable, DebuggableItem {
         }
         if (rItem == null && (acceptAll || BCauldronRecipe.acceptedSimple.contains(item.getType()))) {
             // No Custom item found
-            if (VERSION.isOrLater(MinecraftVersion.V1_13)) {
-                return new SimpleItem(item.getType());
-            } else {
-                @SuppressWarnings("deprecation") final var durability = item.getDurability();
-                return new SimpleItem(item.getType(), durability);
-            }
+            return new SimpleItem(item.getType());
         }
         return rItem;
     }
@@ -151,12 +143,6 @@ public abstract class RecipeItem implements Cloneable, DebuggableItem {
                 return null;
             }
             final var mat = MaterialUtil.getMaterialSafely(ingredParts[0]);
-
-            if (mat == null && VERSION.isOrEarlier(MinecraftVersion.V1_14) && ingredParts[0].equalsIgnoreCase("cornflower")) {
-                // Using this in default custom-items, but will error on < 1.14
-                materials.add(Material.BEDROCK);
-                continue;
-            }
 
             if (mat != null) {
                 materials.add(mat);

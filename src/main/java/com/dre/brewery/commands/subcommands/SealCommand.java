@@ -24,8 +24,6 @@ import com.dre.brewery.BSealer;
 import com.dre.brewery.BreweryPlugin;
 import com.dre.brewery.commands.SubCommand;
 import com.dre.brewery.configuration.files.Lang;
-import com.dre.brewery.utility.Logging;
-import com.dre.brewery.utility.MinecraftVersion;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -34,10 +32,6 @@ import java.util.List;
 public final class SealCommand implements SubCommand {
     @Override
     public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
-        if (BreweryPlugin.getMCVersion().isOrEarlier(MinecraftVersion.V1_13)) {
-            Logging.msg(sender, "Sealing requires minecraft 1.13 or higher");
-            return;
-        }
         final var player = (Player) sender;
 
         player.openInventory(new BSealer(player).getInventory());

@@ -22,7 +22,6 @@ package com.dre.brewery.commands.subcommands;
 
 import com.dre.brewery.BCauldron;
 import com.dre.brewery.BSealer;
-import com.dre.brewery.Brew;
 import com.dre.brewery.BreweryPlugin;
 import com.dre.brewery.commands.CommandUtil;
 import com.dre.brewery.commands.SubCommand;
@@ -83,19 +82,7 @@ public final class ReloadCommand implements SubCommand {
             // Let addons know this command was executed
             BreweryPlugin.getAddonManager().reloadAddons();
 
-            // Reload Recipes <-- TODO: Not really sure what this is doing...? - Jsinco
-            var successful = true;
-            for (final var brew : Brew.legacyPotions.values()) {
-                if (!brew.reloadRecipe()) {
-                    successful = false;
-                }
-            }
-
-            if (!successful) {
-                lang.sendEntry(sender, "Error_Recipeload");
-            } else {
-                lang.sendEntry(sender, "CMD_Reload");
-            }
+            lang.sendEntry(sender, "CMD_Reload");
 
             final var releaseChecker = ReleaseChecker.getInstance(true);
             releaseChecker.checkForUpdate().thenAccept(updateAvailable -> {

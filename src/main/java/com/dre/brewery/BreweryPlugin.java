@@ -67,11 +67,11 @@ public final class BreweryPlugin extends JavaPlugin {
     @Getter
     private static AddonManager addonManager;
     @Getter
-    private static final PlatformScheduler scheduler;
+    private static PlatformScheduler scheduler;
     @Getter
-    private static final BreweryPlugin instance;
+    private static BreweryPlugin instance;
     @Getter
-    private static final MinecraftVersion MCVersion;
+    private static MinecraftVersion MCVersion;
     @Getter
     @Setter
     private static DataManager dataManager;
@@ -95,10 +95,8 @@ public final class BreweryPlugin extends JavaPlugin {
     @Override
     public void onLoad() {
 
-        if (getMCVersion().isOrLater(MinecraftVersion.V1_14)) {
-            // Campfires are weird. Initialize once now, so it doesn't lag later when we check for campfires under Cauldrons
-            this.getServer().createBlockData(Material.CAMPFIRE);
-        }
+        // Campfires are weird. Initialize once now, so it doesn't lag later when we check for campfires under Cauldrons
+        this.getServer().createBlockData(Material.CAMPFIRE);
     }
 
     @Override
@@ -134,6 +132,11 @@ public final class BreweryPlugin extends JavaPlugin {
 
 
         Logging.log("Minecraft version&7:&a " + MCVersion.getVersion());
+        if (MinecraftVersion.isBelowMinimum()) {
+            Logging.errorLog("BreweryX requires Minecraft 1.21.5 or newer. Disabling.");
+            this.getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
         if (MCVersion == MinecraftVersion.UNKNOWN) {
             Logging.warningLog("This version of Minecraft is not known to Brewery! Please be wary of bugs or other issues that may occur in this version.");
         }
@@ -202,13 +205,12 @@ public final class BreweryPlugin extends JavaPlugin {
         pluginManager.registerEvents(new EntityListener(), this);
         pluginManager.registerEvents(new InventoryListener(), this);
         pluginManager.registerEvents(new IntegrationListener(), this);
-        if (getMCVersion().isOrLater(MinecraftVersion.V1_9))
-            pluginManager.registerEvents(new CauldronListener(), this);
+        pluginManager.registerEvents(new CauldronListener(), this);
 
         // Heartbeat
         BreweryPlugin.getScheduler().runTimer(new BreweryRunnable(), 650, 1200);
         BreweryPlugin.getScheduler().runTimer(new DrunkRunnable(), 120, 120);
-        if (getMCVersion().isOrLater(MinecraftVersion.V1_9) && !MinecraftVersion.isFolia())
+        if (!MinecraftVersion.isFolia())
             BreweryPlugin.getScheduler().runTimer(new CauldronParticles(), 1, 1);
 
 
@@ -332,7 +334,7 @@ public final class BreweryPlugin extends JavaPlugin {
 
             Barrel.onUpdate();// runs every min to check and update ageing time
 
-            if (getMCVersion().isOrLater(MinecraftVersion.V1_14)) MCBarrel.onUpdate();
+            MCBarrel.onUpdate();
 
             BPlayer.onUpdate();// updates players drunkenness
 

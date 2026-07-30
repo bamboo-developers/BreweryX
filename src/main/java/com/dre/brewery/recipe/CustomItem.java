@@ -21,7 +21,6 @@
 package com.dre.brewery.recipe;
 
 import com.dre.brewery.BreweryPlugin;
-import com.dre.brewery.utility.ItemMetaCompat;
 import com.dre.brewery.utility.Logging;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -83,7 +82,7 @@ public final class CustomItem extends RecipeItem implements Ingredient {
         if (itemMeta.hasLore()) {
             this.lore = itemMeta.getLore();
         }
-        final var readCustomModelData = ItemMetaCompat.getCustomModelData(itemMeta);
+        final var readCustomModelData = readCustomModelData(itemMeta);
         if (readCustomModelData != null) {
             this.customModelData = readCustomModelData;
         }
@@ -243,7 +242,7 @@ public final class CustomItem extends RecipeItem implements Ingredient {
         }
 
         if (this.customModelData != 0) {
-            final var usedCustomModelData = ItemMetaCompat.getCustomModelData(meta);
+            final var usedCustomModelData = readCustomModelData(meta);
             return usedCustomModelData != null && usedCustomModelData == this.customModelData;
         }
         return true;
@@ -354,4 +353,15 @@ public final class CustomItem extends RecipeItem implements Ingredient {
             out.writeBoolean(false);
         }
     }
+
+    @Nullable
+    static Integer readCustomModelData(final ItemMeta meta) {
+        final var component = meta.getCustomModelDataComponent();
+        final var floats = component.getFloats();
+        if (floats.isEmpty()) {
+            return null;
+        }
+        return floats.getFirst().intValue();
+    }
+
 }

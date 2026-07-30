@@ -62,7 +62,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Setter
 public final class BPlayer {
 
-    private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
     private static final Config config = ConfigManager.getConfig(Config.class);
     private static final Lang lang = ConfigManager.getConfig(Lang.class);
 
@@ -297,7 +296,7 @@ public final class BPlayer {
         item.setVelocity(direction);
         item.setPickupDelay(32767); // Item can never be picked up when pickup delay is 32767
         item.setMetadata("brewery_puke", new FixedMetadataValue(BreweryPlugin.getInstance(), true));
-        if (VERSION.isOrLater(MinecraftVersion.V1_14)) item.setPersistent(false); // No need to save Puke items
+        item.setPersistent(false); // No need to save Puke items
 
         final var pukeDespawntime = config.getPukeDespawntime();
         final var despawnRate = BUtil.getItemDespawnRate(player.getWorld());
@@ -343,9 +342,6 @@ public final class BPlayer {
                 duration = 0;
             }
         }
-        if (VERSION.isOrEarlier(MinecraftVersion.V1_14)) {
-            duration *= 4;
-        }
         if (duration > 0) {
             out.add(BukkitConstants.POISON.createEffect(duration, 0));
         }
@@ -357,9 +353,6 @@ public final class BPlayer {
                 duration *= 15;
             } else {
                 duration = 30;
-            }
-            if (VERSION.isOrEarlier(MinecraftVersion.V1_14)) {
-                duration *= 4;
             }
             out.add(BukkitConstants.BLINDNESS.createEffect(duration, 0));
         }
@@ -521,7 +514,7 @@ public final class BPlayer {
         b.append("§7]");
 
         final var text = b.toString();
-        if (hangover && VERSION.isOrLater(MinecraftVersion.V1_11)) {
+        if (hangover) {
             BreweryPlugin.getScheduler().runLater(() -> player.sendTitle("", text, 30, 100, 90), 160);
             return false;
         }
@@ -669,13 +662,8 @@ public final class BPlayer {
                             if (this.time == 0) {
                                 // push him only to the side? or any direction
                                 // like now
-                                if (VERSION.isOrLater(MinecraftVersion.V1_9)) { // Pushing is way stronger in 1.9
-                                    this.push.setX((Math.random() - 0.5) / 2.0);
-                                    this.push.setZ((Math.random() - 0.5) / 2.0);
-                                } else {
-                                    this.push.setX(Math.random() - 0.5);
-                                    this.push.setZ(Math.random() - 0.5);
-                                }
+                                this.push.setX((Math.random() - 0.5) / 2.0);
+                                this.push.setZ((Math.random() - 0.5) / 2.0);
                                 this.push.multiply(config.getStumblePercent());
                                 final var pushEvent = new PlayerPushEvent(player, this.push, this);
                                 BreweryPlugin.getInstance().getServer().getPluginManager().callEvent(pushEvent);
@@ -833,9 +821,6 @@ public final class BPlayer {
         } else if (duration < 115) {
             duration = 115;
         }
-        if (VERSION.isOrEarlier(MinecraftVersion.V1_14)) {
-            duration *= 4;
-        }
         List<PotionEffect> l = new ArrayList<>(1);
         l.add(BukkitConstants.NAUSEA.createEffect(duration, 0));
 
@@ -852,9 +837,6 @@ public final class BPlayer {
 
     public final void hangoverEffects(final Player player) {
         var duration = this.offlineDrunk * 25 * this.getHangoverQuality();
-        if (VERSION.isOrEarlier(MinecraftVersion.V1_14)) {
-            duration *= 2;
-        }
         final var amplifier = this.getHangoverQuality() / 3;
 
         List<PotionEffect> list = new ArrayList<>(2);

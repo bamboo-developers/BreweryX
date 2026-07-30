@@ -22,7 +22,6 @@ package com.dre.brewery;
 
 import com.dre.brewery.lore.BrewLore;
 import com.dre.brewery.utility.Logging;
-import com.dre.brewery.utility.MinecraftVersion;
 import com.tcoded.folialib.wrapper.task.WrappedTask;
 import io.papermc.lib.PaperLib;
 import org.bukkit.Location;
@@ -48,7 +47,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class BDistiller {
 
-    private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
 
     private static final int DISTILLTIME = 400;
     private static final Map<Block, BDistiller> trackedDistillers = new ConcurrentHashMap<>();
@@ -243,17 +241,9 @@ public final class BDistiller {
                 case 1:
                     // Custom potion but not for distilling. Stop any brewing and cancel this task
                     if (stand.getBrewingTime() > 0) {
-                        if (VERSION.isOrLater(MinecraftVersion.V1_11)) {
-                            // The trick below doesn't work in 1.11, but we don't need it anymore
-                            // This should only happen with older Brews that have been made with the old Potion Color System
-                            // This causes standard potions to not brew in the brewing stand if put together with Brews, but the bubble animation will play
-                            stand.setBrewingTime(Short.MAX_VALUE);
-                        } else {
-                            // Brewing time is sent and stored as short
-                            // This sends a negative short value to the Client
-                            // In the client the Brewer will look like it is not doing anything
-                            stand.setBrewingTime(Short.MAX_VALUE << 1);
-                        }
+                        // This causes standard potions to not brew in the brewing stand if put together
+                        // with Brews, but the bubble animation will play
+                        stand.setBrewingTime(Short.MAX_VALUE);
                         stand.setFuelLevel(BDistiller.this.fuel);
                     }
                 case 0:

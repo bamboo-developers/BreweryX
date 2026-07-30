@@ -65,7 +65,7 @@ public final class CopyCommand implements SubCommand {
             return;
         }
         final var player = (Player) sender;
-        final var hand = player.getItemInHand();
+        final var hand = player.getInventory().getItemInMainHand();
         if (hand != null) {
             if (Brew.isBrew(hand)) {
                 while (count > 0) {

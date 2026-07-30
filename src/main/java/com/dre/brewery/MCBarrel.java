@@ -67,12 +67,7 @@ public final class MCBarrel {
         // if nobody had the inventory opened
         if (this.inv.getViewers().size() == 1 && PaperLib.getHolder(this.inv, true).getHolder() instanceof final Barrel barrel) {
             final var data = barrel.getPersistentDataContainer();
-            var key = new NamespacedKey(BreweryPlugin.getInstance(), TAG);
-            if (!data.has(key, PersistentDataType.LONG)) {
-                key = new NamespacedKey("brewery", TAG.toLowerCase()); // Legacy key
-            }
-
-            // Check for legacy key
+            final var key = new NamespacedKey(BreweryPlugin.getInstance(), TAG);
             if (!data.has(key, PersistentDataType.LONG)) {
                 return;
             }

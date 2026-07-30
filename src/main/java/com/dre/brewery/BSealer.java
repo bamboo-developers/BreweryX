@@ -23,7 +23,6 @@ package com.dre.brewery;
 import com.dre.brewery.configuration.ConfigManager;
 import com.dre.brewery.configuration.files.Config;
 import com.dre.brewery.configuration.files.Lang;
-import com.dre.brewery.utility.MinecraftVersion;
 import com.tcoded.folialib.wrapper.task.WrappedTask;
 import io.papermc.lib.PaperLib;
 import org.bukkit.*;
@@ -39,11 +38,9 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * The Sealing Inventory that is being checked for Brews and seals them after a second.
- * <p>Class doesn't load in mc 1.12 and lower (Can't find RecipeChoice, BlockData and NamespacedKey)
  */
 public final class BSealer implements InventoryHolder {
     public static final NamespacedKey TAG_KEY = new NamespacedKey(BreweryPlugin.getInstance(), "SealingTable");
-    public static final NamespacedKey LEGACY_TAG_KEY = new NamespacedKey("brewery", "sealingtable");
     private static final Config config = ConfigManager.getConfig(Config.class);
     private static final Lang lang = ConfigManager.getConfig(Lang.class);
     public static boolean inventoryHolderWorking = true;
@@ -69,13 +66,13 @@ public final class BSealer implements InventoryHolder {
     }
 
     public static boolean isBSealer(final Block block) {
-        if (BreweryPlugin.getMCVersion().isOrLater(MinecraftVersion.V1_14) && block.getType() == config.getSealingTableBlock()) {
+        if (block.getType() == config.getSealingTableBlock()) {
             final var container = (Container) PaperLib.getBlockState(block, true).getState();
             if (container.getCustomName() != null) {
                 if (container.getCustomName().equals("§e" + lang.getEntry("Etc_SealingTable"))) {
                     return true;
                 } else {
-                    return container.getPersistentDataContainer().has(TAG_KEY, PersistentDataType.BYTE) || container.getPersistentDataContainer().has(LEGACY_TAG_KEY, PersistentDataType.BYTE);
+                    return container.getPersistentDataContainer().has(TAG_KEY, PersistentDataType.BYTE);
                 }
             }
         }
@@ -105,7 +102,7 @@ public final class BSealer implements InventoryHolder {
         if (!config.isCraftSealingTable() && recipeExists()) {
             unregisterRecipe();
             return;
-        } else if (!config.isCraftSealingTable() || recipeExists() || BreweryPlugin.getMCVersion().isOrEarlier(MinecraftVersion.V1_13)) {
+        } else if (!config.isCraftSealingTable() || recipeExists()) {
             return;
         }
 
@@ -183,7 +180,7 @@ public final class BSealer implements InventoryHolder {
                 final var brew = Brew.get(this.contents[i]);
                 if (brew != null && !brew.isStripped()) {
                     brew.seal(this.contents[i], this.player);
-                    if (playerValid && BreweryPlugin.getMCVersion().isOrLater(MinecraftVersion.V1_9)) {
+                    if (playerValid) {
                         this.player.playSound(this.player.getLocation(), Sound.ITEM_BOTTLE_FILL_DRAGONBREATH, 1, 1.5f + (float) (Math.random() * 0.2));
                     }
                 }

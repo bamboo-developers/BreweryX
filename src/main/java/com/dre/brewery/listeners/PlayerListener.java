@@ -26,7 +26,6 @@ import com.dre.brewery.configuration.files.Config;
 import com.dre.brewery.configuration.files.Lang;
 import com.dre.brewery.utility.BUtil;
 import com.dre.brewery.utility.MaterialUtil;
-import com.dre.brewery.utility.MinecraftVersion;
 import com.dre.brewery.utility.PermissionUtil;
 import com.dre.brewery.utility.releases.ReleaseChecker;
 import org.bukkit.GameMode;
@@ -47,7 +46,6 @@ import org.bukkit.inventory.PlayerInventory;
 
 public final class PlayerListener implements Listener {
 
-    private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
     private static final Config config = ConfigManager.getConfig(Config.class);
     private static final Lang lang = ConfigManager.getConfig(Lang.class);
 
@@ -63,14 +61,12 @@ public final class PlayerListener implements Listener {
         // -- Clicking an Hopper --
         if (type == Material.HOPPER) {
             if (config.isBrewHopperDump() && event.getPlayer().isSneaking()) {
-                if (VERSION.isOrEarlier(MinecraftVersion.V1_9) || event.getHand() == EquipmentSlot.HAND) {
+                if (event.getHand() == EquipmentSlot.HAND) {
                     final var item = event.getItem();
                     if (Brew.isBrew(item)) {
                         event.setCancelled(true);
                         BUtil.setItemInHand(event, Material.GLASS_BOTTLE, false);
-                        if (VERSION.isOrLater(MinecraftVersion.V1_11)) {
-                            clickedBlock.getWorld().playSound(clickedBlock.getLocation(), Sound.ITEM_BOTTLE_EMPTY, 1f, 1f);
-                        }
+                        clickedBlock.getWorld().playSound(clickedBlock.getLocation(), Sound.ITEM_BOTTLE_EMPTY, 1f, 1f);
                     }
                 }
             }
@@ -78,7 +74,7 @@ public final class PlayerListener implements Listener {
         }
 
         // -- Opening a Sealing Table --
-        if (VERSION.isOrLater(MinecraftVersion.V1_14) && BSealer.isBSealer(clickedBlock)) {
+        if (BSealer.isBSealer(clickedBlock)) {
             if (player.isSneaking()) {
                 event.setUseInteractedBlock(Event.Result.DENY);
                 return;
@@ -107,7 +103,7 @@ public final class PlayerListener implements Listener {
         }
 
         // -- Opening a Minecraft Barrel --
-        if (VERSION.isOrLater(MinecraftVersion.V1_14) && type == Material.BARREL) {
+        if (type == Material.BARREL) {
             if (!player.hasPermission("brewery.openbarrel.mc")) {
                 event.setCancelled(true);
                 lang.sendEntry(player, "Error_NoPermissions");
@@ -116,7 +112,7 @@ public final class PlayerListener implements Listener {
         }
 
         // Do not process Off Hand for Barrel interaction
-        if (VERSION.isOrLater(MinecraftVersion.V1_9) && event.getHand() != EquipmentSlot.HAND) {
+        if (event.getHand() != EquipmentSlot.HAND) {
             return;
         }
 
@@ -151,37 +147,34 @@ public final class PlayerListener implements Listener {
 
             barrel.open(player);
 
-            if (VERSION.isOrLater(MinecraftVersion.V1_14)) {
-
-                // When right clicking a normal Block in 1.14 with a potion or any edible item in hand,
-                // even when cancelled, the consume animation will continue playing while opening the Barrel inventory.
-                // The Animation and sound will play endlessly while the inventory is open, though no item is consumed.
-                // This seems to be a client bug.
-                // This workaround switches the currently selected slot to another for a short time, it needs to be a slot with a different item in it.
-                // This seems to make the client stop animating a consumption
-                // If there is a better way to do this please let me know
-                final var hand = event.getMaterial();
-                if ((hand == Material.POTION || hand.isEdible()) && !BarrelAsset.isBarrelAsset(BarrelAsset.SIGN, type)) {
-                    final var inv = player.getInventory();
-                    final var held = inv.getHeldItemSlot();
-                    var useSlot = -1;
-                    for (var i = 0; i < 9; i++) {
-                        final var item = inv.getItem(i);
-                        if (item == null || item.getType() == Material.AIR) {
-                            useSlot = i;
-                            break;
-                        } else if (useSlot == -1 && item.getType() != hand) {
-                            useSlot = i;
-                        }
-                    }
-                    if (useSlot != -1) {
-                        inv.setHeldItemSlot(useSlot);
-                        BreweryPlugin.getScheduler().runLater(() -> player.getInventory().setHeldItemSlot(held), 2);
+            // When right clicking a normal Block with a potion or any edible item in hand,
+            // even when cancelled, the consume animation will continue playing while opening the Barrel inventory.
+            // The Animation and sound will play endlessly while the inventory is open, though no item is consumed.
+            // This seems to be a client bug.
+            // This workaround switches the currently selected slot to another for a short time, it needs to be a slot with a different item in it.
+            // This seems to make the client stop animating a consumption
+            // If there is a better way to do this please let me know
+            final var hand = event.getMaterial();
+            if ((hand == Material.POTION || hand.isEdible()) && !BarrelAsset.isBarrelAsset(BarrelAsset.SIGN, type)) {
+                final var inv = player.getInventory();
+                final var held = inv.getHeldItemSlot();
+                var useSlot = -1;
+                for (var i = 0; i < 9; i++) {
+                    final var item = inv.getItem(i);
+                    if (item == null || item.getType() == Material.AIR) {
+                        useSlot = i;
+                        break;
+                    } else if (useSlot == -1 && item.getType() != hand) {
+                        useSlot = i;
                     }
                 }
-
-                barrel.playOpeningSound();
+                if (useSlot != -1) {
+                    inv.setHeldItemSlot(useSlot);
+                    BreweryPlugin.getScheduler().runLater(() -> player.getInventory().setHeldItemSlot(held), 2);
+                }
             }
+
+            barrel.playOpeningSound();
         }
     }
 
@@ -215,14 +208,12 @@ public final class PlayerListener implements Listener {
                     event.setCancelled(true);
                     return;
                 }
-                if (VERSION.isOrLater(MinecraftVersion.V1_9)) {
-                    if (player.getGameMode() != GameMode.CREATIVE) {
-// replace the potion with an empty potion to avoid effects
-                        event.setItem(new ItemStack(Material.POTION));
-                    } else {
-// Don't replace the item when keeping the potion, just cancel the event
-                        event.setCancelled(true);
-                    }
+                if (player.getGameMode() != GameMode.CREATIVE) {
+                    // replace the potion with an empty potion to avoid effects
+                    event.setItem(new ItemStack(Material.POTION));
+                } else {
+                    // Don't replace the item when keeping the potion, just cancel the event
+                    event.setCancelled(true);
                 }
             }
         } else if (BUtil.getMaterialMap(config.getDrainItems()).containsKey(item.getType())) {

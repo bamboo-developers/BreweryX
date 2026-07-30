@@ -36,8 +36,8 @@ public enum BarrelPart {
     BLOCK(BarrelAsset.PLANKS);
 
     private final BarrelAsset barrelAsset;
-    private final Bisected.Half half = null;
-    private final BarrelFacing untransformedFacing = null;
+    private Bisected.Half half = null;
+    private BarrelFacing untransformedFacing = null;
 
     BarrelPart(final BarrelAsset barrelAsset) {
         this.barrelAsset = barrelAsset;

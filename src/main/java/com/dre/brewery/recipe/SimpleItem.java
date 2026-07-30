@@ -22,7 +22,6 @@ package com.dre.brewery.recipe;
 
 import com.dre.brewery.BreweryPlugin;
 import com.dre.brewery.utility.Logging;
-import com.dre.brewery.utility.MinecraftVersion;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -40,10 +39,9 @@ import java.util.Objects;
  */
 public final class SimpleItem extends RecipeItem implements Ingredient {
 
-    private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
 
     private final Material mat;
-    private final short dur; // Old Mc
+    private final short dur; // Unused, kept because it is part of the item save format
 
 
     public SimpleItem(final Material mat) {
@@ -108,8 +106,7 @@ public final class SimpleItem extends RecipeItem implements Ingredient {
         if (!this.mat.equals(item.getType())) {
             return false;
         }
-        //noinspection deprecation
-        return VERSION.isOrLater(MinecraftVersion.V1_13) || this.dur == item.getDurability();
+        return true;
     }
 
     @Override

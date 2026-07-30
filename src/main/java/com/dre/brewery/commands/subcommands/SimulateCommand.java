@@ -181,7 +181,7 @@ public final class SimulateCommand implements SubCommand {
             } else if (status instanceof Status.Finished(final var simulation)) {
                 simulate(lang, sender, simulation);
                 return;
-            } else if (status instanceof Status.Error(final var error1, Object...args1)) {
+            } else if (status instanceof Status.Error(final var error1, final var args1)) {
                 lang.sendEntry(sender, error1.getTranslationKey(), args1);
                 return;
             }

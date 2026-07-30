@@ -21,7 +21,6 @@
 package com.dre.brewery.listeners;
 
 import com.dre.brewery.BCauldron;
-import com.dre.brewery.utility.MaterialUtil;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -40,12 +39,6 @@ public final class CauldronListener implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onCauldronChange(final CauldronLevelChangeEvent event) {
-        if (MaterialUtil.WATER_CAULDRON == null) {
-            // < 1.17
-            this.oldCauldronChange(event);
-            return;
-        }
-
         final var currentType = event.getBlock().getType();
         final var newState = event.getNewState(); // Don't think PaperLib can be used here
         final var newType = newState.getType();
@@ -79,18 +72,6 @@ public final class CauldronListener implements Listener {
             if (BCauldron.bcauldrons.containsKey(block)) {
                 BCauldron.remove(block);
             }
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private void oldCauldronChange(final CauldronLevelChangeEvent event) {
-        if (event.getNewLevel() == 0 && event.getOldLevel() != 0) {
-            if (event.getReason() == CauldronLevelChangeEvent.ChangeReason.BOTTLE_FILL) {
-                return;
-            }
-            BCauldron.remove(event.getBlock());
-        } else if (event.getNewLevel() == 3 && event.getOldLevel() != 3) {
-            BCauldron.remove(event.getBlock());
         }
     }
 }

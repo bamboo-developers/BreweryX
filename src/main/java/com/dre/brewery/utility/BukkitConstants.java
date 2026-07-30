@@ -72,8 +72,6 @@ public final class BukkitConstants {
     public static final PotionType POTION_HARMING = potionType("harming");
     public static final PotionType POTION_INVISIBILITY = potionType("invisibility");
 
-    public static final Material SHORT_GRASS = renamedMaterial("grass", new Tuple<>(MinecraftVersion.V1_20_4, "short_grass"));
-
     static {
         try {
             for (final var field : BukkitConstants.class.getDeclaredFields()) {
@@ -96,10 +94,7 @@ public final class BukkitConstants {
     }
 
     public static PotionEffectType potionEffectType(final String key) {
-        if (BreweryPlugin.getMCVersion().isOrLater(MinecraftVersion.V1_21)) {
-            return getOrThrow(Registry.EFFECT, key);
-        }
-        return throwIfNull(key, k -> PotionEffectType.getByKey(NamespacedKey.minecraft(k)));
+        return getOrThrow(Registry.EFFECT, key);
     }
 
     public static PotionType potionType(final String key) {
@@ -108,36 +103,13 @@ public final class BukkitConstants {
 
     @Nullable
     public static PotionEffectType nullablePotionEffectType(final String key) {
-        if (BreweryPlugin.getMCVersion().isOrLater(MinecraftVersion.V1_21)) {
-            return Registry.EFFECT.get(NamespacedKey.minecraft(key));
-        }
-        return PotionEffectType.getByKey(NamespacedKey.minecraft(key));
-    }
-
-    public static Material renamedMaterial(final String defaultValue, final Tuple<MinecraftVersion, String>... names) {
-        final var activeVersion = BreweryPlugin.getMCVersion();
-        for (final var pair : names) {
-            final var version = pair.a();
-            final var name = pair.b();
-            if (activeVersion.isOrLater(version)) {
-                return Material.getMaterial(name.toUpperCase());
-            }
-        }
-        return Material.getMaterial(defaultValue.toUpperCase());
+        return Registry.EFFECT.get(NamespacedKey.minecraft(key));
     }
 
     private static <T extends Keyed> T getOrThrow(final Registry<T> registry, final String key) {
         final var value = registry.get(NamespacedKey.minecraft(key));
         if (value == null) {
             throw new IllegalArgumentException("No value found in registry for key: " + key);
-        }
-        return value;
-    }
-
-    private static <T> T throwIfNull(final String key, final KeyLookup<T> function) {
-        final var value = function.throwIfNull(key);
-        if (value == null) {
-            throw new IllegalArgumentException("No value found for key: " + key);
         }
         return value;
     }
@@ -175,10 +147,6 @@ public final class BukkitConstants {
         return MAPPED_VALUES.values();
     }
 
-
-    private interface KeyLookup<T> {
-        T throwIfNull(String key);
-    }
 
     @Getter
     @AllArgsConstructor

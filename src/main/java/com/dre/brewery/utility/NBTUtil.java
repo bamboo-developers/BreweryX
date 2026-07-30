@@ -2,58 +2,22 @@ package com.dre.brewery.utility;
 
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 
 public final class NBTUtil {
 
-    public static boolean NewNbtVer;
-
-    /**
-     * MC 1.13 uses a different NBT API than the newer versions..
-     * We decide here which to use, the new or the old
-     *
-     * @return true if we can use nbt at all
-     */
-    public static boolean initNbt() {
-        try {
-            Class.forName("org.bukkit.persistence.PersistentDataContainer");
-            NewNbtVer = true;
-            return true;
-        } catch (final ClassNotFoundException e) {
-            try {
-                Class.forName("org.bukkit.inventory.meta.tags.CustomItemTagContainer");
-                NewNbtVer = false;
-                return true;
-            } catch (final ClassNotFoundException ex) {
-                NewNbtVer = false;
-                return false;
-            }
-        }
+    private NBTUtil() {
     }
 
-    @SuppressWarnings("deprecation")
     public static void writeBytesItem(final byte[] bytes, final ItemMeta meta, final NamespacedKey key) {
-        if (NewNbtVer) {
-            meta.getPersistentDataContainer().set(key, org.bukkit.persistence.PersistentDataType.BYTE_ARRAY, bytes);
-        } else {
-            meta.getCustomTagContainer().setCustomTag(key, org.bukkit.inventory.meta.tags.ItemTagType.BYTE_ARRAY, bytes);
-        }
+        meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE_ARRAY, bytes);
     }
 
-    @SuppressWarnings("deprecation")
     public static byte[] readBytesItem(final ItemMeta meta, final NamespacedKey key) {
-        if (NewNbtVer) {
-            return meta.getPersistentDataContainer().get(key, org.bukkit.persistence.PersistentDataType.BYTE_ARRAY);
-        } else {
-            return meta.getCustomTagContainer().getCustomTag(key, org.bukkit.inventory.meta.tags.ItemTagType.BYTE_ARRAY);
-        }
+        return meta.getPersistentDataContainer().get(key, PersistentDataType.BYTE_ARRAY);
     }
 
-    @SuppressWarnings("deprecation")
     public static boolean hasBytesItem(final ItemMeta meta, final NamespacedKey key) {
-        if (NewNbtVer) {
-            return meta.getPersistentDataContainer().has(key, org.bukkit.persistence.PersistentDataType.BYTE_ARRAY);
-        } else {
-            return meta.getCustomTagContainer().hasCustomTag(key, org.bukkit.inventory.meta.tags.ItemTagType.BYTE_ARRAY);
-        }
+        return meta.getPersistentDataContainer().has(key, PersistentDataType.BYTE_ARRAY);
     }
 }

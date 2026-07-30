@@ -31,43 +31,32 @@ import java.util.regex.Pattern;
 /**
  * Enum for major Minecraft versions where Brewery needs
  * to handle things differently.
+ * <p>
+ * BreweryX requires {@link #V1_21_5} or later. Anything older resolves to {@link #UNKNOWN}
+ * and is rejected on startup.
  */
 @Getter
 public enum MinecraftVersion {
 
-    //V1_7("1.7"), Remove 1.7 support. We only support versions that use UUIDs.
-    V1_8("1.8"),
-    V1_9("1.9"),
-    V1_10("1.10"),
-    V1_11("1.11"),
-    V1_12("1.12"),
-    V1_13("1.13"),
-    V1_14("1.14"),
-    V1_15("1.15"),
-    V1_16("1.16"),
-    // If we're being honest, probably no versions below this one will be used since we're compiling to Java 17.
-    //  So they'll need to get some server software for Java 17 *if* they want to use BreweryX.
-    V1_17("1.17"),
-    V1_18("1.18"),
-    V1_19("1.19"),
-    V1_20("1.20"),
-    V1_20_4("1.20.4", "1.20.3"), // 1.20.4 & 1.20.3 are one and the same
-    V1_21("1.21", "1.20.5", "1.20.6"), // 1.20.5, 1.20.6, & 1.21 are being used the same way in BreweryX.
-    V1_21_4("1.21.4"), // min version for setItemModel
-    V1_21_5("1.21.5"), // Int CustomModelData is deprecated since version 1.21.5
+    // Minimum supported version. 1.21.5 - 1.21.8 are handled the same way in BreweryX.
+    V1_21_5("1.21.5", "1.21.6", "1.21.7", "1.21.8"),
     V1_21_10("1.21.10", "1.21.9"), // 1.21.10 & 1.21.9 are one and the same
     V1_21_11("1.21.11"),
     V26_1("26.1"),
     UNKNOWN("Unknown");
 
     private static final Pattern VERSION_PATTERN = Pattern.compile("^([0-9]+)\\.([0-9]+)(?:\\.([0-9]+))?");
+    private static final int[] MINIMUM_VERSION = {1, 21, 5};
 
     @Getter
     private static final boolean isFolia = ClassUtil.exists("io.papermc.paper.threadedregions.RegionizedServer");
     @Getter
     private static final boolean isCanvas = ClassUtil.exists("io.canvasmc.canvas.Config"); // Popular Folia fork
+    /**
+     * Whether the running server is older than {@link #V1_21_5}, the minimum supported version.
+     */
     @Getter
-    private static final boolean useNBT = NBTUtil.initNbt();
+    private static boolean belowMinimum;
 
     private final String[] versions;
 
@@ -108,7 +97,33 @@ public enum MinecraftVersion {
         }
         Preconditions.checkState(matcher.groupCount() == 3 || matcher.groupCount() == 2, "Unexpected Minecraft version format: " + rawVersionParsed);
 
+        belowMinimum = isBelowMinimum(matcher.group(1), matcher.group(2), matcher.group(3));
         return get(matcher.group(1), matcher.group(2), matcher.group(3));
+    }
+
+    /**
+     * Both unsupported old versions and versions newer than this build knows about resolve to
+     * {@link #UNKNOWN}, so the numeric comparison is what tells the two cases apart.
+     */
+    private static boolean isBelowMinimum(final String major, final String minor, @Nullable final String patch) {
+        final int[] running = {parseOrZero(major), parseOrZero(minor), parseOrZero(patch)};
+        for (var i = 0; i < MINIMUM_VERSION.length; i++) {
+            if (running[i] != MINIMUM_VERSION[i]) {
+                return running[i] < MINIMUM_VERSION[i];
+            }
+        }
+        return false;
+    }
+
+    private static int parseOrZero(@Nullable final String value) {
+        if (value == null) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (final NumberFormatException e) {
+            return 0;
+        }
     }
 
     public boolean isOrLater(final MinecraftVersion version) {

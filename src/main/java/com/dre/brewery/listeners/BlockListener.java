@@ -26,7 +26,6 @@ import com.dre.brewery.configuration.ConfigManager;
 import com.dre.brewery.configuration.files.Config;
 import com.dre.brewery.configuration.files.Lang;
 import com.dre.brewery.utility.BUtil;
-import com.dre.brewery.utility.MinecraftVersion;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -36,7 +35,6 @@ import org.bukkit.event.block.*;
 
 public final class BlockListener implements Listener {
 
-    private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
     private final Config config = ConfigManager.getConfig(Config.class);
     private final Lang lang = ConfigManager.getConfig(Lang.class);
 
@@ -76,7 +74,7 @@ public final class BlockListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockPlace(final BlockPlaceEvent event) {
-        if (VERSION.isOrEarlier(MinecraftVersion.V1_14) || event.getBlock().getType() != this.config.getSealingTableBlock())
+        if (event.getBlock().getType() != this.config.getSealingTableBlock())
             return;
         BSealer.blockPlace(event.getItemInHand(), event.getBlock());
     }

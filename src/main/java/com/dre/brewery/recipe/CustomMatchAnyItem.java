@@ -20,7 +20,6 @@
 
 package com.dre.brewery.recipe;
 
-import com.dre.brewery.utility.ItemMetaCompat;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -213,7 +212,7 @@ public final class CustomMatchAnyItem extends RecipeItem {
         }
         final var meta = item.getItemMeta();
         assert meta != null;
-        final var customModelData = ItemMetaCompat.getCustomModelData(meta);
+        final var customModelData = CustomItem.readCustomModelData(meta);
         if (customModelData != null) {
             return this.getCustomModelDataMatch(customModelData);
         }

@@ -27,7 +27,6 @@ import com.dre.brewery.commands.SubCommand;
 import com.dre.brewery.configuration.files.Lang;
 import com.dre.brewery.recipe.*;
 import com.dre.brewery.utility.Logging;
-import com.dre.brewery.utility.MinecraftVersion;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -106,8 +105,6 @@ public final class DebugInfoCommand implements SubCommand {
     }
 
     public final void debugInfo(final CommandSender sender, final String recipeName) {
-        if (BreweryPlugin.getMCVersion().isOrEarlier(MinecraftVersion.V1_9)) return;
-
         final var player = (Player) sender;
         final var hand = player.getInventory().getItemInMainHand();
         final var brew = Brew.get(hand);

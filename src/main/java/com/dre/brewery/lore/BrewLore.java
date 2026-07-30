@@ -22,14 +22,12 @@ package com.dre.brewery.lore;
 
 import com.dre.brewery.BIngredients;
 import com.dre.brewery.Brew;
-import com.dre.brewery.BreweryPlugin;
 import com.dre.brewery.configuration.ConfigManager;
 import com.dre.brewery.configuration.files.Config;
 import com.dre.brewery.configuration.files.Lang;
 import com.dre.brewery.recipe.BEffect;
 import com.dre.brewery.recipe.BRecipe;
 import com.dre.brewery.utility.BUtil;
-import com.dre.brewery.utility.MinecraftVersion;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -134,22 +132,18 @@ public final class BrewLore {
      * adds or removes an empty line in lore to space out the text a bit
      */
     public final void updateSpacer() {
-        var hasCustom = false;
         var hasSpace = false;
         for (var i = 0; i < this.lore.size(); i++) {
             final var t = Type.get(this.lore.get(i));
             if (t == Type.CUSTOM) {
-                hasCustom = true;
+                // Custom lore, keep looking for the spacer position
             } else if (t == Type.SPACE) {
                 hasSpace = true;
             } else if (t != null && t.isAfter(Type.SPACE)) {
                 if (hasSpace) return;
 
-                if (hasCustom || MinecraftVersion.isUseNBT()) {
-                    // We want to add the spacer if we have Custom Lore, to have a space between custom and brew lore.
-                    // Also add a space if there is no Custom Lore but we don't already have a invisible data line
-                    this.lore.add(i, Type.SPACE.id);
-                }
+                // We want to add the spacer if we have Custom Lore, to have a space between custom and brew lore.
+                this.lore.add(i, Type.SPACE.id);
                 return;
             }
         }
@@ -536,13 +530,7 @@ public final class BrewLore {
      * Adds the Effect names to the Items description
      */
     public final void addOrReplaceEffects(final List<BEffect> effects, final int quality) {
-        if (BreweryPlugin.getMCVersion().isOrEarlier(MinecraftVersion.V1_9) && effects != null) {
-            for (final var effect : effects) {
-                if (!effect.isHidden()) {
-                    effect.writeInto(this.meta, quality);
-                }
-            }
-        }
+        // Effects are shown by the client itself since 1.9, nothing to write into the lore
     }
 
     /**
@@ -566,31 +554,6 @@ public final class BrewLore {
                 this.meta.removeCustomEffect(type);
                 //}
             }
-        }
-    }
-
-    /**
-     * Remove the Old Spacer from the legacy potion data system
-     */
-    public final void removeLegacySpacing() {
-        if (MinecraftVersion.isUseNBT()) {
-            // Using NBT we don't get the invisible line, so we keep our spacing
-            return;
-        }
-        if (!this.lore.isEmpty() && this.lore.getFirst().isEmpty()) {
-            this.lore.removeFirst();
-            this.write();
-        }
-    }
-
-    /**
-     * Remove any Brew Data from Lore
-     */
-    public final void removeLoreData() {
-        final var index = BUtil.indexOfStart(this.lore, LoreSaveStream.IDENTIFIER);
-        if (index != -1) {
-            this.lore.set(index, "");
-            this.write();
         }
     }
 

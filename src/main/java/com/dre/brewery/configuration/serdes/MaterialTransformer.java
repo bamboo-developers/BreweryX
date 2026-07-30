@@ -35,7 +35,7 @@ public final class MaterialTransformer extends BidirectionalTransformer<String, 
 
     @Override
     public final Material leftToRight(@NonNull final String data, @NonNull final SerdesContext serdesContext) {
-        return MaterialUtil.getMaterialSafely(data); // handles grass -> short_grass
+        return MaterialUtil.getMaterialSafely(data);
     }
 
     @Override

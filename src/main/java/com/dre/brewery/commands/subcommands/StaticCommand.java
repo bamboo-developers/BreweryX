@@ -37,7 +37,7 @@ public final class StaticCommand implements SubCommand {
     @Override
     public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
         final var player = (Player) sender;
-        final var hand = player.getItemInHand();
+        final var hand = player.getInventory().getItemInMainHand();
         if (hand.getType() != Material.AIR) {
             var brew = Brew.get(hand);
             if (brew != null) {

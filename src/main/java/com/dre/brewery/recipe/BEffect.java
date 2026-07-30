@@ -20,11 +20,9 @@
 
 package com.dre.brewery.recipe;
 
-import com.dre.brewery.BreweryPlugin;
 import com.dre.brewery.utility.BUtil;
 import com.dre.brewery.utility.BukkitConstants;
 import com.dre.brewery.utility.Logging;
-import com.dre.brewery.utility.MinecraftVersion;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffect;
@@ -125,10 +123,6 @@ public final class BEffect implements Cloneable {
         }
 
         duration *= 20;
-        if (BreweryPlugin.getMCVersion().isOrEarlier(MinecraftVersion.V1_14)) {
-            @SuppressWarnings("deprecation") final var modifier = this.type.getDurationModifier();
-            duration /= modifier;
-        }
         return this.type.createEffect(duration, lvl - 1);
     }
 

@@ -57,7 +57,6 @@ public final class BUtil {
     /* **************************************** */
 
     private static final String WITH_DELIMITER = "((?<=%1$s)|(?=%1$s))";
-    private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
     private static final Pattern RANGE_PATTERN = Pattern.compile("([-+]?\\d+)\\.\\.([-+]?\\d+)");
 
     /**
@@ -145,16 +144,11 @@ public final class BUtil {
      * @param mat     The Material of the new item
      * @param swapped If true, will set the opposite Hand instead of the one he used
      */
-    @SuppressWarnings("deprecation")
     public static void setItemInHand(final PlayerInteractEvent event, final Material mat, final boolean swapped) {
-        if (BreweryPlugin.getMCVersion().isOrLater(MinecraftVersion.V1_9)) {
-            if ((event.getHand() == EquipmentSlot.OFF_HAND) != swapped) {
-                event.getPlayer().getInventory().setItemInOffHand(new ItemStack(mat));
-            } else {
-                event.getPlayer().getInventory().setItemInMainHand(new ItemStack(mat));
-            }
+        if ((event.getHand() == EquipmentSlot.OFF_HAND) != swapped) {
+            event.getPlayer().getInventory().setItemInOffHand(new ItemStack(mat));
         } else {
-            event.getPlayer().setItemInHand(new ItemStack(mat));
+            event.getPlayer().getInventory().setItemInMainHand(new ItemStack(mat));
         }
     }
 
@@ -179,12 +173,7 @@ public final class BUtil {
         BreweryPlugin.getScheduler().runAtEntityLater(player, () -> {
             final var type = effect.getType();
             if (player.hasPotionEffect(type)) {
-                final PotionEffect plEffect;
-                if (VERSION.isOrLater(MinecraftVersion.V1_11)) {
-                    plEffect = player.getPotionEffect(type);
-                } else {
-                    plEffect = player.getActivePotionEffects().stream().filter(e -> e.getType().equals(type)).findAny().get();
-                }
+                final var plEffect = player.getPotionEffect(type);
 
                 if (!onlyIfStronger ||
                         plEffect.getAmplifier() < effect.getAmplifier() ||
@@ -380,7 +369,7 @@ public final class BUtil {
             return true;
         }
         final var type = block.getType();
-        if (type == Material.CAULDRON || type == MaterialUtil.WATER_CAULDRON) {
+        if (type == Material.CAULDRON || type == Material.WATER_CAULDRON) {
             // will only remove when existing
             BCauldron.remove(block);
             return true;

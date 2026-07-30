@@ -38,7 +38,6 @@ import static com.dre.brewery.utility.PermissionUtil.BPermission.*;
 public final class CommandUtil {
 
     private static final BreweryPlugin plugin = BreweryPlugin.getInstance();
-    private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
     private static final Lang lang = ConfigManager.getConfig(Lang.class);
     private static final String[] QUALITY = {"1", "10"};
     // Todo: Replace with a map
@@ -140,7 +139,7 @@ public final class CommandUtil {
             cmds.add(lang.getEntry("Help_Info"));
         }
 
-        if (VERSION.isOrLater(MinecraftVersion.V1_13) && SEAL.checkCached(sender)) {
+        if (SEAL.checkCached(sender)) {
             cmds.add(lang.getEntry("Help_Seal"));
         }
 
