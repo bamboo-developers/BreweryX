@@ -28,11 +28,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public class PermissionUtil {
+public final class PermissionUtil {
 
-    public static Map<CommandSender, Boolean> extendedPermsCache = new HashMap<>();
+    public static final Map<CommandSender, Boolean> extendedPermsCache = new HashMap<>();
 
-    public static void logout(CommandSender sender) {
+    public static void logout(final CommandSender sender) {
         extendedPermsCache.remove(sender);
     }
 
@@ -42,8 +42,8 @@ public class PermissionUtil {
      *
      * @param sender The sender of which to update the permission cache
      */
-    public static void evaluateExtendedPermissions(CommandSender sender) {
-        for (BPermission perm : BPermission.values()) {
+    public static void evaluateExtendedPermissions(final CommandSender sender) {
+        for (final var perm : BPermission.values()) {
             if (perm != BPermission.UNLABEL) { // This is the default permission
                 if (sender.hasPermission(perm.permission)) {
                     extendedPermsCache.put(sender, true);
@@ -59,8 +59,8 @@ public class PermissionUtil {
      *
      * @return false if there _might be_ more permissions for this sender
      */
-    public static boolean noExtendedPermissions(CommandSender sender) {
-        Boolean extendedPerms = extendedPermsCache.get(sender);
+    public static boolean noExtendedPermissions(final CommandSender sender) {
+        var extendedPerms = extendedPermsCache.get(sender);
 
         if (extendedPerms == null) {
             evaluateExtendedPermissions(sender);
@@ -75,8 +75,8 @@ public class PermissionUtil {
      *
      * @return true only if the sender definitely has the permission. false if he hasn't or it's unlikely
      */
-    public static boolean hasCachedPermission(CommandSender sender, String permission) {
-        BPermission perm = BPermission.get(permission);
+    public static boolean hasCachedPermission(final CommandSender sender, final String permission) {
+        final var perm = BPermission.get(permission);
         if (perm != null) {
             return hasCachedPermission(sender, perm);
         } else {
@@ -89,7 +89,7 @@ public class PermissionUtil {
      *
      * @return true only if the sender definitely has the permission. false if he hasn't or it's unlikely
      */
-    public static boolean hasCachedPermission(CommandSender sender, BPermission bPerm) {
+    public static boolean hasCachedPermission(final CommandSender sender, final BPermission bPerm) {
         if (bPerm != BPermission.UNLABEL) {
             if (noExtendedPermissions(sender)) {
                 return false;
@@ -111,7 +111,7 @@ public class PermissionUtil {
      * @param player The player of whom to get the sensitivity of
      * @return The Players alcohol sensitivity
      */
-    public static int getDrinkSensitive(Permissible player) {
+    public static int getDrinkSensitive(final Permissible player) {
         return getRangedPermission(player, "brewery.sensitive.");
     }
 
@@ -122,7 +122,7 @@ public class PermissionUtil {
      * @param player The player of whom to get the recovery rate of
      * @return The Players alcohol recovery rate
      */
-    public static int getAlcRecovery(Permissible player) {
+    public static int getAlcRecovery(final Permissible player) {
         return getRangedPermission(player, "brewery.recovery.");
     }
 
@@ -134,21 +134,21 @@ public class PermissionUtil {
      * @param subPermission The permission string before the number
      * @return The permission number as int
      */
-    public static int getRangedPermission(Permissible player, String subPermission) {
-        Optional<PermissionAttachmentInfo> found = player.getEffectivePermissions().stream().
-            filter(PermissionAttachmentInfo::getValue). // Only active permissions
-                filter(x -> x.getPermission().startsWith(subPermission)).
-            findFirst();
+    public static int getRangedPermission(final Permissible player, final String subPermission) {
+        final var found = player.getEffectivePermissions().stream().
+                filter(PermissionAttachmentInfo::getValue). // Only active permissions
+                        filter(x -> x.getPermission().startsWith(subPermission)).
+                findFirst();
 
         if (found.isPresent()) {
-            String permission = found.get().getPermission();
-            int lastDot = permission.lastIndexOf('.');
+            final var permission = found.get().getPermission();
+            final var lastDot = permission.lastIndexOf('.');
             try {
-                int value = Integer.parseInt(permission.substring(lastDot + 1));
+                final var value = Integer.parseInt(permission.substring(lastDot + 1));
                 if (value >= 0) {
                     return value;
                 }
-            } catch (NumberFormatException ignored) {
+            } catch (final NumberFormatException ignored) {
             }
         }
         return -1;
@@ -180,23 +180,23 @@ public class PermissionUtil {
         COPY("brewery.cmd.copy"),
         DELETE("brewery.cmd.delete");
 
-        public String permission;
+        public final String permission;
 
-        BPermission(String permission) {
+        BPermission(final String permission) {
             this.permission = permission;
         }
 
-        public boolean checkCached(CommandSender sender) {
-            return hasCachedPermission(sender, this);
-        }
-
-        public static BPermission get(String permission) {
-            for (BPermission bPerm : BPermission.values()) {
+        public static BPermission get(final String permission) {
+            for (final var bPerm : BPermission.values()) {
                 if (bPerm.permission.equals(permission)) {
                     return bPerm;
                 }
             }
             return null;
+        }
+
+        public boolean checkCached(final CommandSender sender) {
+            return hasCachedPermission(sender, this);
         }
     }
 }

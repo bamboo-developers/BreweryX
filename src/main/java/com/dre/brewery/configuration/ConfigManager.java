@@ -42,7 +42,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-public class ConfigManager {
+public final class ConfigManager {
 
     private static final ConfigHead INSTANCE = new ConfigHead();
 
@@ -55,7 +55,7 @@ public class ConfigManager {
      * @param <T>         The type of the config
      * @return The config instance
      */
-    public static <T extends AbstractOkaeriConfigFile> T getConfig(Class<T> configClass) {
+    public static <T extends AbstractOkaeriConfigFile> T getConfig(final Class<T> configClass) {
         return INSTANCE.getConfig(configClass);
     }
 
@@ -65,7 +65,7 @@ public class ConfigManager {
      * @param configClass The class of the config to replace
      * @param <T>         The type of the config
      */
-    public static <T extends AbstractOkaeriConfigFile> void newInstance(Class<T> configClass, boolean overwrite) {
+    public static <T extends AbstractOkaeriConfigFile> void newInstance(final Class<T> configClass, final boolean overwrite) {
         INSTANCE.newInstance(configClass, overwrite);
     }
 
@@ -77,7 +77,7 @@ public class ConfigManager {
      * @param <T>         The type of the config
      * @return The file name
      */
-    public static <T extends AbstractOkaeriConfigFile> Path getFilePath(Class<T> configClass) {
+    public static <T extends AbstractOkaeriConfigFile> Path getFilePath(final Class<T> configClass) {
         return INSTANCE.getFilePath(configClass);
     }
 
@@ -92,7 +92,7 @@ public class ConfigManager {
      * @param <T>         The type of the config
      * @return The new config instance
      */
-    private static <T extends AbstractOkaeriConfigFile> T createConfig(Class<T> configClass, Path file, Configurer configurer, OkaeriSerdesPack serdesPack, boolean update, boolean removeOrphans) {
+    private static <T extends AbstractOkaeriConfigFile> T createConfig(final Class<T> configClass, final Path file, final Configurer configurer, final OkaeriSerdesPack serdesPack, final boolean update, final boolean removeOrphans) {
         return INSTANCE.createConfig(configClass, file, configurer, serdesPack, update, removeOrphans);
     }
 
@@ -103,24 +103,24 @@ public class ConfigManager {
      * @param <T>         The type of the config
      * @return The new config instance
      */
-    private static <T extends AbstractOkaeriConfigFile> T createConfig(Class<T> configClass) {
+    private static <T extends AbstractOkaeriConfigFile> T createConfig(final Class<T> configClass) {
         return INSTANCE.createConfig(configClass);
     }
 
     @Nullable
-    private static <T extends AbstractOkaeriConfigFile> T createBlankConfigInstance(Class<T> configClass) {
+    private static <T extends AbstractOkaeriConfigFile> T createBlankConfigInstance(final Class<T> configClass) {
         return INSTANCE.createBlankConfigInstance(configClass);
     }
 
 
     // Util
 
-    public static void createFileFromResources(String resourcesPath, Path destination) {
+    public static void createFileFromResources(final String resourcesPath, final Path destination) {
         INSTANCE.createFileFromResources(resourcesPath, destination);
     }
 
 
-    private static OkaeriConfigFileOptions getOkaeriConfigFileOptions(Class<? extends AbstractOkaeriConfigFile> configClass) {
+    private static OkaeriConfigFileOptions getOkaeriConfigFileOptions(final Class<? extends AbstractOkaeriConfigFile> configClass) {
         return INSTANCE.getOkaeriConfigFileOptions(configClass);
     }
 
@@ -129,11 +129,11 @@ public class ConfigManager {
 
     public static void loadRecipes() {
         // loading recipes
-        List<BRecipe> configRecipes = BRecipe.getConfigRecipes();
+        final var configRecipes = BRecipe.getConfigRecipes();
         configRecipes.clear();
 
-        for (var recipeEntry : getConfig(RecipesFile.class).getRecipes().entrySet()) {
-            BRecipe recipe = BRecipe.fromConfig(recipeEntry.getKey(), recipeEntry.getValue());
+        for (final var recipeEntry : getConfig(RecipesFile.class).getRecipes().entrySet()) {
+            final var recipe = BRecipe.fromConfig(recipeEntry.getKey(), recipeEntry.getValue());
             if (recipe != null && recipe.isValid()) {
                 configRecipes.add(recipe);
             } else {
@@ -148,11 +148,11 @@ public class ConfigManager {
     public static void loadCauldronIngredients() {
         // Loading Cauldron Recipes
 
-        List<BCauldronRecipe> configRecipes = BCauldronRecipe.getConfigRecipes();
+        final var configRecipes = BCauldronRecipe.getConfigRecipes();
         configRecipes.clear();
 
-        for (var cauldronEntry : getConfig(CauldronFile.class).getCauldronIngredients().entrySet()) {
-            BCauldronRecipe recipe = BCauldronRecipe.fromConfig(cauldronEntry.getKey(), cauldronEntry.getValue());
+        for (final var cauldronEntry : getConfig(CauldronFile.class).getCauldronIngredients().entrySet()) {
+            final var recipe = BCauldronRecipe.fromConfig(cauldronEntry.getKey(), cauldronEntry.getValue());
             if (recipe != null) {
                 configRecipes.add(recipe);
             } else {
@@ -162,23 +162,23 @@ public class ConfigManager {
         BCauldronRecipe.setNumConfigRecipes(configRecipes.size());
 
         // Recalculating Cauldron-Accepted Items for non-config recipes
-        for (BRecipe recipe : BRecipe.getAddedRecipes()) {
+        for (final var recipe : BRecipe.getAddedRecipes()) {
             recipe.updateAcceptedLists();
         }
-        for (BCauldronRecipe recipe : BCauldronRecipe.getAddedRecipes()) {
+        for (final var recipe : BCauldronRecipe.getAddedRecipes()) {
             recipe.updateAcceptedLists();
         }
     }
 
     public static void loadDistortWords() {
         // Loading Words
-        Config config = getConfig(Config.class);
+        final var config = getConfig(Config.class);
 
         if (config.isEnableChatDistortion()) {
-            for (ConfigDistortWord distortWord : config.getWords()) {
+            for (final var distortWord : config.getWords()) {
                 new DistortChat(distortWord);
             }
-            for (String bypass : config.getDistortBypass()) {
+            for (final var bypass : config.getDistortBypass()) {
                 DistortChat.getIgnoreText().add(bypass.split(","));
             }
             DistortChat.getCommands().addAll(config.getDistortCommands());
@@ -186,7 +186,7 @@ public class ConfigManager {
     }
 
     public static void loadSeed() {
-        Config config = getConfig(Config.class);
+        final var config = getConfig(Config.class);
         if (config.isEnableEncode()) {
             Brew.loadSeed(config.getEncodeKey());
         }

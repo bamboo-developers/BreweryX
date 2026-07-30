@@ -37,49 +37,49 @@ import java.util.jar.JarInputStream;
  */
 @Deprecated(since = "3.4.3-SNAPSHOT")
 public class AddonFileManager {
-    private final static BreweryPlugin plugin = BreweryPlugin.getInstance();
+    private static final BreweryPlugin plugin = BreweryPlugin.getInstance();
 
     private final File addonFolder;
     private final AddonLogger logger;
     private final File configFile;
-    private YamlConfiguration addonConfig;
     private final File jarFile;
+    private YamlConfiguration addonConfig;
 
-    public AddonFileManager(BreweryAddon addon, File jarFile) {
+    public AddonFileManager(final BreweryAddon addon, final File jarFile) {
         this.jarFile = jarFile;
-        String addonName = addon.getClass().getSimpleName();
+        final var addonName = addon.getClass().getSimpleName();
         this.addonFolder = new File(plugin.getDataFolder().getAbsolutePath() + File.separator + "addons" + File.separator + addonName);
         this.logger = addon.getAddonLogger();
-        this.configFile = new File(addonFolder, addonName + ".yml");
-        this.addonConfig = configFile.exists() ? YamlConfiguration.loadConfiguration(configFile) : null;
+        this.configFile = new File(this.addonFolder, addonName + ".yml");
+        this.addonConfig = this.configFile.exists() ? YamlConfiguration.loadConfiguration(this.configFile) : null;
     }
 
 
-    public void generateFile(String fileName) {
-        generateFile(new File(addonFolder, fileName));
+    public void generateFile(final String fileName) {
+        this.generateFile(new File(this.addonFolder, fileName));
     }
 
-    public void generateFileAbsPath(String absolutePath) {
-        generateFile(new File(absolutePath));
+    public void generateFileAbsPath(final String absolutePath) {
+        this.generateFile(new File(absolutePath));
     }
 
-    public void generateFile(File parent, String fileName) {
-        generateFile(new File(parent, fileName));
+    public void generateFile(final File parent, final String fileName) {
+        this.generateFile(new File(parent, fileName));
     }
 
-    public void generateFile(File file) {
-        createAddonFolder();
+    public final void generateFile(final File file) {
+        this.createAddonFolder();
         try {
             if (!file.exists()) {
                 file.createNewFile();
-                try (JarInputStream jarInputStream = new JarInputStream(new FileInputStream(jarFile))) {
+                try (final var jarInputStream = new JarInputStream(new FileInputStream(this.jarFile))) {
                     JarEntry jarEntry;
                     while ((jarEntry = jarInputStream.getNextJarEntry()) != null) {
                         if (jarEntry.isDirectory() || !jarEntry.getName().equals(file.getName())) {
                             continue;
                         }
-                        OutputStream outputStream = Files.newOutputStream(file.toPath());
-                        byte[] buffer = new byte[1024];
+                        final var outputStream = Files.newOutputStream(file.toPath());
+                        final var buffer = new byte[1024];
                         int bytesRead;
                         while ((bytesRead = jarInputStream.read(buffer)) != -1) {
                             outputStream.write(buffer, 0, bytesRead);
@@ -90,50 +90,50 @@ public class AddonFileManager {
                     }
                 }
             }
-        } catch (IOException ex) {
-            logger.severe("Failed to generate file " + file.getName(), ex);
+        } catch (final IOException ex) {
+            this.logger.severe("Failed to generate file " + file.getName(), ex);
         }
     }
 
-    public File getFile(String fileName) {
-        createAddonFolder();
-        return new File(addonFolder, fileName);
+    public File getFile(final String fileName) {
+        this.createAddonFolder();
+        return new File(this.addonFolder, fileName);
     }
 
-    public YamlConfiguration getYamlConfiguration(String fileName) {
-        createAddonFolder();
-        return YamlConfiguration.loadConfiguration(new File(addonFolder, fileName));
+    public YamlConfiguration getYamlConfiguration(final String fileName) {
+        this.createAddonFolder();
+        return YamlConfiguration.loadConfiguration(new File(this.addonFolder, fileName));
     }
 
     public File getAddonFolder() {
-        return addonFolder;
+        return this.addonFolder;
     }
 
 
     public YamlConfiguration getAddonConfig() {
-        generateAddonConfig();
-        return addonConfig;
+        this.generateAddonConfig();
+        return this.addonConfig;
     }
 
     public void saveAddonConfig() {
-        generateAddonConfig();
+        this.generateAddonConfig();
         try {
-            addonConfig.save(configFile);
-        } catch (IOException ex) {
-            logger.severe("Failed to save addon config", ex);
+            this.addonConfig.save(this.configFile);
+        } catch (final IOException ex) {
+            this.logger.severe("Failed to save addon config", ex);
         }
     }
 
     private void generateAddonConfig() {
-        if (addonConfig == null) {
-            generateFile(configFile);
-            addonConfig = YamlConfiguration.loadConfiguration(configFile);
+        if (this.addonConfig == null) {
+            this.generateFile(this.configFile);
+            this.addonConfig = YamlConfiguration.loadConfiguration(this.configFile);
         }
     }
 
     private void createAddonFolder() {
-        if (!addonFolder.exists()) {
-            addonFolder.mkdirs();
+        if (!this.addonFolder.exists()) {
+            this.addonFolder.mkdirs();
         }
     }
 }

@@ -32,20 +32,20 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 
-public class DrinkCommand implements SubCommand {
+public final class DrinkCommand implements SubCommand {
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
         if (args.length < 2) {
             lang.sendEntry(sender, "Etc_Usage");
             lang.sendEntry(sender, "Help_Drink");
             return;
         }
 
-        Tuple<Brew, Player> brewForPlayer = CommandUtil.getFromCommand(sender, args);
+        final var brewForPlayer = CommandUtil.getFromCommand(sender, args);
         if (brewForPlayer != null) {
-            Player player = brewForPlayer.b();
-            Brew brew = brewForPlayer.a();
-            String brewName = brew.getCurrentRecipe().getName(brew.getQuality());
+            final var player = brewForPlayer.b();
+            final var brew = brewForPlayer.a();
+            final var brewName = brew.getCurrentRecipe().getName(brew.getQuality());
             BPlayer.drink(brew, player, null, null);
 
             lang.sendEntry(sender, "CMD_Drink", brewName);
@@ -56,7 +56,7 @@ public class DrinkCommand implements SubCommand {
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return CommandUtil.recipeNamesAndIds(args);
     }
 

@@ -20,13 +20,7 @@
 
 package com.dre.brewery.storage;
 
-import com.dre.brewery.BCauldron;
-import com.dre.brewery.BPlayer;
-import com.dre.brewery.Barrel;
-import com.dre.brewery.Brew;
-import com.dre.brewery.BreweryPlugin;
-import com.dre.brewery.MCBarrel;
-import com.dre.brewery.Wakeup;
+import com.dre.brewery.*;
 import com.dre.brewery.configuration.ConfigManager;
 import com.dre.brewery.configuration.files.Config;
 import com.dre.brewery.configuration.sector.capsule.ConfiguredDataManager;
@@ -43,180 +37,33 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 @Getter
 public abstract class DataManager {
 
-    protected static BreweryPlugin plugin = BreweryPlugin.getInstance();
+    protected static final BreweryPlugin plugin = BreweryPlugin.getInstance();
     protected static long lastAutoSave = System.currentTimeMillis();
-    protected static Set<ExternallyAutoSavable> autoSavabales = new HashSet<>();
+    protected static final Set<ExternallyAutoSavable> autoSavabales = new HashSet<>();
 
     private final DataManagerType type;
 
-    protected DataManager(DataManagerType type) throws StorageInitException {
+    protected DataManager(final DataManagerType type) throws StorageInitException {
         this.type = type;
     }
 
     // Child methods
 
-    public abstract boolean createTable(String name, int maxIdLength);
-
-    public abstract boolean dropTable(String name);
-
-    public abstract <T extends SerializableThing> T getGeneric(String id, String table, Class<T> type);
-
-    public abstract <T extends SerializableThing> List<T> getAllGeneric(String table, Class<T> type);
-
-    public abstract <T extends SerializableThing> void saveAllGeneric(List<T> serializableThings, String table, @Nullable Class<T> type);
-
-    public abstract <T extends SerializableThing> void saveGeneric(T serializableThing, String table);
-
-    public abstract void deleteGeneric(String id, String table);
-
-    public abstract CompletableFuture<Barrel> getBarrel(UUID id);
-
-    public abstract CompletableFuture<List<Barrel>> getAllBarrels();
-
-    public abstract void saveAllBarrels(Collection<Barrel> barrels);
-
-    public abstract void saveBarrel(Barrel barrel);
-
-    public abstract void deleteBarrel(UUID id);
-
-
-    public abstract BCauldron getCauldron(UUID id);
-
-    public abstract Collection<BCauldron> getAllCauldrons();
-
-    public abstract void saveAllCauldrons(Collection<BCauldron> cauldrons);
-
-    public abstract void saveCauldron(BCauldron cauldron);
-
-    public abstract void deleteCauldron(UUID id);
-
-
-    public abstract BPlayer getPlayer(UUID playerUUID);
-
-    public abstract Collection<BPlayer> getAllPlayers();
-
-    public abstract void saveAllPlayers(Collection<BPlayer> players);
-
-    public abstract void savePlayer(BPlayer player);
-
-    public abstract void deletePlayer(UUID playerUUID);
-
-
-    public abstract Wakeup getWakeup(UUID id);
-
-    public abstract Collection<Wakeup> getAllWakeups();
-
-    public abstract void saveAllWakeups(Collection<Wakeup> wakeups);
-
-    public abstract void saveWakeup(Wakeup wakeup);
-
-    public abstract void deleteWakeup(UUID id);
-
-
-    public abstract BreweryMiscData getBreweryMiscData();
-
-    public abstract void saveBreweryMiscData(BreweryMiscData data);
-
-    protected void closeConnection() {
-        // Implemented in subclasses that use database connections
-    }
-
-
-    public void tryAutoSave() {
-        long interval = ConfigManager.getConfig(Config.class).getAutosave() * 60000L;
-
-        if (System.currentTimeMillis() - lastAutoSave > interval) {
-            saveAll(true);
-            lastAutoSave = System.currentTimeMillis();
-            Logging.debugLog("Auto saved all data!");
-        }
-    }
-
-    public void exit(boolean save, boolean async) {
-        this.exit(save, async, null);
-    }
-
-    public void exit(boolean save, boolean async, Runnable callback) {
-        if (save) {
-            saveAll(async, () -> {
-                this.closeConnection();
-                Logging.log("Closed connection from&7:&a " + this.getType().getFormattedName());
-                if (callback != null) {
-                    callback.run();
-                }
-            });
-        } else {
-            this.closeConnection(); // let databases close their connections
-            Logging.log("Closed connection from&7:&a " + this.getType().getFormattedName());
-            if (callback != null) {
-                callback.run();
-            }
-        }
-    }
-
-    public void saveAll(boolean async) {
-        saveAll(async, null);
-    }
-
-    public void saveAll(boolean async, Runnable callback) {
-        Collection<Barrel> barrels = Barrel.getAllBarrels();
-        Collection<BCauldron> cauldrons = BCauldron.getBcauldrons().values();
-        Collection<BPlayer> bPlayers = BPlayer.getPlayers().values();
-        Collection<Wakeup> wakeups = Wakeup.getWakeups();
-
-        if (async) {
-            BreweryPlugin.getScheduler().runLaterAsync(() -> {
-                doSave(barrels, cauldrons, bPlayers, wakeups);
-                if (callback != null) {
-                    callback.run();
-                }
-            }, 0);
-        } else {
-            doSave(barrels, cauldrons, bPlayers, wakeups);
-            if (callback != null) {
-                callback.run();
-            }
-        }
-    }
-
-    private void doSave(Collection<Barrel> barrels, Collection<BCauldron> cauldrons, Collection<BPlayer> players, Collection<Wakeup> wakeups) {
-        this.saveBreweryMiscData(getLoadedMiscData());
-        this.saveAllBarrels(barrels);
-        this.saveAllCauldrons(cauldrons);
-        this.saveAllPlayers(players);
-        this.saveAllWakeups(wakeups);
-
-        for (ExternallyAutoSavable autoSaveAble : autoSavabales) {
-            try {
-                autoSaveAble.onAutoSave(this);
-            } catch (Throwable e) {
-                Logging.errorLog("An external auto-savable class threw an exception. This is most likely an addon not saving properly.", e);
-            }
-        }
-        Logging.debugLog("Saved all data!");
-    }
-
-
-    public static DataManager createDataManager(ConfiguredDataManager record) throws StorageInitException {
-        DataManager dataManager = switch (record.getType()) {
+    public static DataManager createDataManager(final ConfiguredDataManager record) throws StorageInitException {
+        final var dataManager = switch (record.getType()) {
             case FLATFILE -> new FlatFileStorage(record);
             case MYSQL, SQLITE, POSTGRESQL -> new MySQLStorage(record);
         };
 
         // Legacy data migration
         if (BData.checkForLegacyData()) {
-            long start = System.currentTimeMillis();
+            final var start = System.currentTimeMillis();
             Logging.log("&5Brewery is loading data from a legacy format!");
 
             BData.readData();
@@ -231,7 +78,7 @@ public abstract class DataManager {
         // DataManager has been reloaded and may have swapped to a new implementation.
         // We have to ensure all our tables that were externally
         // created are re-created on the new DataManager or already exist!
-        for (ExternallyAutoSavable autoSavable : autoSavabales) { // Should be empty on the first startup of the DataManager
+        for (final var autoSavable : autoSavabales) { // Should be empty on the first startup of the DataManager
             dataManager.createTable(autoSavable.table(), autoSavable.tableMaxIdLength());
         }
 
@@ -239,26 +86,13 @@ public abstract class DataManager {
         return dataManager;
     }
 
-
-    // Utility
-
-    public void registerAutoSavable(ExternallyAutoSavable autoSavable) {
-        autoSavabales.add(autoSavable);
-        this.createTable(autoSavable.table(), autoSavable.tableMaxIdLength());
-    }
-
-    public void unregisterAutoSavable(ExternallyAutoSavable autoSavable) {
-        autoSavabales.remove(autoSavable);
-    }
-
-
-    public static void loadMiscData(BreweryMiscData miscData) {
+    public static void loadMiscData(final BreweryMiscData miscData) {
         Brew.installTime = miscData.installTime();
         MCBarrel.mcBarrelTime = miscData.mcBarrelTime();
         Brew.loadPrevSeeds(miscData.prevSaveSeeds());
 
 
-        BreweryStats breweryStats = plugin.getBreweryStats();
+        final var breweryStats = plugin.getBreweryStats();
         // Check the hash to prevent tampering with statistics - Note by original author
         if (miscData.brewsCreated().size() == 7 && miscData.brewsCreatedHash() == miscData.brewsCreated().hashCode()) {
             breweryStats.brewsCreated = miscData.brewsCreated().get(0);
@@ -272,48 +106,47 @@ public abstract class DataManager {
     }
 
     public static BreweryMiscData getLoadedMiscData() {
-        List<Integer> brewsCreated = new ArrayList<>(7);
-        BreweryStats breweryStats = plugin.getBreweryStats();
+        final List<Integer> brewsCreated = new ArrayList<>(7);
+        final var breweryStats = plugin.getBreweryStats();
         brewsCreated.addAll(List.of(breweryStats.brewsCreated, breweryStats.brewsCreatedCmd, breweryStats.exc, breweryStats.good, breweryStats.norm, breweryStats.bad, breweryStats.terr));
 
 
         return new BreweryMiscData(
-            Brew.installTime,
-            MCBarrel.mcBarrelTime,
-            Brew.getPrevSeeds(),
-            brewsCreated,
-            brewsCreated.hashCode()
+                Brew.installTime,
+                MCBarrel.mcBarrelTime,
+                Brew.getPrevSeeds(),
+                brewsCreated,
+                brewsCreated.hashCode()
         );
     }
 
-
-    public static Location deserializeLocation(String locationString) {
+    public static Location deserializeLocation(final String locationString) {
         return deserializeLocation(locationString, false);
     }
 
-    public static String serializeLocation(Location location) {
+    public static String serializeLocation(final Location location) {
         return serializeLocation(location, false);
     }
 
-    public static Location deserializeLocation(String string, boolean yawPitch) {
+    public static Location deserializeLocation(final String string, final boolean yawPitch) {
         if (string == null) {
             Logging.warningLog("Location is null!");
             return null;
         }
 
-        String locationString = string;
+        var locationString = string;
         String worldName = null;
         if (locationString.contains("?=")) {
-            String[] split = locationString.split("\\?=");
+            final var split = locationString.split("\\?=");
             locationString = split[0];
             worldName = split[1];
         }
 
-        String[] loc = locationString.split(",");
+        final var loc = locationString.split(",");
         UUID worldUUID = null;
         try {
             worldUUID = UUID.fromString(loc[0]);
-        } catch (IllegalArgumentException ignored) {
+        } catch (final IllegalArgumentException ignored) {
         }
 
 
@@ -341,7 +174,7 @@ public abstract class DataManager {
         }
     }
 
-    public static String serializeLocation(Location location, boolean yawPitch) {
+    public static String serializeLocation(final Location location, final boolean yawPitch) {
         if (location.getWorld() == null) {
             Logging.errorLog("Location must have a world! " + location);
             return null;
@@ -356,5 +189,153 @@ public abstract class DataManager {
         // added this extra char separator so brewery can now parse locations via the world uuid or name
         locationString = locationString + "?=" + location.getWorld().getName();
         return locationString;
+    }
+
+    public abstract boolean createTable(String name, int maxIdLength);
+
+    public abstract boolean dropTable(String name);
+
+    public abstract <T extends SerializableThing> T getGeneric(String id, String table, Class<T> type);
+
+    public abstract <T extends SerializableThing> List<T> getAllGeneric(String table, Class<T> type);
+
+    public abstract <T extends SerializableThing> void saveAllGeneric(List<T> serializableThings, String table, @Nullable Class<T> type);
+
+    public abstract <T extends SerializableThing> void saveGeneric(T serializableThing, String table);
+
+    public abstract void deleteGeneric(String id, String table);
+
+    public abstract CompletableFuture<Barrel> getBarrel(UUID id);
+
+    public abstract CompletableFuture<List<Barrel>> getAllBarrels();
+
+    public abstract void saveAllBarrels(Collection<Barrel> barrels);
+
+    public abstract void saveBarrel(Barrel barrel);
+
+    public abstract void deleteBarrel(UUID id);
+
+    public abstract BCauldron getCauldron(UUID id);
+
+    public abstract Collection<BCauldron> getAllCauldrons();
+
+    public abstract void saveAllCauldrons(Collection<BCauldron> cauldrons);
+
+    public abstract void saveCauldron(BCauldron cauldron);
+
+    public abstract void deleteCauldron(UUID id);
+
+    public abstract BPlayer getPlayer(UUID playerUUID);
+
+    public abstract Collection<BPlayer> getAllPlayers();
+
+    public abstract void saveAllPlayers(Collection<BPlayer> players);
+
+    public abstract void savePlayer(BPlayer player);
+
+    public abstract void deletePlayer(UUID playerUUID);
+
+    public abstract Wakeup getWakeup(UUID id);
+
+    public abstract Collection<Wakeup> getAllWakeups();
+
+    public abstract void saveAllWakeups(Collection<Wakeup> wakeups);
+
+    public abstract void saveWakeup(Wakeup wakeup);
+
+    public abstract void deleteWakeup(UUID id);
+
+    public abstract BreweryMiscData getBreweryMiscData();
+
+    public abstract void saveBreweryMiscData(BreweryMiscData data);
+
+    protected void closeConnection() {
+        // Implemented in subclasses that use database connections
+    }
+
+
+    // Utility
+
+    public final void tryAutoSave() {
+        final var interval = ConfigManager.getConfig(Config.class).getAutosave() * 60000L;
+
+        if (System.currentTimeMillis() - lastAutoSave > interval) {
+            this.saveAll(true);
+            lastAutoSave = System.currentTimeMillis();
+            Logging.debugLog("Auto saved all data!");
+        }
+    }
+
+    public final void exit(final boolean save, final boolean async) {
+        this.exit(save, async, null);
+    }
+
+    public final void exit(final boolean save, final boolean async, final Runnable callback) {
+        if (save) {
+            this.saveAll(async, () -> {
+                this.closeConnection();
+                Logging.log("Closed connection from&7:&a " + this.getType().getFormattedName());
+                if (callback != null) {
+                    callback.run();
+                }
+            });
+        } else {
+            this.closeConnection(); // let databases close their connections
+            Logging.log("Closed connection from&7:&a " + this.getType().getFormattedName());
+            if (callback != null) {
+                callback.run();
+            }
+        }
+    }
+
+    public final void saveAll(final boolean async) {
+        this.saveAll(async, null);
+    }
+
+    public final void saveAll(final boolean async, final Runnable callback) {
+        final Collection<Barrel> barrels = Barrel.getAllBarrels();
+        final var cauldrons = BCauldron.getBcauldrons().values();
+        final var bPlayers = BPlayer.getPlayers().values();
+        final Collection<Wakeup> wakeups = Wakeup.getWakeups();
+
+        if (async) {
+            BreweryPlugin.getScheduler().runLaterAsync(() -> {
+                this.doSave(barrels, cauldrons, bPlayers, wakeups);
+                if (callback != null) {
+                    callback.run();
+                }
+            }, 0);
+        } else {
+            this.doSave(barrels, cauldrons, bPlayers, wakeups);
+            if (callback != null) {
+                callback.run();
+            }
+        }
+    }
+
+    private void doSave(final Collection<Barrel> barrels, final Collection<BCauldron> cauldrons, final Collection<BPlayer> players, final Collection<Wakeup> wakeups) {
+        this.saveBreweryMiscData(getLoadedMiscData());
+        this.saveAllBarrels(barrels);
+        this.saveAllCauldrons(cauldrons);
+        this.saveAllPlayers(players);
+        this.saveAllWakeups(wakeups);
+
+        for (final var autoSaveAble : autoSavabales) {
+            try {
+                autoSaveAble.onAutoSave(this);
+            } catch (final Throwable e) {
+                Logging.errorLog("An external auto-savable class threw an exception. This is most likely an addon not saving properly.", e);
+            }
+        }
+        Logging.debugLog("Saved all data!");
+    }
+
+    public void registerAutoSavable(final ExternallyAutoSavable autoSavable) {
+        autoSavabales.add(autoSavable);
+        this.createTable(autoSavable.table(), autoSavable.tableMaxIdLength());
+    }
+
+    public void unregisterAutoSavable(final ExternallyAutoSavable autoSavable) {
+        autoSavabales.remove(autoSavable);
     }
 }

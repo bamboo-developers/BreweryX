@@ -24,9 +24,9 @@ import eu.okaeri.configs.serdes.OkaeriSerdesPack;
 import eu.okaeri.configs.serdes.SerdesRegistry;
 import lombok.NonNull;
 
-public class BreweryXSerdesPack implements OkaeriSerdesPack {
+public final class BreweryXSerdesPack implements OkaeriSerdesPack {
     @Override
-    public void register(@NonNull SerdesRegistry registry) {
+    public final void register(@NonNull final SerdesRegistry registry) {
         registry.register(new MaterialTransformer());
     }
 }

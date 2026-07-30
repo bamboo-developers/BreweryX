@@ -20,11 +20,7 @@
 
 package com.dre.brewery.commands.subcommands;
 
-import com.dre.brewery.BCauldron;
-import com.dre.brewery.BPlayer;
-import com.dre.brewery.Barrel;
-import com.dre.brewery.BreweryPlugin;
-import com.dre.brewery.Wakeup;
+import com.dre.brewery.*;
 import com.dre.brewery.commands.SubCommand;
 import com.dre.brewery.configuration.files.Lang;
 import com.dre.brewery.recipe.BRecipe;
@@ -33,9 +29,9 @@ import org.bukkit.command.CommandSender;
 
 import java.util.List;
 
-public class ShowStatsCommand implements SubCommand {
+public final class ShowStatsCommand implements SubCommand {
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
         //if (sender instanceof ConsoleCommandSender && !sender.isOp()) return;
 
         Logging.msg(sender, "Drunk Players: " + BPlayer.numDrunkPlayers());
@@ -47,7 +43,7 @@ public class ShowStatsCommand implements SubCommand {
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return null;
     }
 

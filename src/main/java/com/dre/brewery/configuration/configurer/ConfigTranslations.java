@@ -28,29 +28,29 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-public class ConfigTranslations {
+public final class ConfigTranslations {
 
     private final Map<String, Object> translations;
 
-    public ConfigTranslations(Translation activeTranslation) {
+    public ConfigTranslations(final Translation activeTranslation) {
         this(activeTranslation, new Yaml());
     }
 
-    public ConfigTranslations(Translation activeTranslation, Yaml yamlInstance) {
-        try (InputStream inputStream = ConfigTranslations.class
-            .getResourceAsStream("/config-langs/" + activeTranslation.fileName())) {
+    public ConfigTranslations(final Translation activeTranslation, final Yaml yamlInstance) {
+        try (final var inputStream = ConfigTranslations.class
+                .getResourceAsStream("/config-langs/" + activeTranslation.fileName())) {
             if (inputStream != null) {
-                translations = yamlInstance.load(inputStream);
+                this.translations = yamlInstance.load(inputStream);
                 return;
             }
-            try (InputStream defaultInputStream = ConfigTranslations.class.getResourceAsStream("/config-langs/" + Translation.EN.fileName())) {
+            try (final var defaultInputStream = ConfigTranslations.class.getResourceAsStream("/config-langs/" + Translation.EN.fileName())) {
                 Logging.log("Could not find config translation, using default");
                 if (defaultInputStream == null) {
                     throw new IOException("Couldn't find default translation file");
                 }
-                translations = yamlInstance.load(defaultInputStream);
+                this.translations = yamlInstance.load(defaultInputStream);
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -62,19 +62,19 @@ public class ConfigTranslations {
      * @return the translation for the given key, or null if not found
      */
     @Nullable
-    public String getTranslation(String key) {
+    public final String getTranslation(final String key) {
         try {
-            if (translations == null) {
+            if (this.translations == null) {
                 return null;
             } else if (!key.contains(".")) {
-                return (String) translations.get(key);
+                return (String) this.translations.get(key);
             }
 
 
-            String[] keys = key.split("\\.");
-            Map<String, Object> current = translations;
+            final var keys = key.split("\\.");
+            var current = this.translations;
 
-            for (int i = 0; i < keys.length - 1; i++) {
+            for (var i = 0; i < keys.length - 1; i++) {
                 current = (Map<String, Object>) current.get(keys[i]);
                 if (current == null) {
                     return null;
@@ -82,7 +82,7 @@ public class ConfigTranslations {
             }
 
             return (String) current.get(keys[keys.length - 1]);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             Logging.errorLog("Error while getting translation for key: " + key, e);
             return null;
         }

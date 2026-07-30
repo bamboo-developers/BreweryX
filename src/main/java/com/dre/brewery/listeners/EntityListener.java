@@ -45,24 +45,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
-public class EntityListener implements Listener {
+public final class EntityListener implements Listener {
 
     // Legacy Brew removal
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onItemDespawn(ItemDespawnEvent event) {
+    public void onItemDespawn(final ItemDespawnEvent event) {
         if (Brew.noLegacy()) return;
-        ItemStack item = event.getEntity().getItemStack();
+        final var item = event.getEntity().getItemStack();
         if (item.getType() == Material.POTION) {
             Brew.removeLegacy(item);
         }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onEntityCombust(EntityCombustEvent event) {
+    public void onEntityCombust(final EntityCombustEvent event) {
         if (Brew.noLegacy()) return;
-        Entity entity = event.getEntity();
-        if (entity instanceof Item itemEntity) {
-            ItemStack item = itemEntity.getItemStack();
+        final var entity = event.getEntity();
+        if (entity instanceof final Item itemEntity) {
+            final var item = itemEntity.getItemStack();
             if (item.getType() == Material.POTION) {
                 Brew.removeLegacy(item);
             }
@@ -72,22 +72,22 @@ public class EntityListener implements Listener {
     //  --- Barrel Breaking ---
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onExplode(EntityExplodeEvent event) {
-        if (causedByWindCharge(event)) return; // Fixes barrels being destroyed when hit by a WindCharge
-        ListIterator<Block> iter = event.blockList().listIterator();
+    public void onExplode(final EntityExplodeEvent event) {
+        if (this.causedByWindCharge(event)) return; // Fixes barrels being destroyed when hit by a WindCharge
+        final var iter = event.blockList().listIterator();
         if (!iter.hasNext()) return;
-        List<BarrelDestroyEvent> breakEvents = new ArrayList<>(6);
+        final List<BarrelDestroyEvent> breakEvents = new ArrayList<>(6);
         Block block;
         blocks:
         while (iter.hasNext()) {
             block = iter.next();
-            BCauldron cauldron = BCauldron.get(block);
+            final var cauldron = BCauldron.get(block);
             if (cauldron != null) {
                 BUtil.blockDestroy(block, null, BarrelDestroyEvent.Reason.EXPLODED);
                 continue;
             }
             if (!breakEvents.isEmpty()) {
-                for (BarrelDestroyEvent breakEvent : breakEvents) {
+                for (final var breakEvent : breakEvents) {
                     if (breakEvent.getBarrel().hasBlock(block)) {
                         if (breakEvent.isCancelled()) {
                             iter.remove();
@@ -96,9 +96,9 @@ public class EntityListener implements Listener {
                     }
                 }
             }
-            Barrel barrel = Barrel.get(block);
+            final var barrel = Barrel.get(block);
             if (barrel != null) {
-                BarrelDestroyEvent breakEvent = new BarrelDestroyEvent(barrel, block, BarrelDestroyEvent.Reason.EXPLODED, null);
+                final var breakEvent = new BarrelDestroyEvent(barrel, block, BarrelDestroyEvent.Reason.EXPLODED, null);
                 BreweryPlugin.getInstance().getServer().getPluginManager().callEvent(breakEvent);
                 breakEvents.add(breakEvent);
                 if (breakEvent.isCancelled()) {
@@ -111,7 +111,7 @@ public class EntityListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onBlockChange(EntityChangeBlockEvent event) {
+    public void onBlockChange(final EntityChangeBlockEvent event) {
         if (event.getBlock().getType().name().toUpperCase().contains("CUT_COPPER")) return;
         if (Barrel.get(event.getBlock()) == null) return;
         event.setCancelled(true);
@@ -123,12 +123,12 @@ public class EntityListener implements Listener {
      * @param event An instance of EntityExplodeEvent that should be analyzed
      * @return A boolean representing if the given event was caused by a wind charge
      */
-    private boolean causedByWindCharge(EntityExplodeEvent event) {
+    private boolean causedByWindCharge(final EntityExplodeEvent event) {
 
         // Wind charges don't exist in versions below 1.21
         if (!BreweryPlugin.getMCVersion().isOrLater(MinecraftVersion.V1_21)) return false;
 
-        EntityType type = event.getEntityType();
+        final var type = event.getEntityType();
         return type == EntityType.valueOf("BREEZE_WIND_CHARGE") || type == EntityType.valueOf("WIND_CHARGE");
         // Enum can't currently be used directly, because BX still uses Spigots 1.20.2 API
 

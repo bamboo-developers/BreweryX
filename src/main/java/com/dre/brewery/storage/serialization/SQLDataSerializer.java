@@ -31,21 +31,21 @@ import java.util.Base64;
  * Serializes the given object to JSON and then to a Base64 encoded string.
  */
 @Getter
-public class SQLDataSerializer {
+public final class SQLDataSerializer {
     private final Gson gson = new GsonBuilder().setPrettyPrinting().excludeFieldsWithModifiers(Modifier.STATIC).create();
 
-    public String serialize(Object object) {
-        return Base64.getEncoder().encodeToString(gson.toJson(object).getBytes());
+    public final String serialize(final Object object) {
+        return Base64.getEncoder().encodeToString(this.gson.toJson(object).getBytes());
     }
 
-    public <T> T deserialize(String data, Class<T> type) {
-        return gson.fromJson(new String(Base64.getMimeDecoder().decode(data)), type);
+    public final <T> T deserialize(final String data, final Class<T> type) {
+        return this.gson.fromJson(new String(Base64.getMimeDecoder().decode(data)), type);
     }
 
-    public <T> T deserialize(String data, Class<T> type, T defaultValue) {
+    public <T> T deserialize(final String data, final Class<T> type, final T defaultValue) {
         try {
-            return deserialize(data, type);
-        } catch (Exception e) {
+            return this.deserialize(data, type);
+        } catch (final Exception e) {
             return defaultValue;
         }
     }

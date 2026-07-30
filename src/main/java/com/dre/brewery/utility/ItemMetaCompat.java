@@ -41,23 +41,23 @@ public final class ItemMetaCompat {
     private ItemMetaCompat() {
     }
 
-    public static boolean hasCustomModelData(@NotNull ItemMeta meta) {
+    public static boolean hasCustomModelData(@NotNull final ItemMeta meta) {
         if (HAS_COMPONENT_METHOD != null && GET_COMPONENT_METHOD != null) {
             return getCustomModelData(meta) != null;
         }
         if (HAS_LEGACY_METHOD != null) {
             try {
                 return (boolean) HAS_LEGACY_METHOD.invoke(meta);
-            } catch (IllegalAccessException | InvocationTargetException ignored) {
+            } catch (final IllegalAccessException | InvocationTargetException ignored) {
                 return false;
             }
         }
         return false;
     }
 
-    public static @Nullable Integer getCustomModelData(@NotNull ItemMeta meta) {
+    public static @Nullable Integer getCustomModelData(@NotNull final ItemMeta meta) {
         if (HAS_COMPONENT_METHOD != null && GET_COMPONENT_METHOD != null) {
-            Integer componentValue = readComponentValue(meta);
+            final var componentValue = readComponentValue(meta);
             if (componentValue != null) {
                 return componentValue;
             }
@@ -67,44 +67,44 @@ public final class ItemMetaCompat {
                 if ((boolean) HAS_LEGACY_METHOD.invoke(meta)) {
                     return (Integer) GET_LEGACY_METHOD.invoke(meta);
                 }
-            } catch (IllegalAccessException | InvocationTargetException ignored) {
+            } catch (final IllegalAccessException | InvocationTargetException ignored) {
                 return null;
             }
         }
         return null;
     }
 
-    private static @Nullable Integer readComponentValue(@NotNull ItemMeta meta) {
+    private static @Nullable Integer readComponentValue(@NotNull final ItemMeta meta) {
         try {
-            Object component = GET_COMPONENT_METHOD.invoke(meta);
+            final var component = GET_COMPONENT_METHOD.invoke(meta);
             if (component == null) {
                 return null;
             }
 
-            Method getFloats = findMethod(component.getClass(), "getFloats");
+            final var getFloats = findMethod(component.getClass(), "getFloats");
             if (getFloats == null) {
                 return null;
             }
 
-            Object rawFloats = getFloats.invoke(component);
-            if (!(rawFloats instanceof List<?> floats) || floats.isEmpty()) {
+            final var rawFloats = getFloats.invoke(component);
+            if (!(rawFloats instanceof final List<?> floats) || floats.isEmpty()) {
                 return null;
             }
 
-            Object first = floats.get(0);
-            if (first instanceof Number number) {
+            final var first = floats.getFirst();
+            if (first instanceof final Number number) {
                 return number.intValue();
             }
-        } catch (IllegalAccessException | InvocationTargetException ignored) {
+        } catch (final IllegalAccessException | InvocationTargetException ignored) {
             return null;
         }
         return null;
     }
 
-    private static @Nullable Method findMethod(Class<?> type, String name) {
+    private static @Nullable Method findMethod(final Class<?> type, final String name) {
         try {
             return type.getMethod(name);
-        } catch (NoSuchMethodException ignored) {
+        } catch (final NoSuchMethodException ignored) {
             return null;
         }
     }

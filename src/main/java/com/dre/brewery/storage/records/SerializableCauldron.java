@@ -37,20 +37,20 @@ import org.bukkit.Location;
  */
 public record SerializableCauldron(String id, String serializedLocation, String serializedIngredients,
                                    int state) implements SerializableThing {
-    public SerializableCauldron(BCauldron cauldron) {
+    public SerializableCauldron(final BCauldron cauldron) {
         this(cauldron.getId().toString(), DataManager.serializeLocation(cauldron.getBlock().getLocation()), cauldron.getIngredients().serializeIngredients(), cauldron.getState());
     }
 
     public BCauldron toCauldron() {
-        Location loc = DataManager.deserializeLocation(serializedLocation);
+        final var loc = DataManager.deserializeLocation(this.serializedLocation);
         if (loc == null) {
             return null;
         }
-        return new BCauldron(loc.getBlock(), BIngredients.deserializeIngredients(serializedIngredients), state, BUtil.uuidFromString(id));
+        return new BCauldron(loc.getBlock(), BIngredients.deserializeIngredients(this.serializedIngredients), this.state, BUtil.uuidFromString(this.id));
     }
 
     @Override
     public String getId() {
-        return id;
+        return this.id;
     }
 }

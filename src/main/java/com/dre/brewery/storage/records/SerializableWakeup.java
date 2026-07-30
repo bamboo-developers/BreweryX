@@ -33,20 +33,20 @@ import org.bukkit.Location;
  * @param serializedLocation The Location of the wakeup
  */
 public record SerializableWakeup(String id, String serializedLocation) implements SerializableThing {
-    public SerializableWakeup(Wakeup wakeup) {
+    public SerializableWakeup(final Wakeup wakeup) {
         this(wakeup.getId().toString(), DataManager.serializeLocation(wakeup.getLoc(), true));
     }
 
     public Wakeup toWakeup() {
-        Location loc = DataManager.deserializeLocation(serializedLocation, true);
+        final var loc = DataManager.deserializeLocation(this.serializedLocation, true);
         if (loc == null) {
             return null;
         }
-        return new Wakeup(loc, BUtil.uuidFromString(id));
+        return new Wakeup(loc, BUtil.uuidFromString(this.id));
     }
 
     @Override
     public String getId() {
-        return id;
+        return this.id;
     }
 }

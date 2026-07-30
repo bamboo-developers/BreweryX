@@ -37,15 +37,15 @@ import java.util.Collection;
  * @see AddonConfigFile
  * @see OkaeriConfigFileOptions
  */
-public class AddonConfigManager {
+public final class AddonConfigManager {
 
     private final ConfigHead INSTANCE;
 
-    public AddonConfigManager(BreweryAddon addon) {
+    public AddonConfigManager(final BreweryAddon addon) {
         this.INSTANCE = new ConfigHead(BreweryPlugin.getInstance().getDataFolder().toPath().resolve("addons").resolve(addon.getAddonInfo().name()));
     }
 
-    public AddonConfigManager(Path addonDataFolder) {
+    public AddonConfigManager(final Path addonDataFolder) {
         this.INSTANCE = new ConfigHead(addonDataFolder);
     }
 
@@ -56,8 +56,8 @@ public class AddonConfigManager {
      * @param <T>         The type of the config
      * @return The config instance
      */
-    public <T extends AddonConfigFile> T getConfig(Class<T> configClass) {
-        return INSTANCE.getConfig(configClass);
+    public <T extends AddonConfigFile> T getConfig(final Class<T> configClass) {
+        return this.INSTANCE.getConfig(configClass);
     }
 
     /**
@@ -66,8 +66,8 @@ public class AddonConfigManager {
      * @param configClass The class of the config to replace
      * @param <T>         The type of the config
      */
-    public <T extends AddonConfigFile> void newInstance(Class<T> configClass, boolean overwrite) {
-        INSTANCE.newInstance(configClass, overwrite);
+    public <T extends AddonConfigFile> void newInstance(final Class<T> configClass, final boolean overwrite) {
+        this.INSTANCE.newInstance(configClass, overwrite);
     }
 
 
@@ -78,13 +78,13 @@ public class AddonConfigManager {
      * @param <T>         The type of the config
      * @return The file name
      */
-    public <T extends AddonConfigFile> Path getFilePath(Class<T> configClass) {
-        return INSTANCE.getFilePath(configClass);
+    public <T extends AddonConfigFile> Path getFilePath(final Class<T> configClass) {
+        return this.INSTANCE.getFilePath(configClass);
     }
 
 
     public Collection<AddonConfigFile> getLoadedConfigs() {
-        return INSTANCE.LOADED_CONFIGS.values().stream().map(AddonConfigFile.class::cast).toList();
+        return this.INSTANCE.LOADED_CONFIGS.values().stream().map(AddonConfigFile.class::cast).toList();
     }
 
 
@@ -98,8 +98,8 @@ public class AddonConfigManager {
      * @param <T>         The type of the config
      * @return The new config instance
      */
-    private <T extends AddonConfigFile> T createConfig(Class<T> configClass, Path file, Configurer configurer, OkaeriSerdesPack serdesPack, boolean update, boolean removeOrphans) {
-        return INSTANCE.createConfig(configClass, file, configurer, serdesPack, update, removeOrphans);
+    private <T extends AddonConfigFile> T createConfig(final Class<T> configClass, final Path file, final Configurer configurer, final OkaeriSerdesPack serdesPack, final boolean update, final boolean removeOrphans) {
+        return this.INSTANCE.createConfig(configClass, file, configurer, serdesPack, update, removeOrphans);
     }
 
     /**
@@ -109,40 +109,40 @@ public class AddonConfigManager {
      * @param <T>         The type of the config
      * @return The new config instance
      */
-    public <T extends AddonConfigFile> T createConfig(Class<T> configClass) {
-        return INSTANCE.createConfig(configClass);
+    public <T extends AddonConfigFile> T createConfig(final Class<T> configClass) {
+        return this.INSTANCE.createConfig(configClass);
     }
 
     @Nullable
-    public <T extends AddonConfigFile> T createBlankConfigInstance(Class<T> configClass) {
-        return INSTANCE.createBlankConfigInstance(configClass);
+    public <T extends AddonConfigFile> T createBlankConfigInstance(final Class<T> configClass) {
+        return this.INSTANCE.createBlankConfigInstance(configClass);
     }
 
 
-    public void addSerdesPacks(OkaeriSerdesPack... serdesPacks) {
-        INSTANCE.addSerdesPacks(serdesPacks);
+    public void addSerdesPacks(final OkaeriSerdesPack... serdesPacks) {
+        this.INSTANCE.addSerdesPacks(serdesPacks);
     }
 
-    public void addBiDirectionalTransformers(BidirectionalTransformer<?, ?>... transformers) {
-        INSTANCE.addBidirectionalTransformers(transformers);
+    public void addBiDirectionalTransformers(final BidirectionalTransformer<?, ?>... transformers) {
+        this.INSTANCE.addBidirectionalTransformers(transformers);
     }
 
-    public void addConfigurer(Configurer configurer) {
-        INSTANCE.addConfigurer(configurer);
+    public void addConfigurer(final Configurer configurer) {
+        this.INSTANCE.addConfigurer(configurer);
     }
 
     // Util
 
-    public void createFileFromResources(String resourcesPath, Path destination) {
-        INSTANCE.createFileFromResources(resourcesPath, destination);
+    public void createFileFromResources(final String resourcesPath, final Path destination) {
+        this.INSTANCE.createFileFromResources(resourcesPath, destination);
     }
 
 
-    public OkaeriConfigFileOptions getOkaeriConfigFileOptions(Class<? extends AddonConfigFile> configClass) {
-        return INSTANCE.getOkaeriConfigFileOptions(configClass);
+    public OkaeriConfigFileOptions getOkaeriConfigFileOptions(final Class<? extends AddonConfigFile> configClass) {
+        return this.INSTANCE.getOkaeriConfigFileOptions(configClass);
     }
 
     public Path getDataFolder() {
-        return INSTANCE.DATA_FOLDER;
+        return this.INSTANCE.DATA_FOLDER;
     }
 }

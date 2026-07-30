@@ -26,7 +26,6 @@ import com.dre.brewery.integration.papi.placeholders.DrunkennessBarsPlaceholder;
 import com.dre.brewery.integration.papi.placeholders.DrunkennessPlaceholder;
 import com.dre.brewery.integration.papi.placeholders.QualityPlaceholder;
 import com.dre.brewery.integration.papi.placeholders.QualityStarsPlaceholder;
-import com.dre.brewery.utility.BUtil;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PlaceholderAPIManager extends PlaceholderExpansion {
+public final class PlaceholderAPIManager extends PlaceholderExpansion {
 
     private static final BreweryPlugin plugin = BreweryPlugin.getInstance();
     private static final Map<String, Placeholder> placeholders = new HashMap<>();
@@ -47,33 +46,33 @@ public class PlaceholderAPIManager extends PlaceholderExpansion {
     }
 
     @Override
-    public @NotNull String getIdentifier() {
+    public final @NotNull String getIdentifier() {
         return "breweryx";
     }
 
     @Override
-    public @NotNull String getAuthor() {
+    public final @NotNull String getAuthor() {
         return "Mitality & Jsinco";
     }
 
     @Override
-    public @NotNull String getVersion() {
+    public final @NotNull String getVersion() {
         return plugin.getDescription().getVersion();
     }
 
     @Override
-    public boolean persist() {
+    public final boolean persist() {
         return true;
     }
 
     @Override
-    public String onRequest(OfflinePlayer player, @NotNull String params) {
-        BPlayer bPlayer = BPlayer.get(player);
+    public final String onRequest(final OfflinePlayer player, @NotNull final String params) {
+        var bPlayer = BPlayer.get(player);
         if (bPlayer == null) bPlayer = new BPlayer(player.getUniqueId());
 
-        String[] args = params.split("_");
+        final var args = params.split("_");
 
-        Placeholder placeholder = placeholders.get(args[0].toLowerCase());
+        final var placeholder = placeholders.get(args[0].toLowerCase());
         if (placeholder != null) {
             return placeholder.onReceivedRequest(plugin, player, bPlayer, args);
         }

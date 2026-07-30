@@ -33,6 +33,7 @@ public sealed interface BestRecipeResult {
 
     /**
      * Gets the best recipe, if one with quality above 0 was found.
+     *
      * @return the recipe, or null if not found
      */
     @Nullable BRecipe getSuccessRecipe();
@@ -40,20 +41,22 @@ public sealed interface BestRecipeResult {
     /**
      * If no recipe was found, gets the worst defect of the next best recipe.
      * If there are multiple equally bad defects, one is chosen at random.
+     *
      * @return the worst defect, or null if a recipe was found
      */
     @Nullable BrewDefect getWorstDefect();
 
     /**
      * A recipe matching the ingredients was found.
+     *
      * @param recipe the best recipe with the highest quality
-     * @param eval the recipe's evaluation
+     * @param eval   the recipe's evaluation
      */
     record Found(BRecipe recipe, RecipeEvaluation eval) implements BestRecipeResult {
 
         @Override
         public @Nullable BRecipe getSuccessRecipe() {
-            return recipe;
+            return this.recipe;
         }
 
         @Override
@@ -64,18 +67,19 @@ public sealed interface BestRecipeResult {
         @Override
         public String toString() {
             return new StringJoiner(", ", "Found{", "}")
-                .add("recipe=" + recipe)
-                .add("eval=" + eval)
-                .toString();
+                    .add("recipe=" + this.recipe)
+                    .add("eval=" + this.eval)
+                    .toString();
         }
 
     }
 
     /**
      * No recipe with quality above 0 was found.
+     *
      * @param guess the failed recipe with the highest quality (or least problems),
      *              a "best guess" of what the user was trying to brew
-     * @param eval the recipe's evaluation
+     * @param eval  the recipe's evaluation
      */
     record Error(BRecipe guess, RecipeEvaluation eval) implements BestRecipeResult {
 
@@ -86,15 +90,15 @@ public sealed interface BestRecipeResult {
 
         @Override
         public @Nullable BrewDefect getWorstDefect() {
-            return BUtil.choose(eval.getWorstDefects());
+            return BUtil.choose(this.eval.getWorstDefects());
         }
 
         @Override
         public String toString() {
             return new StringJoiner(", ", "Error{", "}")
-                .add("guess=" + guess)
-                .add("eval=" + eval)
-                .toString();
+                    .add("guess=" + this.guess)
+                    .add("eval=" + this.eval)
+                    .toString();
         }
 
     }

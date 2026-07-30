@@ -21,12 +21,7 @@
 package com.dre.brewery.configuration.sector.capsule;
 
 import eu.okaeri.configs.OkaeriConfig;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 @Getter
 @Setter
@@ -34,7 +29,7 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class ConfigCustomItem extends OkaeriConfig {
+public final class ConfigCustomItem extends OkaeriConfig {
 
     private Boolean matchAny;
     private Object material; // List<Material> or Material

@@ -31,16 +31,16 @@ import org.bukkit.command.CommandSender;
 import java.util.ArrayList;
 import java.util.List;
 
-public class HelpCommand implements SubCommand {
+public final class HelpCommand implements SubCommand {
 
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
-        int page = 1;
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
+        var page = 1;
         if (args.length > 1) {
             page = BUtil.parseInt(args[1]).orElse(1);
         }
 
-        ArrayList<String> commands = CommandUtil.getCommands(sender);
+        final var commands = CommandUtil.getCommands(sender);
 
         if (page == 1) {
             Logging.msg(sender, "&6" + breweryPlugin.getDescription().getName() + " v" + breweryPlugin.getDescription().getVersion());
@@ -50,7 +50,7 @@ public class HelpCommand implements SubCommand {
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return null;
     }
 
@@ -64,5 +64,3 @@ public class HelpCommand implements SubCommand {
         return false;
     }
 }
-
-

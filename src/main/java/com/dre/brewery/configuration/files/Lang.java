@@ -45,146 +45,15 @@ import java.util.Map;
 // Our bind file for this class should vary based on what language the user has set in the config.
 @OkaeriConfigFileOptions(useLangFileName = true, removeOrphans = true)
 @Header({"!!! IMPORTANT: BreweryX configuration files do NOT support external comments! If you add any comments, they will be overwritten !!!",
-    "Translations for BreweryX"})
+        "Translations for BreweryX"})
 @DefaultCommentSpace(1)
 @SuppressWarnings("unused")
-public class Lang extends AbstractOkaeriConfigFile {
+public final class Lang extends AbstractOkaeriConfigFile {
 
     @Exclude
-    private transient final Config config = ConfigManager.getConfig(Config.class);
+    private final transient Config config = ConfigManager.getConfig(Config.class);
     @Exclude
     private transient Map<String, Object> mappedEntries; // String or List<String> only
-
-    @SneakyThrows
-    @Override // Should override because we need to remap our strings after a reload of this file.
-    public void reload() {
-        if (this.blankInstance) {
-            super.reload();
-            return;
-        }
-        Path bind = ConfigManager.getFilePath(Lang.class);
-        File file = bind.toFile();
-        if (!file.exists()) {
-            file.createNewFile();
-        }
-        this.setBindFile(bind);
-        this.load(this.update);
-        this.mapStrings();
-    }
-
-    public void updateMissingValuesFrom(@Nullable Lang other) {
-        if (other == null) {
-            return;
-        }
-
-        for (Field field : this.getClass().getDeclaredFields()) {
-            if (field.getType() != String.class && field.getType() != List.class) {
-                continue;
-            }
-
-            try {
-                Object thisValue = field.get(this);
-                Object otherValue = field.get(other);
-                if (thisValue == null && otherValue != null) {
-                    field.set(this, otherValue);
-                }
-            } catch (IllegalAccessException e) {
-                Logging.errorLog("Lang failed to get a field value! &6(" + field.getName() + ")", e);
-            }
-        }
-    }
-
-    public void mapStrings() {
-        BreweryPlugin plugin = BreweryPlugin.getInstance();
-        Logging.log("Using language&7: &a" + this.getBindFile().getFileName());
-
-        this.mappedEntries = new HashMap<>();
-        for (Field field : this.getClass().getDeclaredFields()) {
-            if (field.getType() != String.class && field.getType() != List.class) {
-                continue;
-            }
-
-            try {
-                CustomKey customKey = field.getAnnotation(CustomKey.class);
-                if (customKey != null) {
-                    this.mappedEntries.put(customKey.value(), field.get(this));
-                } else {
-                    this.mappedEntries.put(field.getName(), field.get(this));
-                }
-            } catch (IllegalAccessException e) {
-                Logging.errorLog("Lang failed to get a field value! &6(" + field.getName() + ")", e);
-            }
-        }
-    }
-
-    public void sendEntry(CommandSender recipient, String key, Object... args) {
-        recipient.sendMessage(BUtil.color(config.getPluginPrefix() + this.getEntry(key, false, args)));
-    }
-
-    public void logEntry(Logging.LogLevel level, String key, Object... args) {
-        Logging.log(level, this.getEntry(key, false, args));
-    }
-
-    public String getEntry(String key, Object... args) {
-        return this.getEntry(key, true, args);
-    }
-
-    public String getEntry(String key, boolean color, Object... args) {
-        if (mappedEntries == null) {
-            mapStrings();
-        }
-
-        String msg;
-        Object entry = mappedEntries.get(key);
-        if (entry instanceof String) {
-            msg = format((String) entry, args);
-        } else if (entry instanceof List) {
-            msg = "&c[LanguageReader] Config entry for key '" + key + "' is a list!";
-        } else {
-            msg = "&c[LanguageReader] Failed to retrieve a config entry for key '" + key + "'!";
-        }
-        return color ? BUtil.color(msg) : msg;
-    }
-
-    public List<String> getEntries(String key, Object... args) {
-        return this.getEntries(key, true, args);
-    }
-
-    @SuppressWarnings("unchecked") // All lists in this class are List<String>
-    public List<String> getEntries(String key, boolean color, Object... args) {
-        if (mappedEntries == null) {
-            mapStrings();
-        }
-
-        List<String> msgs;
-        Object entry = mappedEntries.get(key);
-        if (entry instanceof String) {
-            msgs = List.of((String) entry);
-        } else if (entry instanceof List) {
-            msgs = (List<String>) entry;
-        } else {
-            msgs = List.of("&c[LanguageReader] Failed to retrieve a config entry for key '" + key + "'!");
-        }
-        return msgs.stream()
-            .map(s -> format(s, args))
-            .map(s -> color ? BUtil.color(s) : s)
-            .toList();
-    }
-
-    private static String format(String entry, Object... args) {
-        int i = 0;
-        for (Object arg : args) {
-            if (arg != null) {
-                i++;
-                entry = entry.replace("&v" + i, arg.toString());
-            }
-        }
-        return entry;
-    }
-
-
-    // I shouldn't have to set any declarations here since they'll all be pulled from the bound translation files.
-
     @Comment("Brew")
     @CustomKey("Brew_Alc")
     private String brewAlc;
@@ -206,6 +75,9 @@ public class Lang extends AbstractOkaeriConfigFile {
     private String brewHundredsOfYears;
     @CustomKey("Brew_Ingredients")
     private String brewIngredients;
+
+
+    // I shouldn't have to set any declarations here since they'll all be pulled from the bound translation files.
     @CustomKey("Brew_LessDistilled")
     private String brewLessDistilled;
     @CustomKey("Brew_minute")
@@ -224,7 +96,6 @@ public class Lang extends AbstractOkaeriConfigFile {
     private String brewWoodtype;
     @CustomKey("Brew_Years")
     private String brewYears;
-
     @Comment("Brew Defects")
     @CustomKey("Defect_BadAged")
     private List<String> defectBadAged;
@@ -256,7 +127,6 @@ public class Lang extends AbstractOkaeriConfigFile {
     private List<String> defectWrongIngredient;
     @CustomKey("Defect_WrongWood")
     private List<String> defectWrongWood;
-
     @Comment("CMD")
     @CustomKey("CMD_Aged")
     private String cmdAged;
@@ -320,7 +190,6 @@ public class Lang extends AbstractOkaeriConfigFile {
     private String cmdUnLabel;
     @CustomKey("CMD_Age_Ruined")
     private String cmdAgeRuined;
-
     @Comment("Error")
     @CustomKey("Error_AlreadyUnlabeled")
     private String errorAlreadyUnlabeled;
@@ -358,7 +227,6 @@ public class Lang extends AbstractOkaeriConfigFile {
     private String errorUnknownCommand;
     @CustomKey("Error_YmlRead")
     private String errorYmlRead;
-
     @Comment("Etc")
     @CustomKey("Etc_Barrel")
     private String etcBarrel;
@@ -374,7 +242,6 @@ public class Lang extends AbstractOkaeriConfigFile {
     private String etcSealingTable;
     @CustomKey("Etc_Usage")
     private String etcUsage;
-
     @Comment("Help")
     @CustomKey("Help_Age")
     private String helpAge;
@@ -438,7 +305,6 @@ public class Lang extends AbstractOkaeriConfigFile {
     private String helpWakeupList;
     @CustomKey("Help_WakeupRemove")
     private String helpWakeupRemove;
-
     @Comment("Perms")
     @CustomKey("Perms_NoBarrelCreate")
     private String permsNoBarrelCreate;
@@ -450,7 +316,6 @@ public class Lang extends AbstractOkaeriConfigFile {
     private String permsNoCauldronInsert;
     @CustomKey("Perms_NoSmallBarrelCreate")
     private String permsNoSmallBarrelCreate;
-
     @Comment("Player")
     @CustomKey("Player_BarrelCreated")
     private String playerBarrelCreated;
@@ -502,5 +367,132 @@ public class Lang extends AbstractOkaeriConfigFile {
     private String playerWakeNotExist;
     @CustomKey("Player_WakeTeleport")
     private String playerWakeTeleport;
+
+    private static String format(String entry, final Object... args) {
+        var i = 0;
+        for (final var arg : args) {
+            if (arg != null) {
+                i++;
+                entry = entry.replace("&v" + i, arg.toString());
+            }
+        }
+        return entry;
+    }
+
+    @SneakyThrows
+    @Override // Should override because we need to remap our strings after a reload of this file.
+    public void reload() {
+        if (this.blankInstance) {
+            super.reload();
+            return;
+        }
+        final var bind = ConfigManager.getFilePath(Lang.class);
+        final var file = bind.toFile();
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+        this.setBindFile(bind);
+        this.load(this.update);
+        this.mapStrings();
+    }
+
+    public final void updateMissingValuesFrom(@Nullable final Lang other) {
+        if (other == null) {
+            return;
+        }
+
+        for (final var field : this.getClass().getDeclaredFields()) {
+            if (field.getType() != String.class && field.getType() != List.class) {
+                continue;
+            }
+
+            try {
+                final var thisValue = field.get(this);
+                final var otherValue = field.get(other);
+                if (thisValue == null && otherValue != null) {
+                    field.set(this, otherValue);
+                }
+            } catch (final IllegalAccessException e) {
+                Logging.errorLog("Lang failed to get a field value! &6(" + field.getName() + ")", e);
+            }
+        }
+    }
+
+    public final void mapStrings() {
+        final var plugin = BreweryPlugin.getInstance();
+        Logging.log("Using language&7: &a" + this.getBindFile().getFileName());
+
+        this.mappedEntries = new HashMap<>();
+        for (final var field : this.getClass().getDeclaredFields()) {
+            if (field.getType() != String.class && field.getType() != List.class) {
+                continue;
+            }
+
+            try {
+                final var customKey = field.getAnnotation(CustomKey.class);
+                if (customKey != null) {
+                    this.mappedEntries.put(customKey.value(), field.get(this));
+                } else {
+                    this.mappedEntries.put(field.getName(), field.get(this));
+                }
+            } catch (final IllegalAccessException e) {
+                Logging.errorLog("Lang failed to get a field value! &6(" + field.getName() + ")", e);
+            }
+        }
+    }
+
+    public final void sendEntry(final CommandSender recipient, final String key, final Object... args) {
+        recipient.sendMessage(BUtil.color(this.config.getPluginPrefix() + this.getEntry(key, false, args)));
+    }
+
+    public void logEntry(final Logging.LogLevel level, final String key, final Object... args) {
+        Logging.log(level, this.getEntry(key, false, args));
+    }
+
+    public final String getEntry(final String key, final Object... args) {
+        return this.getEntry(key, true, args);
+    }
+
+    public final String getEntry(final String key, final boolean color, final Object... args) {
+        if (this.mappedEntries == null) {
+            this.mapStrings();
+        }
+
+        final String msg;
+        final var entry = this.mappedEntries.get(key);
+        if (entry instanceof String) {
+            msg = format((String) entry, args);
+        } else if (entry instanceof List) {
+            msg = "&c[LanguageReader] Config entry for key '" + key + "' is a list!";
+        } else {
+            msg = "&c[LanguageReader] Failed to retrieve a config entry for key '" + key + "'!";
+        }
+        return color ? BUtil.color(msg) : msg;
+    }
+
+    public final List<String> getEntries(final String key, final Object... args) {
+        return this.getEntries(key, true, args);
+    }
+
+    @SuppressWarnings("unchecked") // All lists in this class are List<String>
+    public final List<String> getEntries(final String key, final boolean color, final Object... args) {
+        if (this.mappedEntries == null) {
+            this.mapStrings();
+        }
+
+        final List<String> msgs;
+        final var entry = this.mappedEntries.get(key);
+        if (entry instanceof String) {
+            msgs = List.of((String) entry);
+        } else if (entry instanceof List) {
+            msgs = (List<String>) entry;
+        } else {
+            msgs = List.of("&c[LanguageReader] Failed to retrieve a config entry for key '" + key + "'!");
+        }
+        return msgs.stream()
+                .map(s -> format(s, args))
+                .map(s -> color ? BUtil.color(s) : s)
+                .toList();
+    }
 
 }

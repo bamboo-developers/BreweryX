@@ -33,69 +33,73 @@ import java.util.stream.Collectors;
  * Helper class that keeps track of {@link BrewDefect BrewDefects} and their quality deductions.
  * Quality starts at 10, and is reduced by each defect.
  */
-public class RecipeEvaluation {
+public final class RecipeEvaluation {
 
     private final List<QualityDeduction> deductions = new ArrayList<>();
 
     /**
-     * Deducts quality by the specified amount.
-     * @param defect the defect that caused the quality deduction
-     * @param qualityDeduction the amount to deduct by
-     * @throws IllegalArgumentException if qualityDeduction is negative
-     */
-    public void deduct(BrewDefect defect, float qualityDeduction) {
-        if (qualityDeduction < 0) {
-            throw new IllegalArgumentException("qualityDeduction cannot be negative");
-        }
-        deductions.add(QualityDeduction.deduction(defect, qualityDeduction));
-    }
-
-    /**
-     * Adds a fatal defect that prevents the recipe from being used.
-     * @param defect the defect
-     */
-    public void fatal(BrewDefect defect) {
-        deductions.add(QualityDeduction.fatal(defect));
-    }
-
-    /**
      * Combines multiple RecipeEvaluations into one.
      * If there are {@code n} evaluations, each evaluation contributes {@code 1/n} of the quality.
+     *
      * @param evals the evaluations
      * @return the combined evaluation
      */
-    public static RecipeEvaluation combine(RecipeEvaluation... evals) {
-        RecipeEvaluation combined = new RecipeEvaluation();
-        for (RecipeEvaluation eval : evals) {
-            List<QualityDeduction> scaledDown = eval.deductions.stream()
-                .map(d -> d.scale(1.0f / evals.length))
-                .toList();
+    public static RecipeEvaluation combine(final RecipeEvaluation... evals) {
+        final var combined = new RecipeEvaluation();
+        for (final var eval : evals) {
+            final var scaledDown = eval.deductions.stream()
+                    .map(d -> d.scale(1.0f / evals.length))
+                    .toList();
             combined.deductions.addAll(scaledDown);
         }
         return combined;
     }
 
     /**
+     * Deducts quality by the specified amount.
+     *
+     * @param defect           the defect that caused the quality deduction
+     * @param qualityDeduction the amount to deduct by
+     * @throws IllegalArgumentException if qualityDeduction is negative
+     */
+    public final void deduct(final BrewDefect defect, final float qualityDeduction) {
+        if (qualityDeduction < 0) {
+            throw new IllegalArgumentException("qualityDeduction cannot be negative");
+        }
+        this.deductions.add(QualityDeduction.deduction(defect, qualityDeduction));
+    }
+
+    /**
+     * Adds a fatal defect that prevents the recipe from being used.
+     *
+     * @param defect the defect
+     */
+    public final void fatal(final BrewDefect defect) {
+        this.deductions.add(QualityDeduction.fatal(defect));
+    }
+
+    /**
      * @return whether {@link #getQuality()} is -1
      */
-    public boolean isFatal() {
-        return getTrueQuality() < 0;
+    public final boolean isFatal() {
+        return this.getTrueQuality() < 0;
     }
 
     /**
      * @return whether there are any fatal defects
      */
     private boolean hasFatalDefect() {
-        return deductions.stream().anyMatch(QualityDeduction::isFatal);
+        return this.deductions.stream().anyMatch(QualityDeduction::isFatal);
     }
 
     /**
      * Gets the quality of the recipe. Will be between 0 and 10 inclusive and rounded.
      * If there are fatal defects, or if the quality is deducted to less than 0,the quality will be -1.
+     *
      * @return the quality
      */
-    public float getQuality() {
-        float quality = getTrueQuality();
+    public final float getQuality() {
+        final var quality = this.getTrueQuality();
         if (quality < 0) {
             return -1;
         }
@@ -105,39 +109,41 @@ public class RecipeEvaluation {
     /**
      * Gets the true quality of the recipe, without rounding or bounds.
      * Can be any number 10 or below. Will be negative infinity if there are fatal defects.
+     *
      * @return the true quality
      */
-    public float getTrueQuality() {
-        if (hasFatalDefect()) {
+    public final float getTrueQuality() {
+        if (this.hasFatalDefect()) {
             return Float.NEGATIVE_INFINITY;
         }
-        return deductions.stream()
-            .map(QualityDeduction::getQualityDeduction)
-            .reduce(10f, (q1, q2) -> q1 - q2);
+        return this.deductions.stream()
+                .map(QualityDeduction::getQualityDeduction)
+                .reduce(10f, (q1, q2) -> q1 - q2);
     }
 
     /**
      * @return all quality deductions, in arbitrary order
      */
     public List<QualityDeduction> getDeductions() {
-        return Collections.unmodifiableList(deductions);
+        return Collections.unmodifiableList(this.deductions);
     }
 
     /**
      * Gets the defect that deducts the most quality from the recipe.
      * If there is a tie, multiple defects are returned.
+     *
      * @return list of defects, possibly empty
      */
-    public List<BrewDefect> getWorstDefects() {
-        if (hasFatalDefect()) {
-            return deductions.stream()
-                .filter(QualityDeduction::isFatal)
-                .map(QualityDeduction::getDefect)
-                .toList();
+    public final List<BrewDefect> getWorstDefects() {
+        if (this.hasFatalDefect()) {
+            return this.deductions.stream()
+                    .filter(QualityDeduction::isFatal)
+                    .map(QualityDeduction::getDefect)
+                    .toList();
         } else {
-            return BUtil.multiMin(deductions).stream()
-                .map(QualityDeduction::getDefect)
-                .toList();
+            return BUtil.multiMin(this.deductions).stream()
+                    .map(QualityDeduction::getDefect)
+                    .toList();
         }
     }
 
@@ -149,49 +155,51 @@ public class RecipeEvaluation {
      *     <li>Number of fatal defects, most to fewest</li>
      *     <li>{@link #getTrueQuality()}, lowest to highest</li>
      * </ul>
+     *
      * @param other the other evaluation
      * @return -1, 0, or 1 if <, =, or >
      * @throws NullPointerException if other is null
      */
-    public int compareMostToLeastComplexity(RecipeEvaluation other) {
+    public final int compareMostToLeastComplexity(final RecipeEvaluation other) {
         if (other == null) {
             throw new NullPointerException("other cannot be null");
         }
-        int numDefectsCompare = -Integer.compare(deductions.size(), other.deductions.size());
+        final var numDefectsCompare = -Integer.compare(this.deductions.size(), other.deductions.size());
         if (numDefectsCompare != 0) {
             return numDefectsCompare;
         }
-        int thisFatalCount = fatalCount();
-        boolean thisFatal = thisFatalCount > 0;
-        int otherFatalCount = other.fatalCount();
-        boolean otherFatal = otherFatalCount > 0;
+        final var thisFatalCount = this.fatalCount();
+        final var thisFatal = thisFatalCount > 0;
+        final var otherFatalCount = other.fatalCount();
+        final var otherFatal = otherFatalCount > 0;
         if (!thisFatal && !otherFatal) {
-            return Float.compare(getTrueQuality(), other.getTrueQuality());
+            return Float.compare(this.getTrueQuality(), other.getTrueQuality());
         }
         if (thisFatal && otherFatal) {
             return -Integer.compare(thisFatalCount, otherFatalCount);
         }
         return -Boolean.compare(thisFatal, otherFatal);
     }
+
     private int fatalCount() {
-        return (int) deductions.stream()
-            .filter(QualityDeduction::isFatal)
-            .count();
+        return (int) this.deductions.stream()
+                .filter(QualityDeduction::isFatal)
+                .count();
     }
 
     @Override
-    public String toString() {
-        float quality = getTrueQuality();
-        String qualityStr = quality == Float.NEGATIVE_INFINITY ? "fatal" : String.format("%.3f", quality);
+    public final String toString() {
+        final var quality = this.getTrueQuality();
+        final var qualityStr = quality == Float.NEGATIVE_INFINITY ? "fatal" : String.format("%.3f", quality);
 
-        String deductionsStr = deductions.stream()
-            .map(QualityDeduction::toString)
-            .collect(Collectors.joining(", ", "[", "]"));
+        final var deductionsStr = this.deductions.stream()
+                .map(QualityDeduction::toString)
+                .collect(Collectors.joining(", ", "[", "]"));
 
         return new StringJoiner(", ", "{", "}")
-            .add("quality=" + qualityStr)
-            .add("deductions=" + deductionsStr)
-            .toString();
+                .add("quality=" + qualityStr)
+                .add("deductions=" + deductionsStr)
+                .toString();
     }
 
 }

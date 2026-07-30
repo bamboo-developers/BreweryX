@@ -20,23 +20,11 @@
 
 package com.dre.brewery.storage;
 
-import com.dre.brewery.BCauldron;
-import com.dre.brewery.BIngredients;
-import com.dre.brewery.BPlayer;
-import com.dre.brewery.Barrel;
-import com.dre.brewery.BarrelWoodType;
-import com.dre.brewery.Brew;
-import com.dre.brewery.BreweryPlugin;
-import com.dre.brewery.MCBarrel;
-import com.dre.brewery.Wakeup;
+import com.dre.brewery.*;
 import com.dre.brewery.lore.Base91DecoderStream;
 import com.dre.brewery.recipe.Ingredient;
 import com.dre.brewery.recipe.SimpleItem;
-import com.dre.brewery.utility.BUtil;
-import com.dre.brewery.utility.BoundingBox;
-import com.dre.brewery.utility.FutureUtil;
-import com.dre.brewery.utility.Logging;
-import com.dre.brewery.utility.MinecraftVersion;
+import com.dre.brewery.utility.*;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -49,14 +37,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -71,25 +52,25 @@ import java.util.stream.Collectors;
  * those world UUIDs. The new DataManager now uses a UUID for Barrels, Cauldrons, Players, and Wakeups.
  * This class was written by the original authors and is only used for bringing the old data into cache.
  */
-public class BData {
+public final class BData {
 
     private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
     private static final BreweryPlugin plugin = BreweryPlugin.getInstance();
 
-    public static AtomicInteger dataMutex = new AtomicInteger(0); // WorldData: -1 = Saving, 0 = Free, >= 1 = Loading
+    public static final AtomicInteger dataMutex = new AtomicInteger(0); // WorldData: -1 = Saving, 0 = Free, >= 1 = Loading
     public static FileConfiguration worldData = null; // World Data Cache for consecutive loading of Worlds. Nulled after a data save
 
 
     public static boolean checkForLegacyData() {
-        File file = new File(plugin.getDataFolder(), "data.yml");
-        File worldDataFile = new File(plugin.getDataFolder(), "worlddata.yml");
+        final var file = new File(plugin.getDataFolder(), "data.yml");
+        final var worldDataFile = new File(plugin.getDataFolder(), "worlddata.yml");
         return file.exists() || worldDataFile.exists();
     }
 
     public static void finalizeLegacyDataMigration() {
-        File file = new File(plugin.getDataFolder(), "data.yml");
-        File worldDataFile = new File(plugin.getDataFolder(), "worlddata.yml");
-        File worldDataFileBackup = new File(plugin.getDataFolder(), "worlddataBackup.yml");
+        final var file = new File(plugin.getDataFolder(), "data.yml");
+        final var worldDataFile = new File(plugin.getDataFolder(), "worlddata.yml");
+        final var worldDataFileBackup = new File(plugin.getDataFolder(), "worlddataBackup.yml");
 
         if (file.exists()) {
             file.renameTo(new File(plugin.getDataFolder(), "data.yml.old"));
@@ -105,11 +86,11 @@ public class BData {
 
     // load all Data
     public static void readData() {
-        File file = new File(plugin.getDataFolder(), "data.yml");
-        File worldDataFile = new File(plugin.getDataFolder(), "worlddata.yml");
+        final var file = new File(plugin.getDataFolder(), "data.yml");
+        final var worldDataFile = new File(plugin.getDataFolder(), "worlddata.yml");
         if (file.exists()) {
 
-            FileConfiguration data = YamlConfiguration.loadConfiguration(file);
+            final FileConfiguration data = YamlConfiguration.loadConfiguration(file);
 
 
             Brew.installTime = data.getLong("installTime", System.currentTimeMillis());
@@ -117,9 +98,9 @@ public class BData {
 
             Brew.loadPrevSeeds(data);
 
-            List<Integer> brewsCreated = data.getIntegerList("brewsCreated");
+            final var brewsCreated = data.getIntegerList("brewsCreated");
             if (brewsCreated.size() == 7) {
-                int hash = data.getInt("brewsCreatedH");
+                final var hash = data.getInt("brewsCreatedH");
                 // Check the hash to prevent tampering with statistics
                 if (brewsCreated.hashCode() == hash) {
                     plugin.getBreweryStats().brewsCreated = brewsCreated.get(0);
@@ -134,20 +115,20 @@ public class BData {
         }
 
         if (worldDataFile.exists()) {
-            FileConfiguration data = YamlConfiguration.loadConfiguration(worldDataFile);
+            final FileConfiguration data = YamlConfiguration.loadConfiguration(worldDataFile);
 
             // loading Ingredients into ingMap
             // Only for Legacy Brews
-            Map<String, BIngredients> ingMap = new HashMap<>();
-            ConfigurationSection section = data.getConfigurationSection("Ingredients");
+            final Map<String, BIngredients> ingMap = new HashMap<>();
+            var section = data.getConfigurationSection("Ingredients");
             if (section != null) {
-                for (String id : section.getKeys(false)) {
+                for (final var id : section.getKeys(false)) {
                     if (section.isConfigurationSection(id + ".mats")) {
                         // Old way of saving
-                        ConfigurationSection matSection = section.getConfigurationSection(id + ".mats");
+                        final var matSection = section.getConfigurationSection(id + ".mats");
                         if (matSection != null) {
                             // matSection has all the materials + amount as Integers
-                            List<Ingredient> ingredients = oldDeserializeIngredients(matSection);
+                            final var ingredients = oldDeserializeIngredients(matSection);
                             ingMap.put(id, new BIngredients(ingredients, section.getInt(id + ".cookedTime", 0), true));
                         } else {
                             Logging.errorLog("Ingredient id: '" + id + "' incomplete in data.yml");
@@ -163,18 +144,18 @@ public class BData {
             section = data.getConfigurationSection("Brew");
             if (section != null) {
                 // All sections have the UID as name
-                for (String uid : section.getKeys(false)) {
-                    BIngredients ingredients = getIngredients(ingMap, section.getString(uid + ".ingId"));
-                    int quality = section.getInt(uid + ".quality", 0);
-                    int alc = section.getInt(uid + ".alc", 0);
-                    byte distillRuns = (byte) section.getInt(uid + ".distillRuns", 0);
-                    float ageTime = (float) section.getDouble(uid + ".ageTime", 0.0);
-                    float wood = (float) section.getDouble(uid + ".wood", -1.0);
-                    String recipe = section.getString(uid + ".recipe", null);
-                    boolean unlabeled = section.getBoolean(uid + ".unlabeled", false);
-                    boolean persistent = section.getBoolean(uid + ".persist", false);
-                    boolean stat = section.getBoolean(uid + ".stat", false);
-                    int lastUpdate = section.getInt(uid + ".lastUpdate", 0);
+                for (final var uid : section.getKeys(false)) {
+                    final var ingredients = getIngredients(ingMap, section.getString(uid + ".ingId"));
+                    final var quality = section.getInt(uid + ".quality", 0);
+                    final var alc = section.getInt(uid + ".alc", 0);
+                    final var distillRuns = (byte) section.getInt(uid + ".distillRuns", 0);
+                    final var ageTime = (float) section.getDouble(uid + ".ageTime", 0.0);
+                    final var wood = (float) section.getDouble(uid + ".wood", -1.0);
+                    final var recipe = section.getString(uid + ".recipe", null);
+                    final var unlabeled = section.getBoolean(uid + ".unlabeled", false);
+                    final var persistent = section.getBoolean(uid + ".persist", false);
+                    final var stat = section.getBoolean(uid + ".stat", false);
+                    final var lastUpdate = section.getInt(uid + ".lastUpdate", 0);
 
                     Brew.loadLegacy(ingredients, Integer.parseInt(uid), quality, alc, distillRuns, ageTime, BarrelWoodType.fromAny(wood), recipe, unlabeled, persistent, stat, lastUpdate);
                 }
@@ -190,7 +171,7 @@ public class BData {
                 plugin.getBreweryStats().bad = 0;
                 plugin.getBreweryStats().terr = 0;
                 if (!Brew.noLegacy()) {
-                    for (int i = Brew.legacyPotions.size(); i > 0; i--) {
+                    for (var i = Brew.legacyPotions.size(); i > 0; i--) {
                         plugin.getBreweryStats().metricsForCreate(false);
                     }
                 }
@@ -198,12 +179,12 @@ public class BData {
 
             // Remove Legacy Potions that haven't been touched in a long time, these may have been lost
             if (!Brew.noLegacy()) {
-                int currentHoursAfterInstall = (int) ((double) (System.currentTimeMillis() - Brew.installTime) / 3600000D);
-                int purgeTime = currentHoursAfterInstall - (24 * 30 * 4); // Purge Time is 4 Months ago
+                final var currentHoursAfterInstall = (int) ((double) (System.currentTimeMillis() - Brew.installTime) / 3600000D);
+                final var purgeTime = currentHoursAfterInstall - (24 * 30 * 4); // Purge Time is 4 Months ago
                 if (purgeTime > 0) {
-                    int removed = 0;
-                    for (Iterator<Brew> iterator = Brew.legacyPotions.values().iterator(); iterator.hasNext(); ) {
-                        Brew brew = iterator.next();
+                    var removed = 0;
+                    for (final var iterator = Brew.legacyPotions.values().iterator(); iterator.hasNext(); ) {
+                        final var brew = iterator.next();
                         if (brew.getLastUpdate() < purgeTime) {
                             iterator.remove();
                             removed++;
@@ -216,16 +197,16 @@ public class BData {
             }
 
             // loading BPlayer
-            List<BPlayer> players = new ArrayList<>();
+            final List<BPlayer> players = new ArrayList<>();
             section = data.getConfigurationSection("Player");
             if (section != null) {
                 // keys have players uuid
-                for (String uuid : section.getKeys(false)) {
+                for (final var uuid : section.getKeys(false)) {
 
 
-                    int quality = section.getInt(uuid + ".quality");
-                    int drunk = section.getInt(uuid + ".drunk");
-                    int offDrunk = section.getInt(uuid + ".offDrunk", 0);
+                    final var quality = section.getInt(uuid + ".quality");
+                    final var drunk = section.getInt(uuid + ".drunk");
+                    final var offDrunk = section.getInt(uuid + ".offDrunk", 0);
 
                     players.add(new BPlayer(uuid, quality, drunk, offDrunk));
                 }
@@ -233,29 +214,29 @@ public class BData {
             BPlayer.getPlayers().putAll(players.stream().collect(Collectors.toMap(BPlayer::getUuid, Function.identity())));
 
 
-            final List<World> worlds = plugin.getServer().getWorlds();
-            for (World world : worlds) {
+            final var worlds = plugin.getServer().getWorlds();
+            for (final var world : worlds) {
                 loadWorldData(world.getUID().toString(), world);
             }
         }
     }
 
-    public static BIngredients deserializeIngredients(String mat) {
-        try (DataInputStream in = new DataInputStream(new Base91DecoderStream(new ByteArrayInputStream(mat.getBytes())))) {
-            byte ver = in.readByte();
+    public static BIngredients deserializeIngredients(final String mat) {
+        try (final var in = new DataInputStream(new Base91DecoderStream(new ByteArrayInputStream(mat.getBytes())))) {
+            final var ver = in.readByte();
             return BIngredients.load(in, ver);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logging.errorLog("Failed to load Ingredients from data.yml", e);
             return new BIngredients();
         }
     }
 
     // Loading from the old way of saving ingredients
-    public static List<Ingredient> oldDeserializeIngredients(ConfigurationSection matSection) {
-        List<Ingredient> ingredients = new ArrayList<>();
-        for (String mat : matSection.getKeys(false)) {
-            String[] matSplit = mat.split(",");
-            Material m = Material.getMaterial(matSplit[0]);
+    public static List<Ingredient> oldDeserializeIngredients(final ConfigurationSection matSection) {
+        final List<Ingredient> ingredients = new ArrayList<>();
+        for (final var mat : matSection.getKeys(false)) {
+            final var matSplit = mat.split(",");
+            var m = Material.getMaterial(matSplit[0]);
             if (m == null && VERSION.isOrLater(MinecraftVersion.V1_13)) {
                 if (matSplit[0].equals("LONG_GRASS")) {
                     m = Material.SHORT_GRASS;
@@ -265,7 +246,7 @@ public class BData {
                 Logging.debugLog("converting Data Material from " + matSplit[0] + " to " + m);
             }
             if (m == null) continue;
-            SimpleItem item;
+            final SimpleItem item;
             if (matSplit.length == 2) {
                 item = new SimpleItem(m, (short) BUtil.parseIntOrZero(matSplit[1]));
             } else {
@@ -278,7 +259,7 @@ public class BData {
     }
 
     // returns Ingredients by id from the specified ingMap
-    public static BIngredients getIngredients(Map<String, BIngredients> ingMap, String id) {
+    public static BIngredients getIngredients(final Map<String, BIngredients> ingMap, final String id) {
         if (!ingMap.isEmpty()) {
             if (ingMap.containsKey(id)) {
                 return ingMap.get(id);
@@ -289,10 +270,10 @@ public class BData {
     }
 
     // loads BIngredients from an ingredient section
-    public static BIngredients loadCauldronIng(ConfigurationSection section, String path) {
+    public static BIngredients loadCauldronIng(final ConfigurationSection section, final String path) {
         if (section.isConfigurationSection(path)) {
             // Old way of saving
-            ConfigurationSection matSection = section.getConfigurationSection(path);
+            final var matSection = section.getConfigurationSection(path);
             if (matSection != null) {
                 // matSection has all the materials + amount as Integers
                 return new BIngredients(oldDeserializeIngredients(section), 0);
@@ -306,18 +287,18 @@ public class BData {
         }
     }
 
-    public static void lwDataTask(List<World> worlds) {
+    public static void lwDataTask(final List<World> worlds) {
         if (!acquireDataLoadMutex()) return; // Tries for 60 sec
 
         try {
-            for (World world : worlds) {
+            for (final var world : worlds) {
                 if (world.getName().startsWith("DXL_")) {
                     loadWorldData(BUtil.getDxlName(world.getName()), world);
                 } else {
                     loadWorldData(world.getUID().toString(), world);
                 }
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             Logging.errorLog("Error loading World Data", e);
         } finally {
             releaseDataLoadMutex();
@@ -329,13 +310,13 @@ public class BData {
 
     // load Block locations of given world
     // can be run async
-    public static void loadWorldData(String uuid, World world) {
+    public static void loadWorldData(final String uuid, final World world) {
         if (BData.worldData == null) {
-            File file = new File(plugin.getDataFolder(), "worlddata.yml");
+            final var file = new File(plugin.getDataFolder(), "worlddata.yml");
             if (file.exists()) {
-                long t1 = System.currentTimeMillis();
+                final var t1 = System.currentTimeMillis();
                 BData.worldData = YamlConfiguration.loadConfiguration(file);
-                long t2 = System.currentTimeMillis();
+                final var t2 = System.currentTimeMillis();
                 if (t2 - t1 > 15000) {
                     // Spigot is _very_ slow at loading inventories from yml. Paper is way faster.
                     // Notify Admin that loading Data took long (its async so not much of a problem)
@@ -352,16 +333,16 @@ public class BData {
         // loading BCauldron
         final Map<Block, BCauldron> initCauldrons = new HashMap<>();
         if (BData.worldData.contains("BCauldron." + uuid)) {
-            ConfigurationSection section = BData.worldData.getConfigurationSection("BCauldron." + uuid);
-            for (String cauldron : section.getKeys(false)) {
+            final var section = BData.worldData.getConfigurationSection("BCauldron." + uuid);
+            for (final var cauldron : section.getKeys(false)) {
                 // block is splitted into x/y/z
-                String block = section.getString(cauldron + ".block");
+                final var block = section.getString(cauldron + ".block");
                 if (block != null) {
-                    String[] splitted = block.split("/");
+                    final var splitted = block.split("/");
                     if (splitted.length == 3) {
-                        Block worldBlock = world.getBlockAt(Integer.parseInt(splitted[0]), Integer.parseInt(splitted[1]), Integer.parseInt(splitted[2]));
-                        BIngredients ingredients = loadCauldronIng(section, cauldron + ".ingredients");
-                        int state = section.getInt(cauldron + ".state", 0);
+                        final var worldBlock = world.getBlockAt(Integer.parseInt(splitted[0]), Integer.parseInt(splitted[1]), Integer.parseInt(splitted[2]));
+                        final var ingredients = loadCauldronIng(section, cauldron + ".ingredients");
+                        final var state = section.getInt(cauldron + ".state", 0);
 
                         initCauldrons.put(worldBlock, new BCauldron(worldBlock, ingredients, state, UUID.randomUUID()));
                     } else {
@@ -376,59 +357,59 @@ public class BData {
         // loading Barrel
         final List<CompletableFuture<Barrel>> initBarrelFutures = new ArrayList<>();
         if (BData.worldData.contains("Barrel." + uuid)) {
-            ConfigurationSection section = BData.worldData.getConfigurationSection("Barrel." + uuid);
-            for (String barrel : section.getKeys(false)) {
+            final var section = BData.worldData.getConfigurationSection("Barrel." + uuid);
+            for (final var barrel : section.getKeys(false)) {
                 // block spigot is splitted into x/y/z
-                String spigot = section.getString(barrel + ".spigot");
+                final var spigot = section.getString(barrel + ".spigot");
                 if (spigot != null) {
-                    String[] splitted = spigot.split("/");
+                    final var splitted = spigot.split("/");
                     if (splitted.length == 3) {
 
                         // load itemStacks from invSection
-                        ConfigurationSection invSection = section.getConfigurationSection(barrel + ".inv");
-                        Location spigotLocation = new Location(world, Integer.parseInt(splitted[0]), Integer.parseInt(splitted[1]), Integer.parseInt(splitted[2]));
-                        float time = (float) section.getDouble(barrel + ".time", 0.0);
-                        byte sign = (byte) section.getInt(barrel + ".sign", 0);
+                        final var invSection = section.getConfigurationSection(barrel + ".inv");
+                        final var spigotLocation = new Location(world, Integer.parseInt(splitted[0]), Integer.parseInt(splitted[1]), Integer.parseInt(splitted[2]));
+                        final var time = (float) section.getDouble(barrel + ".time", 0.0);
+                        final var sign = (byte) section.getInt(barrel + ".sign", 0);
 
                         BoundingBox box = null;
                         if (section.contains(barrel + ".bounds")) {
-                            String[] bds = section.getString(barrel + ".bounds", "").split(",");
+                            final var bds = section.getString(barrel + ".bounds", "").split(",");
                             if (bds.length == 6) {
                                 box = BoundingBox.fromPoints(
-                                    Arrays.stream(bds).mapToInt(Integer::parseInt).toArray()
+                                        Arrays.stream(bds).mapToInt(Integer::parseInt).toArray()
                                 );
                             }
                         } else if (section.contains(barrel + ".st")) {
                             // Convert from Stair and Wood Locations to BoundingBox
-                            String[] st = section.getString(barrel + ".st", "").split(",");
-                            String[] wo = section.getString(barrel + ".wo", "").split(",");
-                            int woLength = wo.length;
+                            final var st = section.getString(barrel + ".st", "").split(",");
+                            final var wo = section.getString(barrel + ".wo", "").split(",");
+                            var woLength = wo.length;
                             if (woLength <= 1) {
                                 woLength = 0;
                             }
-                            String[] points = new String[st.length + woLength];
+                            final var points = new String[st.length + woLength];
                             System.arraycopy(st, 0, points, 0, st.length);
                             if (woLength > 1) {
                                 System.arraycopy(wo, 0, points, st.length, woLength);
                             }
-                            int[] locs = Arrays.stream(points).mapToInt(Integer::parseInt).toArray();
+                            final var locs = Arrays.stream(points).mapToInt(Integer::parseInt).toArray();
                             try {
                                 box = BoundingBox.fromPoints(locs);
-                            } catch (Exception e) {
+                            } catch (final Exception e) {
                                 Logging.errorLog("Failed to load BoundingBox from Stair and Wood Locations", e);
                             }
                         }
 
-                        final BoundingBox bbox = box;
-                        CompletableFuture<Barrel> barrelFuture = Barrel.computeSmall(spigotLocation)
-                            .thenApply(small -> {
-                                if (invSection != null) {
-                                    return new Barrel(spigotLocation.getBlock(), sign, bbox, invSection.getValues(true), time, UUID.randomUUID(), small);
-                                } else {
-                                    // Barrel has no inventory
-                                    return new Barrel(spigotLocation.getBlock(), sign, bbox, Collections.emptyMap(), time, UUID.randomUUID(), small);
-                                }
-                            });
+                        final var bbox = box;
+                        final var barrelFuture = Barrel.computeSmall(spigotLocation)
+                                .thenApply(small -> {
+                                    if (invSection != null) {
+                                        return new Barrel(spigotLocation.getBlock(), sign, bbox, invSection.getValues(true), time, UUID.randomUUID(), small);
+                                    } else {
+                                        // Barrel has no inventory
+                                        return new Barrel(spigotLocation.getBlock(), sign, bbox, Collections.emptyMap(), time, UUID.randomUUID(), small);
+                                    }
+                                });
                         initBarrelFutures.add(barrelFuture);
 
                     } else {
@@ -443,20 +424,20 @@ public class BData {
         // loading Wakeup
         final List<Wakeup> initWakeups = new ArrayList<>();
         if (BData.worldData.contains("Wakeup." + uuid)) {
-            ConfigurationSection section = BData.worldData.getConfigurationSection("Wakeup." + uuid);
-            for (String wakeup : section.getKeys(false)) {
+            final var section = BData.worldData.getConfigurationSection("Wakeup." + uuid);
+            for (final var wakeup : section.getKeys(false)) {
                 // loc of wakeup is splitted into x/y/z/pitch/yaw
-                String loc = section.getString(wakeup);
+                final var loc = section.getString(wakeup);
                 if (loc != null) {
-                    String[] splitted = loc.split("/");
+                    final var splitted = loc.split("/");
                     if (splitted.length == 5) {
-                        double x = Double.parseDouble(splitted[0]);
-                        double y = Double.parseDouble(splitted[1]);
-                        double z = Double.parseDouble(splitted[2]);
-                        float pitch = Float.parseFloat(splitted[3]);
-                        float yaw = Float.parseFloat(splitted[4]);
+                        final var x = Double.parseDouble(splitted[0]);
+                        final var y = Double.parseDouble(splitted[1]);
+                        final var z = Double.parseDouble(splitted[2]);
+                        final var pitch = Float.parseFloat(splitted[3]);
+                        final var yaw = Float.parseFloat(splitted[4]);
 
-                        Location location = new Location(world, x, y, z, yaw, pitch);
+                        final var location = new Location(world, x, y, z, yaw, pitch);
 
                         initWakeups.add(new Wakeup(location));
 
@@ -477,7 +458,7 @@ public class BData {
         }
         if (!initBarrelFutures.isEmpty()) {
             FutureUtil.mergeFutures(initBarrelFutures)
-                .thenAcceptAsync(barrels -> barrels.forEach(Barrel::registerBarrel));
+                    .thenAcceptAsync(barrels -> barrels.forEach(Barrel::registerBarrel));
         }
         if (!initWakeups.isEmpty()) {
             Wakeup.wakeups.addAll(initWakeups);
@@ -486,7 +467,7 @@ public class BData {
     }
 
     public static boolean acquireDataLoadMutex() {
-        int wait = 0;
+        var wait = 0;
         // Increment the Data Mutex if it is not -1
         while (BData.dataMutex.updateAndGet(i -> i >= 0 ? i + 1 : i) <= 0) {
             wait++;
@@ -496,7 +477,7 @@ public class BData {
             }
             try {
                 Thread.sleep(1000);
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 return false;
             }
         }

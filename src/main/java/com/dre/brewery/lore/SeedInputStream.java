@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.InputStream;
 import java.util.Arrays;
 
-public class SeedInputStream extends InputStream {
+public final class SeedInputStream extends InputStream {
     // From java.util.Random
     private static final long multiplier = 0x5DEECE66DL;
     private static final long addend = 0xBL;
@@ -37,80 +37,80 @@ public class SeedInputStream extends InputStream {
     private long markSeed;
     private byte[] markbuf;
 
-    public SeedInputStream(long seed) {
+    public SeedInputStream(final long seed) {
         this.seed = (seed ^ multiplier) & mask;
     }
 
     private void calcSeed() {
-        seed = (seed * multiplier + addend) & mask;
+        this.seed = (this.seed * multiplier + addend) & mask;
     }
 
     private void genNext() {
-        calcSeed();
-        int next = (int) (seed >>> 16);
-        buf[0] = (byte) (next >> 24);
-        buf[1] = (byte) (next >> 16);
-        buf[2] = (byte) (next >> 8);
-        buf[3] = (byte) next;
-        reader = 0;
+        this.calcSeed();
+        final var next = (int) (this.seed >>> 16);
+        this.buf[0] = (byte) (next >> 24);
+        this.buf[1] = (byte) (next >> 16);
+        this.buf[2] = (byte) (next >> 8);
+        this.buf[3] = (byte) next;
+        this.reader = 0;
     }
 
     @Override
-    public int read(@NotNull byte[] b, int off, int len) {
-        for (int i = off; i < len; i++) {
-            if (reader >= 4) {
-                genNext();
+    public final int read(@NotNull final byte[] b, final int off, final int len) {
+        for (var i = off; i < len; i++) {
+            if (this.reader >= 4) {
+                this.genNext();
             }
-            b[i] = buf[reader++];
+            b[i] = this.buf[this.reader++];
         }
         return len;
     }
 
     @Override
-    public int read() {
-        if (reader == 4) {
-            genNext();
+    public final int read() {
+        if (this.reader == 4) {
+            this.genNext();
         }
-        return buf[reader++];
+        return this.buf[this.reader++];
     }
 
     @Override
-    public long skip(long toSkip) {
-        long n = toSkip;
+    public final long skip(final long toSkip) {
+        var n = toSkip;
         while (n > 0) {
-            if (reader < 4) {
-                reader++;
+            if (this.reader < 4) {
+                this.reader++;
                 n--;
             } else if (n >= 4) {
-                calcSeed();
+                this.calcSeed();
                 n -= 4;
             } else {
-                genNext();
+                this.genNext();
             }
         }
         return toSkip;
     }
 
     @Override
-    public void close() {
-        buf = null;
+    public final void close() {
+        this.buf = null;
     }
 
     @Override
-    public boolean markSupported() {
+    public final boolean markSupported() {
         return true;
     }
 
     @Override
-    public synchronized void mark(int readlimit) {
-        markbuf = new byte[]{ buf[0], buf[1], buf[2], buf[3], reader };
-        markSeed = seed;
+    public final synchronized void mark(final int readlimit) {
+        this.markbuf = new byte[]{this.buf[0], this.buf[1], this.buf[2], this.buf[3], this.reader};
+        this.markSeed = this.seed;
     }
 
     @Override
-    public synchronized void reset() {
-        seed = markSeed;
-        buf = Arrays.copyOfRange(markbuf, 0, 4);
-        reader = markbuf[4];
+    public final synchronized void reset() {
+        this.seed = this.markSeed;
+        this.buf = Arrays.copyOfRange(this.markbuf, 0, 4);
+        this.reader = this.markbuf[4];
     }
 }

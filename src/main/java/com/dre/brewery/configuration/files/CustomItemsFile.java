@@ -38,23 +38,23 @@ import java.util.Map;
 @Header("!!! IMPORTANT: BreweryX configuration files do NOT support external comments! If you add any comments, they will be overwritten !!!")
 @OkaeriConfigFileOptions("custom-items.yml")
 @Setter
-public class CustomItemsFile extends AbstractOkaeriConfigFile {
+public final class CustomItemsFile extends AbstractOkaeriConfigFile {
 
     @LocalizedComment("customItemsFile.header")
     private Map<String, ConfigCustomItem> customItems = new CustomItemsSector().getCapsules();
 
     // Backwards compatibility, merges custom items from the default config
-    public Map<String, ConfigCustomItem> getCustomItems() {
-        Map<String, ConfigCustomItem> map = new HashMap<>(this.customItems);
+    public final Map<String, ConfigCustomItem> getCustomItems() {
+        final Map<String, ConfigCustomItem> map = new HashMap<>(this.customItems);
         map.putAll(ConfigManager.getConfig(Config.class).getCustomItems());
         return map;
     }
 
-    public List<RecipeItem> getRecipeItems() {
-        List<RecipeItem> recipeItems = new ArrayList<>();
+    public final List<RecipeItem> getRecipeItems() {
+        final List<RecipeItem> recipeItems = new ArrayList<>();
 
-        for (var entry : getCustomItems().entrySet()) {
-            ConfigCustomItem customItem = entry.getValue();
+        for (final var entry : this.getCustomItems().entrySet()) {
+            final var customItem = entry.getValue();
             recipeItems.add(RecipeItem.fromConfigCustom(entry.getKey(), customItem));
         }
         return recipeItems;

@@ -30,28 +30,21 @@ import org.jetbrains.annotations.Nullable;
 
 public final class Logging {
 
-    public enum LogLevel {
-        INFO,
-        WARNING,
-        ERROR,
-        DEBUG
-    }
-
     private static final Config config = ConfigManager.getConfig(Config.class);
 
-    public static void msg(CommandSender sender, String msg) {
+    public static void msg(final CommandSender sender, final String msg) {
         sender.sendMessage(BUtil.color(config.getPluginPrefix() + msg));
     }
 
-    public static void log(String msg) {
+    public static void log(final String msg) {
         Bukkit.getConsoleSender().sendMessage(BUtil.color(config.getPluginPrefix() + msg));
     }
 
-    public static void log(LogLevel level, String msg) {
+    public static void log(final LogLevel level, final String msg) {
         log(level, msg, null);
     }
 
-    public static void log(LogLevel level, String msg, @Nullable Throwable throwable) {
+    public static void log(final LogLevel level, final String msg, @Nullable final Throwable throwable) {
         switch (level) {
             case INFO -> log(msg);
             case WARNING -> warningLog(msg);
@@ -66,18 +59,18 @@ public final class Logging {
         }
     }
 
-    public static void debugLog(String msg) {
+    public static void debugLog(final String msg) {
         if (ConfigManager.getConfig(Config.class).isDebug()) {
             msg(Bukkit.getConsoleSender(), "&2[Debug] &f" + msg);
         }
     }
 
-    public static void warningLog(String msg) {
+    public static void warningLog(final String msg) {
         Bukkit.getConsoleSender().sendMessage(BUtil.color("&e[BreweryX] WARNING: " + msg));
     }
 
-    public static void errorLog(String msg) {
-        String str = BUtil.color("&c[BreweryX] ERROR: " + msg);
+    public static void errorLog(final String msg) {
+        final var str = BUtil.color("&c[BreweryX] ERROR: " + msg);
         Bukkit.getConsoleSender().sendMessage(str);
         if (ReloadCommand.getReloader() != null) { // I hate this, but I'm too lazy to go change all of it - Jsinco
             ReloadCommand.getReloader().sendMessage(str);
@@ -85,21 +78,21 @@ public final class Logging {
     }
 
     // TODO: cleanup
-    public static void errorLog(String msg, Throwable throwable) {
+    public static void errorLog(final String msg, final Throwable throwable) {
         errorLog(msg);
         errorLog("&6" + throwable.toString());
-        for (StackTraceElement ste : throwable.getStackTrace()) {
-            String str = ste.toString();
+        for (final var ste : throwable.getStackTrace()) {
+            var str = ste.toString();
             if (str.contains(".jar//")) {
                 str = str.substring(str.indexOf(".jar//") + 6);
             }
             errorLog(str);
         }
-        Throwable cause = throwable.getCause();
+        var cause = throwable.getCause();
         while (cause != null) {
             Bukkit.getConsoleSender().sendMessage(BUtil.color("&c[BreweryX]&6 Caused by: " + cause));
-            for (StackTraceElement ste : cause.getStackTrace()) {
-                String str = ste.toString();
+            for (final var ste : cause.getStackTrace()) {
+                var str = ste.toString();
                 if (str.contains(".jar//")) {
                     str = str.substring(str.indexOf(".jar//") + 6);
                 }
@@ -109,12 +102,19 @@ public final class Logging {
         }
     }
 
-
     public static String getEnvironmentAsString() {
         if (MinecraftVersion.isFolia()) {
             return "Folia";
         }
         return PaperLib.getEnvironment().getName();
+    }
+
+
+    public enum LogLevel {
+        INFO,
+        WARNING,
+        ERROR,
+        DEBUG
     }
 
 }

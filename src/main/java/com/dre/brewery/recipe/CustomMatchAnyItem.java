@@ -36,7 +36,7 @@ import java.util.Objects;
  * Custom Item that matches any one of the given info.
  * <p>Does not implement Ingredient, as it can not directly be added to an ingredient
  */
-public class CustomMatchAnyItem extends RecipeItem {
+public final class CustomMatchAnyItem extends RecipeItem {
 
     private List<Material> materials;
     private List<String> names;
@@ -45,79 +45,79 @@ public class CustomMatchAnyItem extends RecipeItem {
 
 
     @Override
-    public boolean hasMaterials() {
-        return materials != null && !materials.isEmpty();
+    public final boolean hasMaterials() {
+        return this.materials != null && !this.materials.isEmpty();
     }
 
-    public boolean hasNames() {
-        return names != null && !names.isEmpty();
+    public final boolean hasNames() {
+        return this.names != null && !this.names.isEmpty();
     }
 
-    public boolean hasLore() {
-        return lore != null && !lore.isEmpty();
+    public final boolean hasLore() {
+        return this.lore != null && !this.lore.isEmpty();
     }
 
-    public boolean hasCustomModelDatas() {
-        return customModelDatas != null && !customModelDatas.isEmpty();
+    public final boolean hasCustomModelDatas() {
+        return this.customModelDatas != null && !this.customModelDatas.isEmpty();
     }
 
     @Override
     @Nullable
     public List<Material> getMaterials() {
-        return materials;
+        return this.materials;
     }
 
-    protected void setMaterials(List<Material> materials) {
+    protected final void setMaterials(final List<Material> materials) {
         this.materials = materials;
     }
 
     @Nullable
     public List<String> getNames() {
-        return names;
+        return this.names;
     }
 
-    protected void setNames(List<String> names) {
+    protected final void setNames(final List<String> names) {
         this.names = names;
     }
 
     @Nullable
     public List<String> getLore() {
-        return lore;
+        return this.lore;
     }
 
-    protected void setLore(List<String> lore) {
+    protected final void setLore(final List<String> lore) {
         this.lore = lore;
     }
 
     @Nullable
     public List<Integer> getCustomModelDatas() {
-        return customModelDatas;
+        return this.customModelDatas;
     }
 
-    protected void setCustomModelDatas(List<Integer> customModelDatas) {
+    protected final void setCustomModelDatas(final List<Integer> customModelDatas) {
         this.customModelDatas = customModelDatas;
     }
 
 
     @NotNull
     @Override
-    public Ingredient toIngredient(ItemStack forItem) {
+    public Ingredient toIngredient(final ItemStack forItem) {
         // We only use the one part of this item that actually matched the given item to add to ingredients
-        Material mat = getMaterialMatch(forItem);
+        final var mat = this.getMaterialMatch(forItem);
         if (mat != null) {
             return new CustomItem(mat);
         }
-        String name = getNameMatch(forItem);
+        final var name = this.getNameMatch(forItem);
         if (name != null) {
             return new CustomItem(null, name, null);
         }
-        String l = getLoreMatch(forItem);
+        final var l = this.getLoreMatch(forItem);
         if (l != null) {
-            List<String> lore = new ArrayList<>(1);
+            final List<String> lore = new ArrayList<>(1);
             lore.add(l);
             return new CustomItem(null, null, lore);
         }
-        Integer cmData = getCustomModelDataMatch(forItem);
+        final var cmData = this.getCustomModelDataMatch(forItem);
         if (cmData != null) {
             return new CustomItem(null, null, null, cmData);
         }
@@ -129,28 +129,28 @@ public class CustomMatchAnyItem extends RecipeItem {
     @NotNull
     @Override
     public Ingredient toIngredientGeneric() {
-        if (hasMaterials()) {
-            return new CustomItem(materials.get(0));
+        if (this.hasMaterials()) {
+            return new CustomItem(this.materials.getFirst());
         }
-        if (hasNames()) {
-            return new CustomItem(null, names.get(0), null);
+        if (this.hasNames()) {
+            return new CustomItem(null, this.names.getFirst(), null);
         }
-        if (hasLore()) {
-            return new CustomItem(null, null, new ArrayList<>(List.of(lore.get(0))));
+        if (this.hasLore()) {
+            return new CustomItem(null, null, new ArrayList<>(List.of(this.lore.getFirst())));
         }
-        if (hasCustomModelDatas()) {
-            return new CustomItem(null, null, null, customModelDatas.get(0));
+        if (this.hasCustomModelDatas()) {
+            return new CustomItem(null, null, null, this.customModelDatas.getFirst());
         }
 
         // Shouldnt happen
         return new SimpleItem(Material.GOLDEN_HOE);
     }
 
-    public Material getMaterialMatch(ItemStack item) {
-        if (!hasMaterials()) return null;
+    public final Material getMaterialMatch(final ItemStack item) {
+        if (!this.hasMaterials()) return null;
 
-        Material usedMat = item.getType();
-        for (Material mat : materials) {
+        final var usedMat = item.getType();
+        for (final var mat : this.materials) {
             if (usedMat == mat) {
                 return mat;
             }
@@ -158,22 +158,22 @@ public class CustomMatchAnyItem extends RecipeItem {
         return null;
     }
 
-    public String getNameMatch(ItemStack item) {
-        if (!item.hasItemMeta() || !hasNames()) {
+    public final String getNameMatch(final ItemStack item) {
+        if (!item.hasItemMeta() || !this.hasNames()) {
             return null;
         }
-        ItemMeta meta = item.getItemMeta();
+        final var meta = item.getItemMeta();
         assert meta != null;
         if (meta.hasDisplayName()) {
-            return getNameMatch(meta.getDisplayName());
+            return this.getNameMatch(meta.getDisplayName());
         }
         return null;
     }
 
-    public String getNameMatch(String usedName) {
-        if (!hasNames()) return null;
+    public final String getNameMatch(final String usedName) {
+        if (!this.hasNames()) return null;
 
-        for (String name : names) {
+        for (final var name : this.names) {
             if (name.equalsIgnoreCase(usedName)) {
                 return name;
             }
@@ -181,23 +181,23 @@ public class CustomMatchAnyItem extends RecipeItem {
         return null;
     }
 
-    public String getLoreMatch(ItemStack item) {
-        if (!item.hasItemMeta() || !hasLore()) {
+    public final String getLoreMatch(final ItemStack item) {
+        if (!item.hasItemMeta() || !this.hasLore()) {
             return null;
         }
-        ItemMeta meta = item.getItemMeta();
+        final var meta = item.getItemMeta();
         assert meta != null;
         if (meta.hasLore()) {
-            return getLoreMatch(meta.getLore());
+            return this.getLoreMatch(meta.getLore());
         }
         return null;
     }
 
-    public String getLoreMatch(List<String> usedLore) {
-        if (!hasLore()) return null;
+    public final String getLoreMatch(final List<String> usedLore) {
+        if (!this.hasLore()) return null;
 
-        for (String line : this.lore) {
-            for (String usedLine : usedLore) {
+        for (final var line : this.lore) {
+            for (final var usedLine : usedLore) {
                 if (line.equalsIgnoreCase(usedLine) || line.equalsIgnoreCase(ChatColor.stripColor(usedLine))) {
                     return line;
                 }
@@ -207,24 +207,24 @@ public class CustomMatchAnyItem extends RecipeItem {
     }
 
     @Nullable
-    public Integer getCustomModelDataMatch(ItemStack item) {
-        if (!item.hasItemMeta() || !hasCustomModelDatas()) {
+    public final Integer getCustomModelDataMatch(final ItemStack item) {
+        if (!item.hasItemMeta() || !this.hasCustomModelDatas()) {
             return null;
         }
-        ItemMeta meta = item.getItemMeta();
+        final var meta = item.getItemMeta();
         assert meta != null;
-        Integer customModelData = ItemMetaCompat.getCustomModelData(meta);
+        final var customModelData = ItemMetaCompat.getCustomModelData(meta);
         if (customModelData != null) {
-            return getCustomModelDataMatch(customModelData);
+            return this.getCustomModelDataMatch(customModelData);
         }
         return null;
     }
 
     @Nullable
-    public Integer getCustomModelDataMatch(int usedCustomModelData) {
-        if (!hasCustomModelDatas()) return null;
+    public final Integer getCustomModelDataMatch(final int usedCustomModelData) {
+        if (!this.hasCustomModelDatas()) return null;
 
-        for (int customModelData : this.customModelDatas) {
+        for (final int customModelData : this.customModelDatas) {
             if (customModelData == usedCustomModelData) {
                 return customModelData;
             }
@@ -233,79 +233,78 @@ public class CustomMatchAnyItem extends RecipeItem {
     }
 
     @Override
-    public boolean matches(ItemStack item) {
-        if (getMaterialMatch(item) != null) {
+    public boolean matches(final ItemStack item) {
+        if (this.getMaterialMatch(item) != null) {
             return true;
         }
-        if (getNameMatch(item) != null) {
+        if (this.getNameMatch(item) != null) {
             return true;
         }
-        if (getLoreMatch(item) != null) {
+        if (this.getLoreMatch(item) != null) {
             return true;
         }
-        return getCustomModelDataMatch(item) != null;
+        return this.getCustomModelDataMatch(item) != null;
     }
 
     @Override
-    public boolean matches(Ingredient ingredient) {
+    public boolean matches(final Ingredient ingredient) {
         // Ingredient can not be CustomMatchAnyItem, so we don't need to/can't check for similarity.
-        if (ingredient instanceof CustomItem) {
+        if (ingredient instanceof final CustomItem ci) {
             // If the custom item has any of our data, we match
-            CustomItem ci = ((CustomItem) ingredient);
-            if (hasMaterials() && ci.hasMaterials()) {
-                if (materials.contains(ci.getMaterial())) {
+            if (this.hasMaterials() && ci.hasMaterials()) {
+                if (this.materials.contains(ci.getMaterial())) {
                     return true;
                 }
             }
-            if (hasNames() && ci.hasName()) {
-                if (getNameMatch(ci.getName()) != null) {
+            if (this.hasNames() && ci.hasName()) {
+                if (this.getNameMatch(ci.getName()) != null) {
                     return true;
                 }
             }
-            if (hasLore() && ci.hasLore()) {
-                return getLoreMatch(ci.getLore()) != null;
+            if (this.hasLore() && ci.hasLore()) {
+                return this.getLoreMatch(ci.getLore()) != null;
             }
-            if (hasCustomModelDatas() && ci.hasCustomModelData()) {
-                return getCustomModelDataMatch(ci.getCustomModelData()) != null;
+            if (this.hasCustomModelDatas() && ci.hasCustomModelData()) {
+                return this.getCustomModelDataMatch(ci.getCustomModelData()) != null;
             }
-        } else if (ingredient instanceof SimpleItem si) {
+        } else if (ingredient instanceof final SimpleItem si) {
             // If we contain the Material of the Simple Item, we match
-            return hasMaterials() && materials.contains(si.getMaterial());
+            return this.hasMaterials() && this.materials.contains(si.getMaterial());
         }
         return false;
     }
 
     @Override
     public String getDebugID() {
-        String id = getConfigId();
-        return id != null ? id : String.join("|", names);
+        final var id = this.getConfigId();
+        return id != null ? id : String.join("|", this.names);
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || this.getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        CustomMatchAnyItem that = (CustomMatchAnyItem) o;
-        return Objects.equals(materials, that.materials) &&
-            Objects.equals(names, that.names) &&
-            Objects.equals(lore, that.lore) &&
-            Objects.equals(customModelDatas, that.customModelDatas);
+        final var that = (CustomMatchAnyItem) o;
+        return Objects.equals(this.materials, that.materials) &&
+                Objects.equals(this.names, that.names) &&
+                Objects.equals(this.lore, that.lore) &&
+                Objects.equals(this.customModelDatas, that.customModelDatas);
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), materials, names, lore, customModelDatas);
+    public final int hashCode() {
+        return Objects.hash(super.hashCode(), this.materials, this.names, this.lore, this.customModelDatas);
     }
 
     @Override
-    public String toString() {
+    public final String toString() {
         return "CustomMatchAnyItem{" +
-            "id=" + getConfigId() +
-            ", materials: " + (materials != null ? materials.size() : 0) +
-            ", names:" + (names != null ? names.size() : 0) +
-            ", loresize: " + (lore != null ? lore.size() : 0) +
-            ", customModelDatas: " + (customModelDatas != null ? customModelDatas.size() : 0) +
-            '}';
+                "id=" + this.getConfigId() +
+                ", materials: " + (this.materials != null ? this.materials.size() : 0) +
+                ", names:" + (this.names != null ? this.names.size() : 0) +
+                ", loresize: " + (this.lore != null ? this.lore.size() : 0) +
+                ", customModelDatas: " + (this.customModelDatas != null ? this.customModelDatas.size() : 0) +
+                '}';
     }
 }

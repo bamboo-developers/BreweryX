@@ -20,15 +20,7 @@
 
 package com.dre.brewery.listeners;
 
-import com.dre.brewery.BCauldron;
-import com.dre.brewery.BPlayer;
-import com.dre.brewery.BSealer;
-import com.dre.brewery.Barrel;
-import com.dre.brewery.BarrelAsset;
-import com.dre.brewery.Brew;
-import com.dre.brewery.BreweryPlugin;
-import com.dre.brewery.DistortChat;
-import com.dre.brewery.Wakeup;
+import com.dre.brewery.*;
 import com.dre.brewery.configuration.ConfigManager;
 import com.dre.brewery.configuration.files.Config;
 import com.dre.brewery.configuration.files.Lang;
@@ -47,46 +39,32 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerItemConsumeEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerKickEvent;
-import org.bukkit.event.player.PlayerLoginEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
 
-public class PlayerListener implements Listener {
+public final class PlayerListener implements Listener {
 
     private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
     private static final Config config = ConfigManager.getConfig(Config.class);
     private static final Lang lang = ConfigManager.getConfig(Lang.class);
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onPlayerInteract(PlayerInteractEvent event) {
-        handlePlayerInteract(event);
-    }
-
-    public static void handlePlayerInteract(PlayerInteractEvent event) {
-        Block clickedBlock = event.getClickedBlock();
+    public static void handlePlayerInteract(final PlayerInteractEvent event) {
+        final var clickedBlock = event.getClickedBlock();
         if (clickedBlock == null) return;
 
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 
-        Player player = event.getPlayer();
-        Material type = clickedBlock.getType();
+        final var player = event.getPlayer();
+        final var type = clickedBlock.getType();
 
         // -- Clicking an Hopper --
         if (type == Material.HOPPER) {
             if (config.isBrewHopperDump() && event.getPlayer().isSneaking()) {
                 if (VERSION.isOrEarlier(MinecraftVersion.V1_9) || event.getHand() == EquipmentSlot.HAND) {
-                    ItemStack item = event.getItem();
+                    final var item = event.getItem();
                     if (Brew.isBrew(item)) {
                         event.setCancelled(true);
                         BUtil.setItemInHand(event, Material.GLASS_BOTTLE, false);
@@ -107,7 +85,7 @@ public class PlayerListener implements Listener {
             }
             event.setCancelled(true);
             if (config.isEnableSealingTable()) {
-                BSealer sealer = new BSealer(player);
+                final var sealer = new BSealer(player);
                 event.getPlayer().openInventory(sealer.getInventory());
             } else {
                 lang.sendEntry(player, "Error_SealingTableDisabled");
@@ -115,7 +93,7 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        Material heldItem = event.getItem() != null ? event.getItem().getType() : null;
+        final var heldItem = event.getItem() != null ? event.getItem().getType() : null;
         if (player.isSneaking() && type != Material.BARREL && !BarrelAsset.isBarrelAsset(BarrelAsset.SIGN, heldItem)) {
             return;
         }
@@ -182,13 +160,13 @@ public class PlayerListener implements Listener {
                 // This workaround switches the currently selected slot to another for a short time, it needs to be a slot with a different item in it.
                 // This seems to make the client stop animating a consumption
                 // If there is a better way to do this please let me know
-                Material hand = event.getMaterial();
+                final var hand = event.getMaterial();
                 if ((hand == Material.POTION || hand.isEdible()) && !BarrelAsset.isBarrelAsset(BarrelAsset.SIGN, type)) {
-                    PlayerInventory inv = player.getInventory();
-                    final int held = inv.getHeldItemSlot();
-                    int useSlot = -1;
-                    for (int i = 0; i < 9; i++) {
-                        ItemStack item = inv.getItem(i);
+                    final var inv = player.getInventory();
+                    final var held = inv.getHeldItemSlot();
+                    var useSlot = -1;
+                    for (var i = 0; i < 9; i++) {
+                        final var item = inv.getItem(i);
                         if (item == null || item.getType() == Material.AIR) {
                             useSlot = i;
                             break;
@@ -207,8 +185,13 @@ public class PlayerListener implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPlayerInteract(final PlayerInteractEvent event) {
+        handlePlayerInteract(event);
+    }
+
     @EventHandler
-    public void onClickAir(PlayerInteractEvent event) {
+    public void onClickAir(final PlayerInteractEvent event) {
         if (Wakeup.checkPlayer == null) return;
 
         if (event.getAction() == Action.LEFT_CLICK_AIR) {
@@ -222,19 +205,16 @@ public class PlayerListener implements Listener {
 
     // player drinks a custom potion
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onPlayerItemConsume(PlayerItemConsumeEvent event) {
-        Player player = event.getPlayer();
-        ItemStack item = event.getItem();
+    public void onPlayerItemConsume(final PlayerItemConsumeEvent event) {
+        final var player = event.getPlayer();
+        final var item = event.getItem();
         if (item.getType() == Material.POTION) {
-            Brew brew = Brew.get(item);
+            final var brew = Brew.get(item);
             if (brew != null) {
                 if (!BPlayer.drink(brew, player, item.getItemMeta(), event)) {
                     event.setCancelled(true);
                     return;
                 }
-                /*if (player.getGameMode() != org.bukkit.GameMode.CREATIVE) {
-                    brew.remove(item);
-                }*/
                 if (VERSION.isOrLater(MinecraftVersion.V1_9)) {
                     if (player.getGameMode() != GameMode.CREATIVE) {
 // replace the potion with an empty potion to avoid effects
@@ -246,7 +226,7 @@ public class PlayerListener implements Listener {
                 }
             }
         } else if (BUtil.getMaterialMap(config.getDrainItems()).containsKey(item.getType())) {
-            BPlayer bplayer = BPlayer.get(player);
+            final var bplayer = BPlayer.get(player);
             if (bplayer != null) {
                 bplayer.drainByItem(player, item.getType());
                 if (config.isShowStatusOnDrink()) {
@@ -258,8 +238,8 @@ public class PlayerListener implements Listener {
 
     // Player has died! Decrease Drunkeness by 20
     @EventHandler
-    public void onPlayerRespawn(PlayerRespawnEvent event) {
-        BPlayer bPlayer = BPlayer.get(event.getPlayer());
+    public void onPlayerRespawn(final PlayerRespawnEvent event) {
+        final var bPlayer = BPlayer.get(event.getPlayer());
         if (bPlayer != null) {
             if (bPlayer.getDrunkeness() > 20) {
                 bPlayer.setData(bPlayer.getDrunkeness() - 20, 0);
@@ -271,7 +251,7 @@ public class PlayerListener implements Listener {
 
     // player walks while drunk, push him around!
     @EventHandler(priority = EventPriority.LOW)
-    public void onPlayerMove(PlayerMoveEvent event) {
+    public void onPlayerMove(final PlayerMoveEvent event) {
         if (BPlayer.hasPlayer(event.getPlayer())) {
             BPlayer.playerMove(event);
         }
@@ -279,24 +259,24 @@ public class PlayerListener implements Listener {
 
     // player talks while drunk, but he cant speak very well
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerChat(AsyncPlayerChatEvent event) {
+    public void onPlayerChat(final AsyncPlayerChatEvent event) {
         DistortChat.playerChat(event);
     }
 
     // player commands while drunk, distort chat commands
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onCommandPreProcess(PlayerCommandPreprocessEvent event) {
+    public void onCommandPreProcess(final PlayerCommandPreprocessEvent event) {
         DistortChat.playerCommand(event);
     }
 
     // player joins while passed out
     @EventHandler
-    public void onPlayerLogin(PlayerLoginEvent event) {
+    public void onPlayerLogin(final PlayerLoginEvent event) {
         if (event.getResult() != PlayerLoginEvent.Result.ALLOWED) {
             return;
         }
-        Player player = event.getPlayer();
-        BPlayer bplayer = BPlayer.get(player);
+        final var player = event.getPlayer();
+        final var bplayer = BPlayer.get(player);
         if (bplayer == null) {
             return;
         }
@@ -313,8 +293,8 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        BPlayer bplayer = BPlayer.get(event.getPlayer());
+    public void onPlayerJoin(final PlayerJoinEvent event) {
+        final var bplayer = BPlayer.get(event.getPlayer());
         if (bplayer != null) {
             bplayer.join(event.getPlayer());
         }
@@ -322,8 +302,8 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
-        BPlayer bplayer = BPlayer.get(event.getPlayer());
+    public void onPlayerQuit(final PlayerQuitEvent event) {
+        final var bplayer = BPlayer.get(event.getPlayer());
         if (bplayer != null) {
             bplayer.disconnecting();
         }
@@ -331,8 +311,8 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerKick(PlayerKickEvent event) {
-        BPlayer bplayer = BPlayer.get(event.getPlayer());
+    public void onPlayerKick(final PlayerKickEvent event) {
+        final var bplayer = BPlayer.get(event.getPlayer());
         if (bplayer != null) {
             bplayer.disconnecting();
         }

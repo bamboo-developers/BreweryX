@@ -43,22 +43,22 @@ import java.util.concurrent.CompletableFuture;
  */
 public record SerializableBarrel(String id, String serializedLocation, List<Integer> bounds, float time, byte sign,
                                  String serializedItems) implements SerializableThing {
-    public SerializableBarrel(Barrel barrel) {
+    public SerializableBarrel(final Barrel barrel) {
         this(barrel.getId().toString(), DataManager.serializeLocation(barrel.getSpigot().getLocation()), barrel.getBounds().serializeToIntList(), barrel.getTime(), barrel.getSignoffset(), BukkitSerialization.itemStackArrayToBase64(barrel.getInventory().getContents()));
     }
 
     public CompletableFuture<Barrel> toBarrel() {
-        Location loc = DataManager.deserializeLocation(serializedLocation);
+        final var loc = DataManager.deserializeLocation(this.serializedLocation);
         if (loc == null) {
             return CompletableFuture.completedFuture(null);
         }
         return Barrel.computeSmall(loc).thenApplyAsync(small ->
-            new Barrel(loc.getBlock(), sign, BoundingBox.fromPoints(bounds), BukkitSerialization.itemStackArrayFromBase64(serializedItems), time, BUtil.uuidFromString(id), small)
+                new Barrel(loc.getBlock(), this.sign, BoundingBox.fromPoints(this.bounds), BukkitSerialization.itemStackArrayFromBase64(this.serializedItems), this.time, BUtil.uuidFromString(this.id), small)
         );
     }
 
     @Override
     public String getId() {
-        return id;
+        return this.id;
     }
 }

@@ -29,11 +29,11 @@ public enum DataManagerType {
 
     private final String formattedName;
 
-    DataManagerType(String formattedName) {
+    DataManagerType(final String formattedName) {
         this.formattedName = formattedName;
     }
 
     public String getFormattedName() {
-        return formattedName;
+        return this.formattedName;
     }
 }

@@ -20,11 +20,11 @@
 
 package com.dre.brewery.utility;
 
-public class StringParser {
+public final class StringParser {
 
-    public static Tuple<Integer, String> parseQuality(String line, ParseType type) {
+    public static Tuple<Integer, String> parseQuality(String line, final ParseType type) {
         line = BUtil.color(line);
-        int plus = 0;
+        var plus = 0;
         if (line.startsWith("+++")) {
             plus = 3;
             line = line.substring(3);

@@ -35,26 +35,31 @@ import java.util.List;
  *
  * <p>Can be changed or cancelled
  */
-public class PlayerEffectEvent extends PlayerEvent implements Cancellable {
+public final class PlayerEffectEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final EffectType effectType;
     private List<PotionEffect> effects;
     private boolean cancelled;
 
-    public PlayerEffectEvent(Player who, EffectType effectType, List<PotionEffect> effects) {
+    public PlayerEffectEvent(final Player who, final EffectType effectType, final List<PotionEffect> effects) {
         super(who);
         this.effectType = effectType;
         this.effects = effects;
     }
 
+    // Required by Bukkit
+    public static HandlerList getHandlerList() {
+        return handlers;
+    }
+
     /**
      * @return The effects being applied. Effects can be added or removed from this list.
      */
-    public List<PotionEffect> getEffects() {
-        return effects;
+    public final List<PotionEffect> getEffects() {
+        return this.effects;
     }
 
-    public void setEffects(List<PotionEffect> effects) {
+    public void setEffects(final List<PotionEffect> effects) {
         this.effects = effects;
     }
 
@@ -62,27 +67,22 @@ public class PlayerEffectEvent extends PlayerEvent implements Cancellable {
      * @return What type of effects are applied, see EffectType
      */
     public EffectType getEffectType() {
-        return effectType;
+        return this.effectType;
     }
 
     @Override
-    public boolean isCancelled() {
-        return cancelled;
+    public final boolean isCancelled() {
+        return this.cancelled;
     }
 
     @Override
-    public void setCancelled(boolean cancelled) {
+    public final void setCancelled(final boolean cancelled) {
         this.cancelled = cancelled;
     }
 
     @NotNull
     @Override
-    public HandlerList getHandlers() {
-        return handlers;
-    }
-
-    // Required by Bukkit
-    public static HandlerList getHandlerList() {
+    public final HandlerList getHandlers() {
         return handlers;
     }
 

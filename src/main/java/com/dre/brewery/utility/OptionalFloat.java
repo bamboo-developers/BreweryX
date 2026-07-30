@@ -23,48 +23,51 @@ package com.dre.brewery.utility;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class OptionalFloat {
+public final class OptionalFloat {
     private static final OptionalFloat EMPTY = new OptionalFloat();
     private final float value;
     private final boolean isPresent;
 
-    private OptionalFloat(float value) {
+    private OptionalFloat(final float value) {
         this.value = value;
-        isPresent = true;
-    }
-    private OptionalFloat() {
-        this.value = 0.0f;
-        isPresent = false;
+        this.isPresent = true;
     }
 
-    public static OptionalFloat of(float value) {
+    private OptionalFloat() {
+        this.value = 0.0f;
+        this.isPresent = false;
+    }
+
+    public static OptionalFloat of(final float value) {
         return new OptionalFloat(value);
     }
+
     public static OptionalFloat empty() {
         return EMPTY;
     }
 
     public float getAsFloat() {
-        if (!isPresent) {
+        if (!this.isPresent) {
             throw new IllegalStateException("No value present");
         }
-        return value;
+        return this.value;
     }
 
     public boolean isPresent() {
-        return isPresent;
-    }
-    public boolean isEmpty() {
-        return !isPresent;
+        return this.isPresent;
     }
 
-    public void ifPresent(Consumer<Float> action) {
+    public boolean isEmpty() {
+        return !this.isPresent;
+    }
+
+    public void ifPresent(final Consumer<Float> action) {
         if (this.isPresent) {
             action.accept(this.value);
         }
     }
 
-    public void ifPresentOrElse(Consumer<Float> action, Runnable emptyAction) {
+    public void ifPresentOrElse(final Consumer<Float> action, final Runnable emptyAction) {
         if (this.isPresent) {
             action.accept(this.value);
         } else {
@@ -72,22 +75,22 @@ public class OptionalFloat {
         }
     }
 
-    public float orElse(float other) {
-        return isPresent ? value : other;
+    public final float orElse(final float other) {
+        return this.isPresent ? this.value : other;
     }
 
-    public float orElseGet(Supplier<Float> other) {
-        return isPresent ? value : other.get();
+    public float orElseGet(final Supplier<Float> other) {
+        return this.isPresent ? this.value : other.get();
     }
 
-    public <X extends Throwable> float orElseThrow(Supplier<X> exceptionSupplier) throws X {
-        if (isPresent) {
-            return value;
+    public <X extends Throwable> float orElseThrow(final Supplier<X> exceptionSupplier) throws X {
+        if (this.isPresent) {
+            return this.value;
         }
         throw exceptionSupplier.get();
     }
 
-    public String toString() {
+    public final String toString() {
         return this.isPresent ? "OptionalFloat[" + this.value + "]" : "OptionalFloat.empty";
     }
 

@@ -30,38 +30,38 @@ import org.jetbrains.annotations.NotNull;
  * Called when a Barrel is created by a Player by placing a Sign.
  * <p>Cancelling this will silently fail the Barrel creation
  */
-public class BarrelCreateEvent extends BarrelEvent implements Cancellable {
+public final class BarrelCreateEvent extends BarrelEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final Player player;
     private boolean cancelled;
 
-    public BarrelCreateEvent(Barrel barrel, Player player) {
+    public BarrelCreateEvent(final Barrel barrel, final Player player) {
         super(barrel);
         this.player = player;
     }
 
+    // Required by Bukkit
+    public static HandlerList getHandlerList() {
+        return handlers;
+    }
+
     public Player getPlayer() {
-        return player;
+        return this.player;
     }
 
     @Override
-    public boolean isCancelled() {
-        return cancelled;
+    public final boolean isCancelled() {
+        return this.cancelled;
     }
 
     @Override
-    public void setCancelled(boolean cancelled) {
+    public final void setCancelled(final boolean cancelled) {
         this.cancelled = cancelled;
     }
 
     @NotNull
     @Override
-    public HandlerList getHandlers() {
-        return handlers;
-    }
-
-    // Required by Bukkit
-    public static HandlerList getHandlerList() {
+    public final HandlerList getHandlers() {
         return handlers;
     }
 }

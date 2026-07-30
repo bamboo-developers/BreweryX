@@ -33,13 +33,13 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.List;
 
-public class StaticCommand implements SubCommand {
+public final class StaticCommand implements SubCommand {
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
-        Player player = (Player) sender;
-        ItemStack hand = player.getItemInHand();
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
+        final var player = (Player) sender;
+        final var hand = player.getItemInHand();
         if (hand.getType() != Material.AIR) {
-            Brew brew = Brew.get(hand);
+            var brew = Brew.get(hand);
             if (brew != null) {
                 if (brew.isStatic()) {
                     if (!brew.isStripped()) {
@@ -54,9 +54,9 @@ public class StaticCommand implements SubCommand {
                     lang.sendEntry(sender, "CMD_Static");
                 }
                 brew.touch();
-                ItemMeta meta = hand.getItemMeta();
+                final var meta = hand.getItemMeta();
                 assert meta != null;
-                BrewModifyEvent modifyEvent = new BrewModifyEvent(brew, meta, BrewModifyEvent.Type.STATIC);
+                final var modifyEvent = new BrewModifyEvent(brew, meta, BrewModifyEvent.Type.STATIC);
                 BreweryPlugin.getInstance().getServer().getPluginManager().callEvent(modifyEvent);
                 if (brew != modifyEvent.getBrew()) brew = modifyEvent.getBrew();
                 if (modifyEvent.isCancelled()) {
@@ -71,7 +71,7 @@ public class StaticCommand implements SubCommand {
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return null;
     }
 

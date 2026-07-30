@@ -25,7 +25,6 @@ import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -63,31 +62,34 @@ public enum MinecraftVersion {
 
     private static final Pattern VERSION_PATTERN = Pattern.compile("^([0-9]+)\\.([0-9]+)(?:\\.([0-9]+))?");
 
-    private @Getter static final boolean isFolia = ClassUtil.exists("io.papermc.paper.threadedregions.RegionizedServer");
-    private @Getter static final boolean isCanvas = ClassUtil.exists("io.canvasmc.canvas.Config"); // Popular Folia fork
-    private @Getter static final boolean useNBT = NBTUtil.initNbt();
+    @Getter
+    private static final boolean isFolia = ClassUtil.exists("io.papermc.paper.threadedregions.RegionizedServer");
+    @Getter
+    private static final boolean isCanvas = ClassUtil.exists("io.canvasmc.canvas.Config"); // Popular Folia fork
+    @Getter
+    private static final boolean useNBT = NBTUtil.initNbt();
 
     private final String[] versions;
 
-    MinecraftVersion(String... version) {
+    MinecraftVersion(final String... version) {
         this.versions = version;
     }
 
-    public static MinecraftVersion get(String major, String minor, @Nullable String patch) {
-        String withPatch = major + "." + minor + "." + patch;
-        String withoutPatch = major + "." + minor;
+    public static MinecraftVersion get(final String major, final String minor, @Nullable final String patch) {
+        final var withPatch = major + "." + minor + "." + patch;
+        final var withoutPatch = major + "." + minor;
 
         // We do two passes to prefer exact matches with a patch version.
-        for (MinecraftVersion minecraftVersion : values()) {
-            for (String versionString : minecraftVersion.versions) {
+        for (final var minecraftVersion : values()) {
+            for (final var versionString : minecraftVersion.versions) {
                 if (versionString.equals(withPatch)) {
                     return minecraftVersion;
                 }
             }
         }
 
-        for (MinecraftVersion minecraftVersion : values()) {
-            for (String versionString : minecraftVersion.versions) {
+        for (final var minecraftVersion : values()) {
+            for (final var versionString : minecraftVersion.versions) {
                 if (versionString.equals(withoutPatch)) {
                     return minecraftVersion;
                 }
@@ -97,10 +99,10 @@ public enum MinecraftVersion {
     }
 
     public static MinecraftVersion getIt() {
-        String rawVersion = Bukkit.getVersion();
-        String rawVersionParsed = rawVersion.substring(rawVersion.indexOf("(MC: ") + 5, rawVersion.indexOf(")"));
+        final var rawVersion = Bukkit.getVersion();
+        final var rawVersionParsed = rawVersion.substring(rawVersion.indexOf("(MC: ") + 5, rawVersion.indexOf(")"));
 
-        Matcher matcher = VERSION_PATTERN.matcher(rawVersionParsed);
+        final var matcher = VERSION_PATTERN.matcher(rawVersionParsed);
         if (!matcher.find()) {
             throw new IllegalStateException("Could not parse Minecraft version from: " + rawVersion);
         }
@@ -109,15 +111,15 @@ public enum MinecraftVersion {
         return get(matcher.group(1), matcher.group(2), matcher.group(3));
     }
 
-    public boolean isOrLater(MinecraftVersion version) {
+    public boolean isOrLater(final MinecraftVersion version) {
         return this.ordinal() >= version.ordinal();
     }
 
-    public boolean isOrEarlier(MinecraftVersion version) {
+    public boolean isOrEarlier(final MinecraftVersion version) {
         return this.ordinal() <= version.ordinal();
     }
 
     public String getVersion() {
-        return versions[0];
+        return this.versions[0];
     }
 }

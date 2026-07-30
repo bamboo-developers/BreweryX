@@ -34,7 +34,7 @@ import java.util.Objects;
  *
  * <p>This Event may be Async if the Chat Event is Async!
  */
-public class PlayerChatDistortEvent extends Event implements Cancellable {
+public final class PlayerChatDistortEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
 
     private final Player player;
@@ -43,7 +43,7 @@ public class PlayerChatDistortEvent extends Event implements Cancellable {
     private String distortMsg;
     private boolean cancelled;
 
-    public PlayerChatDistortEvent(boolean async, Player player, BPlayer bPlayer, String prevMsg, String distortMsg) {
+    public PlayerChatDistortEvent(final boolean async, final Player player, final BPlayer bPlayer, final String prevMsg, final String distortMsg) {
         super(async);
         this.player = player;
         this.bPlayer = bPlayer;
@@ -51,14 +51,19 @@ public class PlayerChatDistortEvent extends Event implements Cancellable {
         this.distortMsg = distortMsg;
     }
 
+    // Required by Bukkit
+    public static HandlerList getHandlerList() {
+        return handlers;
+    }
+
     @NotNull
     public Player getPlayer() {
-        return player;
+        return this.player;
     }
 
     @NotNull
     public BPlayer getbPlayer() {
-        return bPlayer;
+        return this.bPlayer;
     }
 
     /**
@@ -66,49 +71,44 @@ public class PlayerChatDistortEvent extends Event implements Cancellable {
      */
     @NotNull
     public String getWrittenMessage() {
-        return prevMsg;
+        return this.prevMsg;
     }
 
     /**
      * @return The message after it was distorted
      */
     @NotNull
-    public String getDistortedMessage() {
-        return distortMsg;
+    public final String getDistortedMessage() {
+        return this.distortMsg;
+    }
+
+    /**
+     * Set the Message that the player will say instead of what he wrote
+     */
+    public void setDistortedMessage(final String distortMsg) {
+        this.distortMsg = Objects.requireNonNull(distortMsg);
     }
 
     /**
      * @return The drunkenness of the player that is writing the message
      */
     public int getDrunkeness() {
-        return bPlayer.getDrunkeness();
-    }
-
-    /**
-     * Set the Message that the player will say instead of what he wrote
-     */
-    public void setDistortedMessage(String distortMsg) {
-        this.distortMsg = Objects.requireNonNull(distortMsg);
+        return this.bPlayer.getDrunkeness();
     }
 
     @Override
-    public boolean isCancelled() {
-        return cancelled;
+    public final boolean isCancelled() {
+        return this.cancelled;
     }
 
     @Override
-    public void setCancelled(boolean cancelled) {
+    public final void setCancelled(final boolean cancelled) {
         this.cancelled = cancelled;
     }
 
     @NotNull
     @Override
-    public HandlerList getHandlers() {
-        return handlers;
-    }
-
-    // Required by Bukkit
-    public static HandlerList getHandlerList() {
+    public final HandlerList getHandlers() {
         return handlers;
     }
 }

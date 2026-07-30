@@ -32,23 +32,23 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.CauldronLevelChangeEvent;
 
-public class CauldronListener implements Listener {
+public final class CauldronListener implements Listener {
 
     /**
      * Water in Cauldron gets filled up: remove BCauldron to disallow unlimited Brews
      * Water in Cauldron gets removed: remove BCauldron to remove Brew data and stop particles
      */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onCauldronChange(CauldronLevelChangeEvent event) {
+    public void onCauldronChange(final CauldronLevelChangeEvent event) {
         if (MaterialUtil.WATER_CAULDRON == null) {
             // < 1.17
-            oldCauldronChange(event);
+            this.oldCauldronChange(event);
             return;
         }
 
-        Material currentType = event.getBlock().getType();
-        BlockState newState = event.getNewState(); // Don't think PaperLib can be used here
-        Material newType = newState.getType();
+        final var currentType = event.getBlock().getType();
+        final var newState = event.getNewState(); // Don't think PaperLib can be used here
+        final var newType = newState.getType();
 
         if (currentType == Material.WATER_CAULDRON) {
             if (newType != Material.WATER_CAULDRON) {
@@ -59,8 +59,8 @@ public class CauldronListener implements Listener {
             } else { // newType == Material.WATER_CAULDRON
                 // Water level change
 
-                Levelled oldCauldron = (Levelled) event.getBlock().getBlockData();
-                Levelled newCauldron = (Levelled) newState.getBlockData();
+                final var oldCauldron = (Levelled) event.getBlock().getBlockData();
+                final var newCauldron = (Levelled) newState.getBlockData();
 
                 // Water Level increased somehow, might be Bucket, Bottle, Rain, etc.
                 if (newCauldron.getLevel() > oldCauldron.getLevel()) {
@@ -74,8 +74,8 @@ public class CauldronListener implements Listener {
      * Check if piston is pushing a BreweryCauldron and remove it
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onPistonExtend(BlockPistonExtendEvent event) {
-        for (Block block : event.getBlocks()) {
+    public void onPistonExtend(final BlockPistonExtendEvent event) {
+        for (final var block : event.getBlocks()) {
             if (BCauldron.bcauldrons.containsKey(block)) {
                 BCauldron.remove(block);
             }
@@ -83,7 +83,7 @@ public class CauldronListener implements Listener {
     }
 
     @SuppressWarnings("deprecation")
-    private void oldCauldronChange(CauldronLevelChangeEvent event) {
+    private void oldCauldronChange(final CauldronLevelChangeEvent event) {
         if (event.getNewLevel() == 0 && event.getOldLevel() != 0) {
             if (event.getReason() == CauldronLevelChangeEvent.ChangeReason.BOTTLE_FILL) {
                 return;

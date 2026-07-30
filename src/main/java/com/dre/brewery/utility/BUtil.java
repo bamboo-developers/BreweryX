@@ -27,11 +27,7 @@ import com.dre.brewery.BreweryPlugin;
 import com.dre.brewery.api.events.barrel.BarrelDestroyEvent;
 import com.dre.brewery.configuration.ConfigManager;
 import com.dre.brewery.configuration.files.Lang;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Color;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
@@ -45,16 +41,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -76,7 +63,7 @@ public final class BUtil {
     /**
      * Check if the Chunk of a Block is loaded !without loading it in the process!
      */
-    public static boolean isChunkLoaded(Block block) {
+    public static boolean isChunkLoaded(final Block block) {
         return block.getWorld().isChunkLoaded(block.getX() >> 4, block.getZ() >> 4);
     }
 
@@ -86,18 +73,18 @@ public final class BUtil {
      * @param msg The message to color
      * @return The colored message, or null if msg was null
      */
-    public static String color(String msg) {
+    public static String color(final String msg) {
         if (msg == null) {
             return null;
         } else if (msg.isEmpty()) {
             return msg;
         }
-        String[] texts = msg.split(String.format(WITH_DELIMITER, "&"));
+        final var texts = msg.split(String.format(WITH_DELIMITER, "&"));
 
-        StringBuilder finalText = new StringBuilder();
+        final var finalText = new StringBuilder();
 
-        for (int i = 0; i < texts.length; i++) {
-            if (texts[i].equalsIgnoreCase("&") && texts.length > i+1) {
+        for (var i = 0; i < texts.length; i++) {
+            if (texts[i].equalsIgnoreCase("&") && texts.length > i + 1) {
                 //get the next string
                 i++;
                 if (texts[i].charAt(0) == '#') {
@@ -112,12 +99,12 @@ public final class BUtil {
         return finalText.toString();
     }
 
-    public static List<String> colorArrayList(List<String> list) {
+    public static List<String> colorArrayList(final List<String> list) {
         if (list == null) return null;
         return list.stream().map(BUtil::color).toList();
     }
 
-    public static List<String> colorArray(String... list) {
+    public static List<String> colorArray(final String... list) {
         if (list == null) return null;
         return Stream.of(list).map(BUtil::color).toList();
     }
@@ -133,21 +120,21 @@ public final class BUtil {
      * @param nextPos    Position of the Next Color
      * @return Mixed Color
      */
-    public static Color weightedMixColor(Color prevColor, int prevPos, int currentPos, Color nextColor, int nextPos) {
-        float diffPrev = currentPos - prevPos;
-        float diffNext = nextPos - currentPos;
-        float total = diffNext + diffPrev;
-        float percentNext = diffPrev / total;
-        float percentPrev = diffNext / total;
+    public static Color weightedMixColor(final Color prevColor, final int prevPos, final int currentPos, final Color nextColor, final int nextPos) {
+        final float diffPrev = currentPos - prevPos;
+        final float diffNext = nextPos - currentPos;
+        final var total = diffNext + diffPrev;
+        final var percentNext = diffPrev / total;
+        final var percentPrev = diffNext / total;
 
 			/*5 #8# 15
 			8-5 = 3 -> 3/10
 			15-8 = 7 -> 7/10*/
 
         return Color.fromRGB(
-            Math.min(255, (int) ((nextColor.getRed() * percentNext) + (prevColor.getRed() * percentPrev))),
-            Math.min(255, (int) ((nextColor.getGreen() * percentNext) + (prevColor.getGreen() * percentPrev))),
-            Math.min(255, (int) ((nextColor.getBlue() * percentNext) + (prevColor.getBlue() * percentPrev)))
+                Math.min(255, (int) ((nextColor.getRed() * percentNext) + (prevColor.getRed() * percentPrev))),
+                Math.min(255, (int) ((nextColor.getGreen() * percentNext) + (prevColor.getGreen() * percentPrev))),
+                Math.min(255, (int) ((nextColor.getBlue() * percentNext) + (prevColor.getBlue() * percentPrev)))
         );
     }
 
@@ -159,7 +146,7 @@ public final class BUtil {
      * @param swapped If true, will set the opposite Hand instead of the one he used
      */
     @SuppressWarnings("deprecation")
-    public static void setItemInHand(PlayerInteractEvent event, Material mat, boolean swapped) {
+    public static void setItemInHand(final PlayerInteractEvent event, final Material mat, final boolean swapped) {
         if (BreweryPlugin.getMCVersion().isOrLater(MinecraftVersion.V1_9)) {
             if ((event.getHand() == EquipmentSlot.OFF_HAND) != swapped) {
                 event.getPlayer().getInventory().setItemInOffHand(new ItemStack(mat));
@@ -175,10 +162,10 @@ public final class BUtil {
     /**
      * returns the Player if online
      */
-    public static Player getPlayerfromString(String nameOrUUID) {
+    public static Player getPlayerfromString(final String nameOrUUID) {
         try {
             return Bukkit.getPlayer(UUID.fromString(nameOrUUID));
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             return Bukkit.getPlayerExact(nameOrUUID);
         }
     }
@@ -188,11 +175,11 @@ public final class BUtil {
      *
      * @param onlyIfStronger Optionally only overwrite if the new one is stronger, i.e. has higher level or longer duration
      */
-    public static void reapplyPotionEffect(Player player, PotionEffect effect, boolean onlyIfStronger) {
+    public static void reapplyPotionEffect(final Player player, final PotionEffect effect, final boolean onlyIfStronger) {
         BreweryPlugin.getScheduler().runAtEntityLater(player, () -> {
-            final PotionEffectType type = effect.getType();
+            final var type = effect.getType();
             if (player.hasPotionEffect(type)) {
-                PotionEffect plEffect;
+                final PotionEffect plEffect;
                 if (VERSION.isOrLater(MinecraftVersion.V1_11)) {
                     plEffect = player.getPotionEffect(type);
                 } else {
@@ -200,8 +187,8 @@ public final class BUtil {
                 }
 
                 if (!onlyIfStronger ||
-                    plEffect.getAmplifier() < effect.getAmplifier() ||
-                    (plEffect.getAmplifier() == effect.getAmplifier() && plEffect.getDuration() < effect.getDuration())) {
+                        plEffect.getAmplifier() < effect.getAmplifier() ||
+                        (plEffect.getAmplifier() == effect.getAmplifier() && plEffect.getDuration() < effect.getDuration())) {
                     player.removePotionEffect(type);
                 } else {
                     return;
@@ -215,9 +202,9 @@ public final class BUtil {
      * Load A List of Strings from config, if found a single String, will convert to List
      */
     @Nullable
-    public static List<String> loadCfgStringList(ConfigurationSection cfg, String path) {
+    public static List<String> loadCfgStringList(final ConfigurationSection cfg, final String path) {
         if (cfg.isString(path)) {
-            List<String> list = new ArrayList<>(1);
+            final List<String> list = new ArrayList<>(1);
             list.add(cfg.getString(path));
             return list;
         } else if (cfg.isList(path)) {
@@ -227,14 +214,14 @@ public final class BUtil {
     }
 
 
-    public static <T> List<T> getListSafely(Object object) {
+    public static <T> List<T> getListSafely(final Object object) {
         if (object == null) {
             return new ArrayList<>();
         }
         if (object instanceof List) {
             return (List<T>) object;
         } else if (object != null) {
-            List<T> list = new ArrayList<>(1);
+            final List<T> list = new ArrayList<>(1);
             list.add((T) object);
             return list;
         }
@@ -243,8 +230,8 @@ public final class BUtil {
     }
 
 
-    public static <E extends Enum<E>> List<E> getListSafely(Object object, Class<E> mapToEnum) {
-        var list = getListSafely(object);
+    public static <E extends Enum<E>> List<E> getListSafely(final Object object, final Class<E> mapToEnum) {
+        final var list = getListSafely(object);
         if (list == null) return null;
         return list.stream().map(it -> getEnumByName(mapToEnum, it.toString())).toList();
     }
@@ -261,10 +248,10 @@ public final class BUtil {
      * @param list      The List in which to search for a substring
      * @param substring Part of the String to search for in each of <tt>list</tt>
      */
-    public static int indexOfSubstring(List<String> list, String substring) {
+    public static int indexOfSubstring(final List<String> list, final String substring) {
         if (list.isEmpty()) return -1;
         for (int index = 0, size = list.size(); index < size; index++) {
-            String string = list.get(index);
+            final var string = list.get(index);
             if (string.contains(substring)) {
                 return index;
             }
@@ -275,7 +262,7 @@ public final class BUtil {
     /**
      * Returns the index of a String from the list that starts with 'lineStart', returns -1 if not found;
      */
-    public static int indexOfStart(List<String> list, String lineStart) {
+    public static int indexOfStart(final List<String> list, final String lineStart) {
         for (int i = 0, size = list.size(); i < size; i++) {
             if (list.get(i).startsWith(lineStart)) {
                 return i;
@@ -290,8 +277,8 @@ public final class BUtil {
      * @param input The input string
      * @return The quoted string
      */
-    public static String quote(String input) {
-        String escaped = input.replace("\\", "\\\\").replace("\"", "\\\"");
+    public static String quote(final String input) {
+        final var escaped = input.replace("\\", "\\\\").replace("\"", "\\\"");
         if (input.contains(" ")) {
             return "\"" + escaped + "\"";
         }
@@ -306,7 +293,7 @@ public final class BUtil {
      * @param input The input string
      * @return List of strings in the input, quoted strings will have their start and end quotes removed
      */
-    public static List<String> splitStringKeepingQuotes(String input) {
+    public static List<String> splitStringKeepingQuotes(final String input) {
         return splitStringKeepingQuotesVerbose(input).strings;
     }
 
@@ -318,13 +305,13 @@ public final class BUtil {
      * @param input The input string
      * @return List of strings in the input, quoted strings will have their start and end quotes removed
      */
-    public static SplitResult splitStringKeepingQuotesVerbose(String input) {
-        List<String> result = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        boolean inQuotes = false;
-        boolean escape = false;
+    public static SplitResult splitStringKeepingQuotesVerbose(final String input) {
+        final List<String> result = new ArrayList<>();
+        final var current = new StringBuilder();
+        var inQuotes = false;
+        var escape = false;
 
-        for (char c : input.toCharArray()) {
+        for (final var c : input.toCharArray()) {
             if (escape) {
                 current.append(c);
                 escape = false;
@@ -349,9 +336,6 @@ public final class BUtil {
         return new SplitResult(result, inQuotes);
     }
 
-    public record SplitResult(List<String> strings, boolean inQuotes) {
-    }
-
     /**
      * Replaces the Placeholders %player_name% and %quality% in the given input string
      *
@@ -360,22 +344,16 @@ public final class BUtil {
      * @param quality Quality to replace %quality%
      * @return The String with all placeholders replaced
      */
-    public static String applyPlaceholders(String input, String player, int quality) {
+    public static String applyPlaceholders(final String input, final String player, final int quality) {
         return input.replaceAll("%player_name%", player).replaceAll("%quality%", String.valueOf(quality));
     }
-
-    /* **************************************** */
-    /* *********                      ********* */
-    /* *********     Brewery Utils    ********* */
-    /* *********                      ********* */
-    /* **************************************** */
 
     /**
      * create empty World save Sections
      */
-    public static void createWorldSections(ConfigurationSection section) {
-        for (World world : BreweryPlugin.getInstance().getServer().getWorlds()) {
-            String worldName = world.getName();
+    public static void createWorldSections(final ConfigurationSection section) {
+        for (final var world : BreweryPlugin.getInstance().getServer().getWorlds()) {
+            var worldName = world.getName();
             if (worldName.startsWith("DXL_")) {
                 worldName = getDxlName(worldName);
             } else {
@@ -385,17 +363,23 @@ public final class BUtil {
         }
     }
 
+    /* **************************************** */
+    /* *********                      ********* */
+    /* *********     Brewery Utils    ********* */
+    /* *********                      ********* */
+    /* **************************************** */
+
     /**
      * Returns true if the Block can be destroyed by the Player or something else (null)
      *
      * @param player The Player that destroyed a Block, Null if no Player involved
      * @return True if the Block can be destroyed
      */
-    public static boolean blockDestroy(Block block, Player player, BarrelDestroyEvent.Reason reason) {
+    public static boolean blockDestroy(final Block block, final Player player, final BarrelDestroyEvent.Reason reason) {
         if (block == null || block.getType() == null) {
             return true;
         }
-        Material type = block.getType();
+        final var type = block.getType();
         if (type == Material.CAULDRON || type == MaterialUtil.WATER_CAULDRON) {
             // will only remove when existing
             BCauldron.remove(block);
@@ -403,7 +387,7 @@ public final class BUtil {
 
         } else if (BarrelAsset.isBarrelAsset(BarrelAsset.FENCE, type)) {
             // remove barrel and throw potions on the ground
-            Barrel barrel = Barrel.getBySpigot(block);
+            final var barrel = Barrel.getBySpigot(block);
             if (barrel != null) {
                 if (barrel.hasPermsDestroy(player, block, reason)) {
                     barrel.remove(null, player, true);
@@ -416,7 +400,7 @@ public final class BUtil {
 
         } else if (BarrelAsset.isBarrelAsset(BarrelAsset.SIGN, type)) {
             // remove small Barrels
-            Barrel barrel2 = Barrel.getBySpigot(block);
+            final var barrel2 = Barrel.getBySpigot(block);
             if (barrel2 != null) {
                 if (!barrel2.isLarge()) {
                     if (barrel2.hasPermsDestroy(player, block, reason)) {
@@ -432,7 +416,7 @@ public final class BUtil {
             return true;
 
         } else if (BarrelAsset.isBarrelAsset(BarrelAsset.PLANKS, type) || BarrelAsset.isBarrelAsset(BarrelAsset.STAIRS, type)) {
-            Barrel barrel3 = Barrel.getByWood(block);
+            final var barrel3 = Barrel.getByWood(block);
             if (barrel3 != null) {
                 if (barrel3.hasPermsDestroy(player, block, reason)) {
                     barrel3.remove(block, player, true);
@@ -444,28 +428,22 @@ public final class BUtil {
         return true;
     }
 
-    /* **************************************** */
-    /* *********                      ********* */
-    /* *********     Other Utils      ********* */
-    /* *********                      ********* */
-    /* **************************************** */
-
     /**
      * prints a list of Strings at the specified page
      *
      * @param sender The CommandSender to send the Page to
      */
-    public static void list(CommandSender sender, ArrayList<String> strings, int page) {
-        int pages = (int) Math.ceil(strings.size() / 7F);
+    public static void list(final CommandSender sender, final ArrayList<String> strings, int page) {
+        final var pages = (int) Math.ceil(strings.size() / 7F);
         if (page > pages || page < 1) {
             page = 1;
         }
 
         sender.sendMessage(color("&7-------------- &f" + ConfigManager.getConfig(Lang.class).getEntry("Etc_Page") + " &6" + page + "&f/&6" + pages + " &7--------------"));
 
-        ListIterator<String> iter = strings.listIterator((page - 1) * 7);
+        final var iter = strings.listIterator((page - 1) * 7);
 
-        for (int i = 0; i < 7; i++) {
+        for (var i = 0; i < 7; i++) {
             if (iter.hasNext()) {
                 sender.sendMessage(color(iter.next()));
             } else {
@@ -474,13 +452,19 @@ public final class BUtil {
         }
     }
 
-    public static Map<Material, Integer> getMaterialMap(List<String> stringList) {
-        Map<Material, Integer> map = new HashMap<>();
-        for (String materialString : stringList) {
-            String[] drainSplit = materialString.split("/");
+    /* **************************************** */
+    /* *********                      ********* */
+    /* *********     Other Utils      ********* */
+    /* *********                      ********* */
+    /* **************************************** */
+
+    public static Map<Material, Integer> getMaterialMap(final List<String> stringList) {
+        final Map<Material, Integer> map = new HashMap<>();
+        for (final var materialString : stringList) {
+            final var drainSplit = materialString.split("/");
             if (drainSplit.length > 1) {
-                Material mat = MaterialUtil.getMaterialSafely(drainSplit[0]);
-                int strength = BUtil.parseIntOrZero(drainSplit[1]);
+                final var mat = MaterialUtil.getMaterialSafely(drainSplit[0]);
+                final var strength = BUtil.parseIntOrZero(drainSplit[1]);
                 if (mat != null && strength > 0) {
                     map.put(mat, strength);
                 }
@@ -489,30 +473,28 @@ public final class BUtil {
         return map;
     }
 
-
-    public static UUID uuidFromString(String uuid) {
+    public static UUID uuidFromString(final String uuid) {
         try {
             return UUID.fromString(uuid);
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             Logging.errorLog("UUID is invalid! " + uuid, e);
             return null;
         }
     }
 
     @Nullable
-    public static <E extends Enum<E>> E getEnumByName(Class<E> enumClass, String name) {
+    public static <E extends Enum<E>> E getEnumByName(final Class<E> enumClass, final String name) {
         try {
             return Enum.valueOf(enumClass, name.toUpperCase());
-        } catch (IllegalArgumentException | NullPointerException e) {
+        } catch (final IllegalArgumentException | NullPointerException e) {
             return null;
         }
     }
 
+    public static int getItemDespawnRate(final World world) {
+        final var spigotConfig = Bukkit.spigot().getConfig();
 
-    public static int getItemDespawnRate(World world) {
-        YamlConfiguration spigotConfig = Bukkit.spigot().getConfig();
-
-        int worldDespawnRate = spigotConfig.getInt("world-settings." + world.getName() + ".item-despawn-rate", -1);
+        final var worldDespawnRate = spigotConfig.getInt("world-settings." + world.getName() + ".item-despawn-rate", -1);
         if (worldDespawnRate < 0) {
             return spigotConfig.getInt("world-settings.default.item-despawn-rate", 6000);
         }
@@ -522,10 +504,10 @@ public final class BUtil {
     /**
      * gets the Name of a DXL World
      */
-    public static String getDxlName(String worldName) {
-        File dungeonFolder = new File(worldName);
+    public static String getDxlName(final String worldName) {
+        final var dungeonFolder = new File(worldName);
         if (dungeonFolder.isDirectory()) {
-            for (File file : dungeonFolder.listFiles()) {
+            for (final var file : dungeonFolder.listFiles()) {
                 if (!file.isDirectory()) {
                     if (file.getName().startsWith(".id_")) {
                         return file.getName().substring(1).toLowerCase();
@@ -536,30 +518,30 @@ public final class BUtil {
         return worldName;
     }
 
-    public static List<String> numberRange(int startInclusive, int stopInclusive) {
+    public static List<String> numberRange(final int startInclusive, final int stopInclusive) {
         return IntStream.range(startInclusive, stopInclusive + 1)
-            .mapToObj(String::valueOf)
-            .toList();
+                .mapToObj(String::valueOf)
+                .toList();
     }
 
-    public static int getRandomIntInRange(String string) {
+    public static int getRandomIntInRange(final String string) {
         if (string == null) {
             return 0;
         }
 
         try {
-            Matcher matcher = RANGE_PATTERN.matcher(string);
+            final var matcher = RANGE_PATTERN.matcher(string);
 
             if (!matcher.matches()) {
                 return parseIntOrZero(string);
             }
 
-            int lowerBound = Integer.parseInt(matcher.group(1));
-            int upperBound = Integer.parseInt(matcher.group(2));
+            final var lowerBound = Integer.parseInt(matcher.group(1));
+            final var upperBound = Integer.parseInt(matcher.group(2));
 
-            Random rand = new Random();
+            final var rand = new Random();
             return rand.nextInt(upperBound - lowerBound + 1) + lowerBound;
-        } catch (NumberFormatException ignored) {
+        } catch (final NumberFormatException ignored) {
             Logging.debugLog("Could not parse integer range: " + string);
         }
 
@@ -573,7 +555,7 @@ public final class BUtil {
      * @param <T>  type of element in list
      * @return a random element, or null if the list is empty
      */
-    public static <T> @Nullable T choose(List<T> list) {
+    public static <T> @Nullable T choose(final List<T> list) {
         if (list.isEmpty()) {
             return null;
         }
@@ -588,15 +570,15 @@ public final class BUtil {
      * @param collection the collection to search for minimum elements
      * @return a list of all minimum elements in the collection, will be empty if the collection is empty
      */
-    public static <T extends Comparable<T>> List<T> multiMin(Collection<T> collection) {
-        List<T> minValues = new ArrayList<>();
+    public static <T extends Comparable<T>> List<T> multiMin(final Collection<T> collection) {
+        final List<T> minValues = new ArrayList<>();
         T min = null;
-        for (T t : collection) {
+        for (final var t : collection) {
             if (min == null) {
                 min = t;
                 minValues.add(t);
             } else {
-                int compare = t.compareTo(min);
+                final var compare = t.compareTo(min);
                 if (compare < 0) {
                     min = t;
                     minValues.clear();
@@ -616,26 +598,26 @@ public final class BUtil {
      * @param b second float
      * @return true if the floats are close
      */
-    public static boolean isClose(float a, float b) {
+    public static boolean isClose(final float a, final float b) {
         return Math.abs(a - b) < 1e-6;
     }
 
-    public static boolean isInt(String string) {
+    public static boolean isInt(final String string) {
         try {
             Integer.parseInt(string);
             return true;
-        } catch (NumberFormatException ignored) {
+        } catch (final NumberFormatException ignored) {
             return false;
         }
     }
 
-    public static OptionalInt parseInt(@Nullable String string) {
+    public static OptionalInt parseInt(@Nullable final String string) {
         if (string == null) {
             return OptionalInt.empty();
         }
         try {
             return OptionalInt.of(Integer.parseInt(string));
-        } catch (NumberFormatException ignored) {
+        } catch (final NumberFormatException ignored) {
             return OptionalInt.empty();
         }
     }
@@ -646,17 +628,17 @@ public final class BUtil {
      * @param string the input string
      * @return the optional
      */
-    public static OptionalDouble parseDouble(@Nullable String string) {
+    public static OptionalDouble parseDouble(@Nullable final String string) {
         if (string == null) {
             return OptionalDouble.empty();
         }
         try {
-            double d = Double.parseDouble(string);
+            final var d = Double.parseDouble(string);
             if (Double.isFinite(d)) {
                 return OptionalDouble.of(d);
             }
             return OptionalDouble.empty();
-        } catch (NumberFormatException ignored) {
+        } catch (final NumberFormatException ignored) {
             return OptionalDouble.empty();
         }
     }
@@ -667,53 +649,56 @@ public final class BUtil {
      * @param string the input string
      * @return the optional
      */
-    public static OptionalFloat parseFloat(@Nullable String string) {
+    public static OptionalFloat parseFloat(@Nullable final String string) {
         if (string == null) {
             return OptionalFloat.empty();
         }
         try {
-            float f = Float.parseFloat(string);
+            final var f = Float.parseFloat(string);
             if (Float.isFinite(f)) {
                 return OptionalFloat.of(f);
             }
             return OptionalFloat.empty();
-        } catch (NumberFormatException ignored) {
+        } catch (final NumberFormatException ignored) {
             return OptionalFloat.empty();
         }
     }
 
-    public static int parseIntOrZero(@Nullable String string) {
+    public static int parseIntOrZero(@Nullable final String string) {
         if (string == null) {
             return 0;
         }
 
         try {
             return Integer.parseInt(string);
-        } catch (NumberFormatException ignored) {
+        } catch (final NumberFormatException ignored) {
             return 0;
         }
     }
 
-    public static double parseDoubleOrZero(@Nullable String string) {
+    public static double parseDoubleOrZero(@Nullable final String string) {
         if (string == null) {
             return 0;
         }
         try {
             return Double.parseDouble(string);
-        } catch (NumberFormatException ignored) {
+        } catch (final NumberFormatException ignored) {
             return 0;
         }
     }
 
-    public static float parseFloatOrZero(@Nullable String string) {
+    public static float parseFloatOrZero(@Nullable final String string) {
         if (string == null) {
             return 0;
         }
         try {
             return Float.parseFloat(string);
-        } catch (NumberFormatException ignored) {
+        } catch (final NumberFormatException ignored) {
             return 0;
         }
+    }
+
+    public record SplitResult(List<String> strings, boolean inQuotes) {
     }
 
 }

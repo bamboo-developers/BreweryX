@@ -20,38 +20,38 @@
 
 package com.dre.brewery.utility;
 
-public class ClassUtil {
+public final class ClassUtil {
 
     private ClassUtil() {
         throw new UnsupportedOperationException("Utility class");
     }
 
 
-    public static boolean methodExists(String className, String methodName, Class<?>... methodParams) {
+    public static boolean methodExists(final String className, final String methodName, final Class<?>... methodParams) {
         try {
-            Class<?> clazz = Class.forName(className);
+            final var clazz = Class.forName(className);
             clazz.getMethod(methodName, methodParams);
             return true;
-        } catch (ClassNotFoundException | NoSuchMethodException e) {
+        } catch (final ClassNotFoundException | NoSuchMethodException e) {
             return false;
         }
     }
 
-    public static boolean fieldExists(String className, String fieldName) {
+    public static boolean fieldExists(final String className, final String fieldName) {
         try {
-            Class<?> clazz = Class.forName(className);
+            final var clazz = Class.forName(className);
             clazz.getField(fieldName);
             return true;
-        } catch (ClassNotFoundException | NoSuchFieldException e) {
+        } catch (final ClassNotFoundException | NoSuchFieldException e) {
             return false;
         }
     }
 
-    public static boolean exists(String className) {
+    public static boolean exists(final String className) {
         try {
             Class.forName(className);
             return true;
-        } catch (ClassNotFoundException e) {
+        } catch (final ClassNotFoundException e) {
             return false;
         }
     }

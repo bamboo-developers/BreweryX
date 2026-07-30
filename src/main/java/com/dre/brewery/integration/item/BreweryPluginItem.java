@@ -29,36 +29,36 @@ import org.bukkit.inventory.ItemStack;
 /**
  * For recipes that use Brewery Items as input
  */
-public class BreweryPluginItem extends PluginItem {
+public final class BreweryPluginItem extends PluginItem {
 
 // When implementing this, put Brewery as softdepend in your plugin.yml!
 // We're calling this as server start:
 // PluginItem.registerForConfig("brewery", BreweryPluginItem::new);
 
     @Override
-    public boolean matches(ItemStack item) {
-        Brew brew = Brew.get(item);
+    public boolean matches(final ItemStack item) {
+        final var brew = Brew.get(item);
         if (brew == null) {
             return false;
         }
-        return isMatchingBrew(brew) || isCauldronIngredient(item);
+        return this.isMatchingBrew(brew) || this.isCauldronIngredient(item);
     }
 
     // Checks if an ItemStack is a Brewery Brew with the correct recipe by comparing the ids/names
-    private boolean isMatchingBrew(Brew brew) {
-        BRecipe recipe = brew.getCurrentRecipe();
+    private boolean isMatchingBrew(final Brew brew) {
+        final var recipe = brew.getCurrentRecipe();
         if (recipe != null) {
             // We *could* add support for names instead of just using the ids
             return this.getItemId().equalsIgnoreCase(recipe.getId()) ||
-                this.getItemId().equalsIgnoreCase(recipe.getRecipeName()) || // From original Impl
-                this.getItemId().equalsIgnoreCase(recipe.getName(10)); // From original Impl
+                    this.getItemId().equalsIgnoreCase(recipe.getRecipeName()) || // From original Impl
+                    this.getItemId().equalsIgnoreCase(recipe.getName(10)); // From original Impl
         }
         return false;
     }
 
     // I truly hate doing it this way, but to have it be checked based on ids
     // I'd have to rewrite major parts of BRecipe and BCauldronRecipe - Jsinco
-    private boolean isCauldronIngredient(ItemStack item) {
+    private boolean isCauldronIngredient(final ItemStack item) {
         if (!item.hasItemMeta()) return false;
         return ChatColor.stripColor(item.getItemMeta().getDisplayName()).equalsIgnoreCase(this.getItemId()); // From original Impl
     }

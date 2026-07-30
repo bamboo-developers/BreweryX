@@ -35,44 +35,41 @@ import org.jetbrains.annotations.Nullable;
 @Setter
 public class Hook {
 
-    protected static final Config config = ConfigManager.getConfig(Config.class);
-
-    public static final Hook GAMEMODEINVENTORIES = new Hook("GameModeInventories", config.isUseGMInventories());
     public static final Hook NEXO = new Hook("Nexo");
-
-
+    protected static final Config config = ConfigManager.getConfig(Config.class);
+    public static final Hook GAMEMODEINVENTORIES = new Hook("GameModeInventories", config.isUseGMInventories());
     private final String name;
     @ApiStatus.Internal
-    private boolean enabled;
-    @ApiStatus.Internal
     protected boolean checked;
+    @ApiStatus.Internal
+    private boolean enabled;
 
-    public Hook(String name) {
+    public Hook(final String name) {
         this.name = name;
         this.enabled = true;
     }
 
-    public Hook(String name, boolean enabled) {
+    public Hook(final String name, final boolean enabled) {
         this.name = name;
         this.enabled = enabled;
     }
 
-    public boolean isEnabled() {
-        if (!checked) { // Have we checked with Bukkit to see if the plugin is enabled yet?
-            checked = true;
-            if (enabled) { // If it's 'enabled' in the config, check if it's actually enabled through Bukkit
-                enabled = Bukkit.getPluginManager().isPluginEnabled(name);
+    public final boolean isEnabled() {
+        if (!this.checked) { // Have we checked with Bukkit to see if the plugin is enabled yet?
+            this.checked = true;
+            if (this.enabled) { // If it's 'enabled' in the config, check if it's actually enabled through Bukkit
+                this.enabled = Bukkit.getPluginManager().isPluginEnabled(this.name);
             }
         }
-        return enabled;
+        return this.enabled;
     }
 
     @Contract
-    public @Nullable Plugin getPlugin() {
-        if (isEnabled()) {
-            Plugin plugin = Bukkit.getPluginManager().getPlugin(name);
+    public final @Nullable Plugin getPlugin() {
+        if (this.isEnabled()) {
+            final var plugin = Bukkit.getPluginManager().getPlugin(this.name);
             if (plugin == null) {
-                Logging.errorLog("Plugin " + name + " is marked enabled but not found!");
+                Logging.errorLog("Plugin " + this.name + " is marked enabled but not found!");
             }
             return plugin;
         } else {

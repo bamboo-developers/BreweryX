@@ -39,7 +39,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>Always one item added at a time.
  * <p>If needed use the caudrons add method to manually add more Items
  */
-public class IngedientAddEvent extends PlayerEvent implements Cancellable {
+public final class IngedientAddEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final Block block;
     private final BCauldron cauldron;
@@ -48,20 +48,25 @@ public class IngedientAddEvent extends PlayerEvent implements Cancellable {
     private boolean cancelled;
     private boolean takeItem = true;
 
-    public IngedientAddEvent(Player who, Block block, BCauldron bCauldron, ItemStack ingredient, RecipeItem rItem) {
+    public IngedientAddEvent(final Player who, final Block block, final BCauldron bCauldron, final ItemStack ingredient, final RecipeItem rItem) {
         super(who);
         this.block = block;
-        cauldron = bCauldron;
+        this.cauldron = bCauldron;
         this.rItem = rItem;
         this.ingredient = ingredient;
     }
 
+    // Required by Bukkit
+    public static HandlerList getHandlerList() {
+        return handlers;
+    }
+
     public Block getBlock() {
-        return block;
+        return this.block;
     }
 
     public BCauldron getCauldron() {
-        return cauldron;
+        return this.cauldron;
     }
 
     /**
@@ -69,8 +74,8 @@ public class IngedientAddEvent extends PlayerEvent implements Cancellable {
      * <p>This might not be the only recipe item that will match the ingredient
      * <p>Will be recalculated if the Ingredient is changed with the setIngredient Method
      */
-    public RecipeItem getRecipeItem() {
-        return rItem;
+    public final RecipeItem getRecipeItem() {
+        return this.rItem;
     }
 
     /**
@@ -80,8 +85,8 @@ public class IngedientAddEvent extends PlayerEvent implements Cancellable {
      *
      * @return The item being added
      */
-    public ItemStack getIngredient() {
-        return ingredient;
+    public final ItemStack getIngredient() {
+        return this.ingredient;
     }
 
     /**
@@ -92,18 +97,18 @@ public class IngedientAddEvent extends PlayerEvent implements Cancellable {
      *
      * @param ingredient The item to add instead
      */
-    public void setIngredient(ItemStack ingredient) {
+    public void setIngredient(final ItemStack ingredient) {
         this.ingredient = ingredient;
         // The Ingredient has been changed. Recalculate RecipeItem!
-        rItem = RecipeItem.getMatchingRecipeItem(ingredient, true);
+        this.rItem = RecipeItem.getMatchingRecipeItem(ingredient, true);
     }
 
     /**
      * If the amount of the item in the players hand should be decreased.
      * (Default true)
      */
-    public boolean willTakeItem() {
-        return takeItem;
+    public final boolean willTakeItem() {
+        return this.takeItem;
     }
 
     /**
@@ -111,7 +116,7 @@ public class IngedientAddEvent extends PlayerEvent implements Cancellable {
      *
      * @param takeItem if the item amount in the hand should be decreased
      */
-    public void setTakeItem(boolean takeItem) {
+    public void setTakeItem(final boolean takeItem) {
         this.takeItem = takeItem;
     }
 
@@ -123,7 +128,7 @@ public class IngedientAddEvent extends PlayerEvent implements Cancellable {
      */
     @Nullable
     public Levelled getCauldronData() {
-        BlockData data = block.getBlockData();
+        final var data = this.block.getBlockData();
         if (data instanceof Levelled) {
             return (Levelled) data;
         }
@@ -138,30 +143,25 @@ public class IngedientAddEvent extends PlayerEvent implements Cancellable {
      * @return The fill level as a byte 0-2
      */
     public byte getFillLevel() {
-        return MaterialUtil.getFillLevel(block);
+        return MaterialUtil.getFillLevel(this.block);
     }
 
     @Override
-    public boolean isCancelled() {
-        return cancelled;
+    public final boolean isCancelled() {
+        return this.cancelled;
     }
 
     /**
      * If the event is cancelled, no item will be added or taken from the player.
      */
     @Override
-    public void setCancelled(boolean cancelled) {
+    public final void setCancelled(final boolean cancelled) {
         this.cancelled = cancelled;
     }
 
     @NotNull
     @Override
-    public HandlerList getHandlers() {
-        return handlers;
-    }
-
-    // Required by Bukkit
-    public static HandlerList getHandlerList() {
+    public final HandlerList getHandlers() {
         return handlers;
     }
 }

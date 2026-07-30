@@ -27,15 +27,7 @@ import com.dre.brewery.configuration.files.Lang;
 import com.dre.brewery.lore.Base91DecoderStream;
 import com.dre.brewery.lore.Base91EncoderStream;
 import com.dre.brewery.lore.BrewLore;
-import com.dre.brewery.recipe.BCauldronRecipe;
-import com.dre.brewery.recipe.BRecipe;
-import com.dre.brewery.recipe.BestRecipeResult;
-import com.dre.brewery.recipe.DebuggableItem;
-import com.dre.brewery.recipe.Ingredient;
-import com.dre.brewery.recipe.ItemLoader;
-import com.dre.brewery.recipe.PotionColor;
-import com.dre.brewery.recipe.RecipeEvaluation;
-import com.dre.brewery.recipe.RecipeItem;
+import com.dre.brewery.recipe.*;
 import com.dre.brewery.utility.BUtil;
 import com.dre.brewery.utility.Logging;
 import com.dre.brewery.utility.MinecraftVersion;
@@ -49,11 +41,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
@@ -63,7 +51,7 @@ import java.util.stream.Collectors;
  * Represents ingredients in Cauldron, Brew
  */
 @Getter
-public class BIngredients {
+public final class BIngredients {
 
     private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
     private static final BreweryPlugin plugin = BreweryPlugin.getInstance();
@@ -79,28 +67,54 @@ public class BIngredients {
      * Init a new BIngredients
      */
     public BIngredients() {
-        //this.id = lastId;
-        //lastId++;
     }
 
     /**
      * Load from File
      */
-    public BIngredients(List<Ingredient> ingredients, int cookedTime) {
+    public BIngredients(final List<Ingredient> ingredients, final int cookedTime) {
         this.ingredients = ingredients;
         this.cookedTime = cookedTime;
-        //this.id = lastId;
-        //lastId++;
     }
 
     /**
      * Load from legacy Brew section
      */
-    public BIngredients(List<Ingredient> ingredients, int cookedTime, boolean legacy) {
+    public BIngredients(final List<Ingredient> ingredients, final int cookedTime, final boolean legacy) {
         this(ingredients, cookedTime);
         if (legacy) {
             this.id = lastId;
             lastId++;
+        }
+    }
+
+    public static BIngredients load(final DataInputStream in, final short dataVersion) throws IOException {
+        final var cookedTime = in.readInt();
+        var size = in.readByte();
+        final List<Ingredient> ing = new ArrayList<>(size);
+        for (; size > 0; size--) {
+            final var itemLoader = new ItemLoader(dataVersion, in, in.readUTF());
+            if (!plugin.getIngredientLoaders().containsKey(itemLoader.getSaveID())) {
+                Logging.errorLog("Ingredient Loader not found: " + itemLoader.getSaveID());
+                break;
+            }
+            final var loaded = plugin.getIngredientLoaders().get(itemLoader.getSaveID()).apply(itemLoader);
+            final int amount = in.readShort();
+            if (loaded != null) {
+                loaded.setAmount(amount);
+                ing.add(loaded);
+            }
+        }
+        return new BIngredients(ing, cookedTime);
+    }
+
+    public static BIngredients deserializeIngredients(final String mat) {
+        try (final var in = new DataInputStream(new Base91DecoderStream(new ByteArrayInputStream(mat.getBytes())))) {
+            final var ver = in.readByte();
+            return BIngredients.load(in, ver);
+        } catch (final IOException e) {
+            Logging.errorLog("Failed to deserialize Ingredients", e);
+            return new BIngredients();
         }
     }
 
@@ -110,17 +124,17 @@ public class BIngredients {
      *
      * @param ingredient the item to add
      */
-    public void add(ItemStack ingredient) {
-        for (Ingredient existing : ingredients) {
+    public void add(final ItemStack ingredient) {
+        for (final var existing : this.ingredients) {
             if (existing.matches(ingredient)) {
                 existing.setAmount(existing.getAmount() + 1);
                 return;
             }
         }
 
-        Ingredient ing = RecipeItem.getMatchingRecipeItem(ingredient, true).toIngredient(ingredient);
+        final var ing = RecipeItem.getMatchingRecipeItem(ingredient, true).toIngredient(ingredient);
         ing.setAmount(1);
-        ingredients.add(ing);
+        this.ingredients.add(ing);
     }
 
     /**
@@ -129,8 +143,8 @@ public class BIngredients {
      * @param ingredient the item to add
      * @param rItem      the RecipeItem that matches the ingredient
      */
-    public void add(ItemStack ingredient, RecipeItem rItem) {
-        add(rItem.toIngredient(ingredient));
+    public final void add(final ItemStack ingredient, final RecipeItem rItem) {
+        this.add(rItem.toIngredient(ingredient));
     }
 
     /**
@@ -138,45 +152,45 @@ public class BIngredients {
      *
      * @param rItem the RecipeItem that matches the ingredient
      */
-    public void addGeneric(RecipeItem rItem) {
-        add(rItem.toIngredientGeneric());
+    public final void addGeneric(final RecipeItem rItem) {
+        this.add(rItem.toIngredientGeneric());
     }
 
-    private void add(Ingredient ingredient) {
-        for (Ingredient existing : ingredients) {
+    private void add(final Ingredient ingredient) {
+        for (final var existing : this.ingredients) {
             if (existing.isSimilar(ingredient)) {
                 existing.setAmount(existing.getAmount() + 1);
                 return;
             }
         }
         ingredient.setAmount(1);
-        ingredients.add(ingredient);
+        this.ingredients.add(ingredient);
     }
 
     /**
      * returns an Potion item with cooked ingredients
      */
-    public ItemStack cook(int state, Player brewer) {
+    public final ItemStack cook(final int state, final Player brewer) {
 
-        ItemStack potion = new ItemStack(Material.POTION);
-        PotionMeta potionMeta = (PotionMeta) potion.getItemMeta();
+        final var potion = new ItemStack(Material.POTION);
+        final var potionMeta = (PotionMeta) potion.getItemMeta();
         assert potionMeta != null;
 
         // cookedTime is always time in minutes, state may differ with number of ticks
-        cookedTime = state;
+        this.cookedTime = state;
         String cookedName = null;
-        BRecipe cookRecipe = getCookRecipe();
-        Brew brew;
+        final var cookRecipe = this.getCookRecipe();
+        final Brew brew;
 
         //int uid = Brew.generateUID();
 
         if (cookRecipe != null) {
             // Potion is best with cooking only
-            int quality = (int) Math.round((getIngredientQuality(cookRecipe) + getCookingQuality(cookRecipe, false)) / 2.0);
-            int alc = Math.round(cookRecipe.getAlcohol() * ((float) quality / 10.0f));
+            final var quality = (int) Math.round((this.getIngredientQuality(cookRecipe) + this.getCookingQuality(cookRecipe, false)) / 2.0);
+            final var alc = Math.round(cookRecipe.getAlcohol() * ((float) quality / 10.0f));
             Logging.debugLog("cooked potion has Quality: " + quality + ", Alc: " + alc);
             brew = new Brew(quality, alc, cookRecipe, this);
-            BrewLore lore = new BrewLore(brew, potionMeta);
+            final var lore = new BrewLore(brew, potionMeta);
             lore.updateQualityStars(false);
             lore.updateCustomLore();
             lore.updateAlc(false);
@@ -200,12 +214,12 @@ public class BIngredients {
                 cookedName = lang.getEntry("Brew_ThickBrew");
                 PotionColor.BLUE.colorBrew(potionMeta, potion, false);
             } else {
-                BCauldronRecipe cauldronRecipe = getCauldronRecipe();
+                final var cauldronRecipe = this.getCauldronRecipe();
                 if (cauldronRecipe != null) {
                     Logging.debugLog("Found Cauldron Recipe: " + cauldronRecipe.getName());
                     cookedName = cauldronRecipe.getName();
                     if (cauldronRecipe.getLore() != null) {
-                        BrewLore lore = new BrewLore(brew, potionMeta);
+                        final var lore = new BrewLore(brew, potionMeta);
                         lore.addCauldronLore(cauldronRecipe.getLore());
                         lore.write();
                     }
@@ -232,7 +246,7 @@ public class BIngredients {
         //potionMeta.addCustomEffect((PotionEffectType.REGENERATION).createEffect((uid * 4), 0), true);
 
         brew.touch();
-        BrewModifyEvent modifyEvent = new BrewModifyEvent(brew, potionMeta, BrewModifyEvent.Type.FILL, brewer);
+        final var modifyEvent = new BrewModifyEvent(brew, potionMeta, BrewModifyEvent.Type.FILL, brewer);
         plugin.getServer().getPluginManager().callEvent(modifyEvent);
         if (modifyEvent.isCancelled()) {
             return null;
@@ -247,29 +261,29 @@ public class BIngredients {
     /**
      * returns amount of ingredients
      */
-    public int getIngredientsCount() {
-        int count = 0;
-        for (Ingredient ing : ingredients) {
+    public final int getIngredientsCount() {
+        var count = 0;
+        for (final var ing : this.ingredients) {
             count += ing.getAmount();
         }
         return count;
     }
 
-    public List<Ingredient> getIngredientList() {
-        return ingredients;
+    public final List<Ingredient> getIngredientList() {
+        return this.ingredients;
     }
 
     /**
      * best recipe for current state of potion, STILL not always returns the correct one...
      */
-    public @Nullable BRecipe getBestRecipe(BarrelWoodType wood, float time, boolean distilled) {
-        return getBestRecipeFull(wood, time, distilled).getSuccessRecipe();
+    public final @Nullable BRecipe getBestRecipe(final BarrelWoodType wood, final float time, final boolean distilled) {
+        return this.getBestRecipeFull(wood, time, distilled).getSuccessRecipe();
     }
 
     /**
      * best recipe for current state of potion, STILL not always returns the correct one...
      */
-    public BestRecipeResult getBestRecipeFull(BarrelWoodType wood, float time, boolean distilled) {
+    public final BestRecipeResult getBestRecipeFull(final BarrelWoodType wood, final float time, final boolean distilled) {
         if (BRecipe.getAllRecipes().isEmpty()) {
             return new BestRecipeResult.NoRecipesRegistered();
         }
@@ -285,34 +299,34 @@ public class BIngredients {
         RecipeEvaluation bestEvalLegacy = null;
 
         // FIXME: This should include BCauldronRecipes too. (Proper parent class needed!)
-        for (BRecipe recipe : BRecipe.getAllRecipes()) {
-            RecipeEvaluation completeRecipeEval;
+        for (final var recipe : BRecipe.getAllRecipes()) {
+            final RecipeEvaluation completeRecipeEval;
 
-            RecipeEvaluation ingredientEval = getIngredientQualityFull(recipe);
-            float ingredientQuality = ingredientEval.getQuality();
+            final var ingredientEval = this.getIngredientQualityFull(recipe);
+            final var ingredientQuality = ingredientEval.getQuality();
 
-            RecipeEvaluation cookingEval = getCookingQualityFull(recipe, distilled);
-            float cookingQuality = cookingEval.getQuality();
+            final var cookingEval = this.getCookingQualityFull(recipe, distilled);
+            final var cookingQuality = cookingEval.getQuality();
 
             // age and wood quality cannot be fatal, only need to check ingredient and cooking
-            boolean isFatal = ingredientEval.isFatal() || cookingEval.isFatal();
+            final var isFatal = ingredientEval.isFatal() || cookingEval.isFatal();
 
             if (recipe.needsToAge() || time > 0.5) {
                 // needs riping in barrel
-                RecipeEvaluation ageEval = getAgeQualityFull(recipe, time);
-                float ageQuality = ageEval.getQuality();
+                final var ageEval = this.getAgeQualityFull(recipe, time);
+                final var ageQuality = ageEval.getQuality();
 
-                RecipeEvaluation woodEval = getWoodQualityFull(recipe, wood);
-                float woodQuality = woodEval.getQuality();
+                final var woodEval = this.getWoodQualityFull(recipe, wood);
+                final var woodQuality = woodEval.getQuality();
 
                 // is this recipe better than the previous best?
                 Logging.debugLog("Ingredient Quality: " + ingredientQuality + " Cooking Quality: " + cookingQuality +
-                    " Wood Quality: " + woodQuality + " age Quality: " + ageQuality + " for " + recipe.getName(5));
+                        " Wood Quality: " + woodQuality + " age Quality: " + ageQuality + " for " + recipe.getName(5));
                 completeRecipeEval = RecipeEvaluation.combine(ingredientEval, cookingEval, ageEval, woodEval);
 
-                float averageQuality = ((float) ingredientQuality + cookingQuality + woodQuality + ageQuality) / 4;
+                final var averageQuality = (ingredientQuality + cookingQuality + woodQuality + ageQuality) / 4;
                 if (!isFatal && averageQuality > quality) {
-                    quality = ((float) ingredientQuality + cookingQuality + woodQuality + ageQuality) / 4;
+                    quality = (ingredientQuality + cookingQuality + woodQuality + ageQuality) / 4;
                     bestRecipeLegacy = recipe;
                     bestEvalLegacy = completeRecipeEval;
                 }
@@ -322,7 +336,7 @@ public class BIngredients {
                 Logging.debugLog("Ingredient Quality: " + ingredientQuality + " Cooking Quality: " + cookingQuality + " for " + recipe.getName(5));
                 completeRecipeEval = RecipeEvaluation.combine(ingredientEval, cookingEval);
 
-                float averageQuality = ((float) ingredientQuality + cookingQuality) / 2;
+                final var averageQuality = (ingredientQuality + cookingQuality) / 2;
                 if (!isFatal && averageQuality > quality) {
                     quality = averageQuality;
                     bestRecipeLegacy = recipe;
@@ -338,11 +352,11 @@ public class BIngredients {
 
         if (bestRecipeLegacy != null) {
             Logging.debugLog(String.format("best recipe: %s has Quality=%.3f",
-                bestRecipeLegacy.getName(5), quality));
+                    bestRecipeLegacy.getName(5), quality));
             return new BestRecipeResult.Found(bestRecipeLegacy, bestEvalLegacy);
         } else {
             Logging.debugLog(String.format("guess recipe: %s has Quality=%.3f",
-                bestRecipe.getName(5), bestEval.getTrueQuality()));
+                    bestRecipe.getName(5), bestEval.getTrueQuality()));
             return new BestRecipeResult.Error(bestRecipe, bestEval);
         }
     }
@@ -350,21 +364,20 @@ public class BIngredients {
     /**
      * returns recipe that is cooking only and matches the ingredients and cooking time
      */
-    public @Nullable BRecipe getCookRecipe() {
-        return getCookRecipeFull().getSuccessRecipe();
+    public final @Nullable BRecipe getCookRecipe() {
+        return this.getCookRecipeFull().getSuccessRecipe();
     }
 
-    public BestRecipeResult getCookRecipeFull() {
-        BestRecipeResult result = getBestRecipeFull(BarrelWoodType.ANY, 0, false);
+    public final BestRecipeResult getCookRecipeFull() {
+        final var result = this.getBestRecipeFull(BarrelWoodType.ANY, 0, false);
 
         // Check if best recipe is cooking only
-        if (result instanceof BestRecipeResult.Found found) {
-            if (found.recipe().isCookingOnly()) {
+        if (result instanceof BestRecipeResult.Found(final var recipe, final var eval)) {
+            if (recipe.isCookingOnly()) {
                 return result;
             } else {
-                RecipeEvaluation eval = found.eval();
                 eval.fatal(new BrewDefect.CookingNotNeeded());
-                return new BestRecipeResult.Error(found.recipe(), eval);
+                return new BestRecipeResult.Error(recipe, eval);
             }
         }
         return result;
@@ -374,12 +387,12 @@ public class BIngredients {
      * Get Cauldron Recipe that matches the contents of the cauldron
      */
     @Nullable
-    public BCauldronRecipe getCauldronRecipe() {
+    public final BCauldronRecipe getCauldronRecipe() {
         BCauldronRecipe best = null;
         float bestMatch = 0;
         float match;
-        for (BCauldronRecipe recipe : BCauldronRecipe.getAllRecipes()) {
-            match = recipe.getIngredientMatch(ingredients);
+        for (final var recipe : BCauldronRecipe.getAllRecipes()) {
+            match = recipe.getIngredientMatch(this.ingredients);
             if (match >= 10) {
                 return recipe;
             }
@@ -394,21 +407,20 @@ public class BIngredients {
     /**
      * returns the currently best matching recipe for distilling for the ingredients and cooking time
      */
-    public @Nullable BRecipe getDistillRecipe(BarrelWoodType wood, float time) {
-        return getDistillRecipeFull(wood, time).getSuccessRecipe();
+    public final @Nullable BRecipe getDistillRecipe(final BarrelWoodType wood, final float time) {
+        return this.getDistillRecipeFull(wood, time).getSuccessRecipe();
     }
 
-    public BestRecipeResult getDistillRecipeFull(BarrelWoodType wood, float time) {
-        BestRecipeResult result = getBestRecipeFull(wood, time, true);
+    public final BestRecipeResult getDistillRecipeFull(final BarrelWoodType wood, final float time) {
+        final var result = this.getBestRecipeFull(wood, time, true);
 
         // Check if best recipe needs to be distilled
-        if (result instanceof BestRecipeResult.Found found) {
-            if (found.recipe().needsDistilling()) {
+        if (result instanceof BestRecipeResult.Found(final var recipe, final var eval)) {
+            if (recipe.needsDistilling()) {
                 return result;
             } else {
-                RecipeEvaluation eval = found.eval();
-                eval.fatal(new BrewDefect.DistillMismatch(true, false, found.recipe().isAlcoholic()));
-                return new BestRecipeResult.Error(found.recipe(), eval);
+                eval.fatal(new BrewDefect.DistillMismatch(true, false, recipe.isAlcoholic()));
+                return new BestRecipeResult.Error(recipe, eval);
             }
         }
         return result;
@@ -417,20 +429,19 @@ public class BIngredients {
     /**
      * returns currently best matching recipe for ingredients, cooking- and ageingtime
      */
-    public @Nullable BRecipe getAgeRecipe(BarrelWoodType wood, float time, boolean distilled) {
-        return getAgeRecipeFull(wood, time, distilled).getSuccessRecipe();
+    public @Nullable BRecipe getAgeRecipe(final BarrelWoodType wood, final float time, final boolean distilled) {
+        return this.getAgeRecipeFull(wood, time, distilled).getSuccessRecipe();
     }
 
-    public BestRecipeResult getAgeRecipeFull(BarrelWoodType wood, float time, boolean distilled) {
-        BestRecipeResult result = getBestRecipeFull(wood, time, distilled);
+    public final BestRecipeResult getAgeRecipeFull(final BarrelWoodType wood, final float time, final boolean distilled) {
+        final var result = this.getBestRecipeFull(wood, time, distilled);
 
-        if (result instanceof BestRecipeResult.Found found) {
-            if (found.recipe().needsToAge()) {
+        if (result instanceof BestRecipeResult.Found(final var recipe, final var eval)) {
+            if (recipe.needsToAge()) {
                 return result;
             } else {
-                RecipeEvaluation eval = found.eval();
-                eval.fatal(new BrewDefect.AgeMismatch(time, found.recipe().getAge(), found.recipe().isAlcoholic()));
-                return new BestRecipeResult.Error(found.recipe(), eval);
+                eval.fatal(new BrewDefect.AgeMismatch(time, recipe.getAge(), recipe.isAlcoholic()));
+                return new BestRecipeResult.Error(recipe, eval);
             }
         }
         return result;
@@ -439,34 +450,34 @@ public class BIngredients {
     /**
      * returns the quality of the ingredients conditioning given recipe, -1 if no recipe is near them
      */
-    public int getIngredientQuality(BRecipe recipe) {
-        return Math.round(getIngredientQualityFull(recipe).getQuality());
+    public final int getIngredientQuality(final BRecipe recipe) {
+        return Math.round(this.getIngredientQualityFull(recipe).getQuality());
     }
 
-    public RecipeEvaluation getIngredientQualityFull(BRecipe recipe) {
-        RecipeEvaluation eval = new RecipeEvaluation();
+    public final RecipeEvaluation getIngredientQualityFull(final BRecipe recipe) {
+        final var eval = new RecipeEvaluation();
 
-        List<RecipeItem> missingIngredients = recipe.getMissingIngredients(ingredients);
+        final var missingIngredients = recipe.getMissingIngredients(this.ingredients);
         if (!missingIngredients.isEmpty()) {
             // when ingredients are not complete
-            for (RecipeItem missing : missingIngredients) {
+            for (final var missing : missingIngredients) {
                 eval.fatal(new BrewDefect.MissingIngredient(missing, missing.getAmount()));
             }
         }
 
-        int badStuff = 0;
-        for (Ingredient ingredient : ingredients) {
-            int amountInRecipe = recipe.amountOf(ingredient);
-            int count = ingredient.getAmount();
+        var badStuff = 0;
+        for (final var ingredient : this.ingredients) {
+            final var amountInRecipe = recipe.amountOf(ingredient);
+            final var count = ingredient.getAmount();
             if (amountInRecipe == 0) {
                 // this ingredient doesn't belong into the recipe
                 badStuff++;
-                if (count > (getIngredientsCount() / 2)) {
+                if (count > (this.getIngredientsCount() / 2)) {
                     // when more than half of the ingredients don't fit into the recipe
                     eval.fatal(new BrewDefect.WrongIngredient(ingredient));
-                } else if (badStuff < ingredients.size()) {
+                } else if (badStuff < this.ingredients.size()) {
                     // when there are other ingredients
-                    float badIngredientDeduction = count * (recipe.getDifficulty() / 2.0f);
+                    final var badIngredientDeduction = count * (recipe.getDifficulty() / 2.0f);
                     eval.deduct(new BrewDefect.WrongIngredient(ingredient), badIngredientDeduction);
                 } else {
                     // ingredients don't fit at all
@@ -474,7 +485,7 @@ public class BIngredients {
                 }
             } else if (count != amountInRecipe) {
                 // calculate the quality
-                float ingredientCountDeduction = ((float) Math.abs(count - amountInRecipe) / recipe.allowedCountDiff(amountInRecipe)) * 10.0f;
+                final var ingredientCountDeduction = ((float) Math.abs(count - amountInRecipe) / recipe.allowedCountDiff(amountInRecipe)) * 10.0f;
                 eval.deduct(new BrewDefect.WrongCount(ingredient, amountInRecipe), ingredientCountDeduction);
             }
         }
@@ -484,21 +495,21 @@ public class BIngredients {
     /**
      * returns the quality regarding the cooking-time conditioning given Recipe
      */
-    public int getCookingQuality(BRecipe recipe, boolean distilled) {
-        return Math.round(getCookingQualityFull(recipe, distilled).getQuality());
+    public final int getCookingQuality(final BRecipe recipe, final boolean distilled) {
+        return Math.round(this.getCookingQualityFull(recipe, distilled).getQuality());
     }
 
-    public RecipeEvaluation getCookingQualityFull(BRecipe recipe, boolean distilled) {
-        RecipeEvaluation eval = new RecipeEvaluation();
+    public final RecipeEvaluation getCookingQualityFull(final BRecipe recipe, final boolean distilled) {
+        final var eval = new RecipeEvaluation();
         if (recipe.needsDistilling() != distilled) {
             eval.fatal(new BrewDefect.DistillMismatch(distilled, recipe.needsDistilling(), recipe.isAlcoholic()));
         }
 
-        if (cookedTime < 1) {
+        if (this.cookedTime < 1) {
             eval.deduct(new BrewDefect.CookTimeMismatch(0, recipe.getCookingTime()), 10);
-        } else if (cookedTime != recipe.getCookingTime()) {
-            float cookTimeDeduction = ((float) Math.abs(cookedTime - recipe.getCookingTime()) / recipe.allowedTimeDiff(recipe.getCookingTime())) * 10.0f;
-            eval.deduct(new BrewDefect.CookTimeMismatch(cookedTime, recipe.getCookingTime()), cookTimeDeduction);
+        } else if (this.cookedTime != recipe.getCookingTime()) {
+            final var cookTimeDeduction = ((float) Math.abs(this.cookedTime - recipe.getCookingTime()) / recipe.allowedTimeDiff(recipe.getCookingTime())) * 10.0f;
+            eval.deduct(new BrewDefect.CookTimeMismatch(this.cookedTime, recipe.getCookingTime()), cookTimeDeduction);
         }
         return eval;
     }
@@ -506,7 +517,7 @@ public class BIngredients {
     /**
      * returns pseudo quality of distilling. 0 if doesn't match the need of the recipes distilling
      */
-    public int getDistillQuality(BRecipe recipe, byte distillRuns) {
+    public final int getDistillQuality(final BRecipe recipe, final byte distillRuns) {
         if (recipe.needsDistilling() != distillRuns > 0) {
             return 0;
         }
@@ -516,21 +527,21 @@ public class BIngredients {
     /**
      * returns the quality regarding the barrel wood conditioning given Recipe
      */
-    public int getWoodQuality(BRecipe recipe, BarrelWoodType wood) {
-        return Math.round(getWoodQualityFull(recipe, wood).getQuality());
+    public final int getWoodQuality(final BRecipe recipe, final BarrelWoodType wood) {
+        return Math.round(this.getWoodQualityFull(recipe, wood).getQuality());
     }
 
-    public RecipeEvaluation getWoodQualityFull(BRecipe recipe, BarrelWoodType wood) {
-        RecipeEvaluation eval = new RecipeEvaluation();
+    public final RecipeEvaluation getWoodQualityFull(final BRecipe recipe, final BarrelWoodType wood) {
+        final var eval = new RecipeEvaluation();
         if (recipe.usesAnyWood()) {
             // type of wood doesnt matter
             return eval;
         }
 
         if (wood != recipe.getWood()) {
-            float woodDeduction;
+            final float woodDeduction;
             if (config.isNewBarrelTypeAlgorithm()) {
-                woodDeduction = getWoodQualityNew(recipe, wood);
+                woodDeduction = this.getWoodQualityNew(recipe, wood);
             } else {
                 woodDeduction = recipe.getWoodDiff(wood.getIndex()) * recipe.getDifficulty();
             }
@@ -543,9 +554,9 @@ public class BIngredients {
     // At difficulty 5, distances 0-5 have quality 10, 8, 4, 1, 0, 0
     // At difficulty 10, distances 0-5 have quality 10, 5, 0, 0, 0, 0
     // See: https://www.desmos.com/calculator/aaoixs2qo7
-    private int getWoodQualityNew(BRecipe recipe, BarrelWoodType wood) {
-        BarrelWoodType recipeWood = recipe.getWood();
-        float baseQuality = switch (recipeWood.getDistance(wood)) {
+    private int getWoodQualityNew(final BRecipe recipe, final BarrelWoodType wood) {
+        final var recipeWood = recipe.getWood();
+        final var baseQuality = switch (recipeWood.getDistance(wood)) {
             case 0 -> 10.0f;
             case 1 -> 9.0f;
             case 2 -> 7.75f;
@@ -557,148 +568,84 @@ public class BIngredients {
         if (baseQuality == 0.0f) {
             return 0;
         }
-        float quality = 10f - (10f - baseQuality) * 0.5f * recipe.getDifficulty();
+        final var quality = 10f - (10f - baseQuality) * 0.5f * recipe.getDifficulty();
         return Math.max(Math.round(quality), 0);
     }
 
     /**
      * returns the quality regarding the ageing time conditioning given Recipe
      */
-    public int getAgeQuality(BRecipe recipe, float time) {
-        return Math.round(getAgeQualityFull(recipe, time).getQuality());
+    public final int getAgeQuality(final BRecipe recipe, final float time) {
+        return Math.round(this.getAgeQualityFull(recipe, time).getQuality());
     }
 
-    public RecipeEvaluation getAgeQualityFull(BRecipe recipe, float time) {
-        RecipeEvaluation eval = new RecipeEvaluation();
+    public final RecipeEvaluation getAgeQualityFull(final BRecipe recipe, final float time) {
+        final var eval = new RecipeEvaluation();
         if (!BUtil.isClose(time, recipe.getAge())) {
-            float ageDeduction = Math.abs(time - recipe.getAge()) * ((float) recipe.getDifficulty() / 2);
+            final var ageDeduction = Math.abs(time - recipe.getAge()) * ((float) recipe.getDifficulty() / 2);
             eval.deduct(new BrewDefect.AgeMismatch(time, recipe.getAge(), recipe.isAlcoholic()), ageDeduction);
         }
         return eval;
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public final boolean equals(final Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof BIngredients)) return false;
-        BIngredients other = ((BIngredients) obj);
-        return cookedTime == other.cookedTime &&
-            ingredients.equals(other.ingredients);
+        if (!(obj instanceof final BIngredients other)) return false;
+        return this.cookedTime == other.cookedTime &&
+                this.ingredients.equals(other.ingredients);
     }
 
     // Creates a copy ingredients
-    public BIngredients copy() {
-        BIngredients copy = new BIngredients();
-        copy.ingredients.addAll(ingredients);
-        copy.cookedTime = cookedTime;
+    public final BIngredients copy() {
+        final var copy = new BIngredients();
+        copy.ingredients.addAll(this.ingredients);
+        copy.cookedTime = this.cookedTime;
         return copy;
     }
 
     @Override
-    public String toString() {
-        String ingredientsStr = ingredients.stream()
-            .map(DebuggableItem::debug)
-            .collect(Collectors.joining(", ", "[", "]"));
+    public final String toString() {
+        final var ingredientsStr = this.ingredients.stream()
+                .map(DebuggableItem::debug)
+                .collect(Collectors.joining(", ", "[", "]"));
         return new StringJoiner(", ", "BIngredients{", "}")
-            .add("cookedTime=" + cookedTime)
-            .add("ingredients=" + ingredientsStr)
-            .toString();
+                .add("cookedTime=" + this.cookedTime)
+                .add("ingredients=" + ingredientsStr)
+                .toString();
     }
 
-	/*public void testStore(DataOutputStream out) throws IOException {
-		out.writeInt(cookedTime);
-		out.writeByte(ingredients.size());
-		for (ItemStack item : ingredients) {
-			out.writeUTF(item.getType().name());
-			out.writeShort(item.getDurability());
-			out.writeShort(item.getAmount());
-		}
-	}
-
-	public void testLoad(DataInputStream in) throws IOException {
-		if (in.readInt() != cookedTime) {
-			P.p.log("cookedtime wrong");
-		}
-		if (in.readUnsignedByte() != ingredients.size()) {
-			P.p.log("size wrong");
-			return;
-		}
-		for (ItemStack item : ingredients) {
-			if (!in.readUTF().equals(item.getType().name())) {
-				P.p.log("name wrong");
-			}
-			if (in.readShort() != item.getDurability()) {
-				P.p.log("dur wrong");
-			}
-			if (in.readShort() != item.getAmount()) {
-				P.p.log("amount wrong");
-			}
-		}
-	}*/
-
-    public void save(DataOutputStream out) throws IOException {
-        out.writeInt(cookedTime);
-        out.writeByte(ingredients.size());
-        for (Ingredient ing : ingredients) {
+    public final void save(final DataOutputStream out) throws IOException {
+        out.writeInt(this.cookedTime);
+        out.writeByte(this.ingredients.size());
+        for (final var ing : this.ingredients) {
             ing.saveTo(out);
             out.writeShort(Math.min(ing.getAmount(), Short.MAX_VALUE));
         }
     }
 
-    public static BIngredients load(DataInputStream in, short dataVersion) throws IOException {
-        int cookedTime = in.readInt();
-        byte size = in.readByte();
-        List<Ingredient> ing = new ArrayList<>(size);
-        for (; size > 0; size--) {
-            ItemLoader itemLoader = new ItemLoader(dataVersion, in, in.readUTF());
-            if (!plugin.getIngredientLoaders().containsKey(itemLoader.getSaveID())) {
-                Logging.errorLog("Ingredient Loader not found: " + itemLoader.getSaveID());
-                break;
-            }
-            Ingredient loaded = plugin.getIngredientLoaders().get(itemLoader.getSaveID()).apply(itemLoader);
-            int amount = in.readShort();
-            if (loaded != null) {
-                loaded.setAmount(amount);
-                ing.add(loaded);
-            }
-        }
-        return new BIngredients(ing, cookedTime);
-    }
-
     // saves data into main Ingredient section. Returns the save id
     // Only needed for legacy potions
-    public int saveLegacy(ConfigurationSection config) {
-        String path = "Ingredients." + id;
-        if (cookedTime != 0) {
-            config.set(path + ".cookedTime", cookedTime);
+    public final int saveLegacy(final ConfigurationSection config) {
+        final var path = "Ingredients." + this.id;
+        if (this.cookedTime != 0) {
+            config.set(path + ".cookedTime", this.cookedTime);
         }
-        config.set(path + ".mats", serializeIngredients());
-        return id;
+        config.set(path + ".mats", this.serializeIngredients());
+        return this.id;
     }
 
-
     // Serialize Ingredients to String for storing in yml, ie for Cauldrons
-    public String serializeIngredients() {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        try (DataOutputStream out = new DataOutputStream(new Base91EncoderStream(byteStream))) {
+    public final String serializeIngredients() {
+        final var byteStream = new ByteArrayOutputStream();
+        try (final var out = new DataOutputStream(new Base91EncoderStream(byteStream))) {
             out.writeByte(Brew.SAVE_VER);
-            save(out);
-        } catch (IOException e) {
+            this.save(out);
+        } catch (final IOException e) {
             Logging.errorLog("Failed to serialize Ingredients", e);
             return "";
         }
         return byteStream.toString();
-    }
-
-
-    public static BIngredients deserializeIngredients(String mat) {
-        try (DataInputStream in = new DataInputStream(new Base91DecoderStream(new ByteArrayInputStream(mat.getBytes())))) {
-            byte ver = in.readByte();
-            return BIngredients.load(in, ver);
-        } catch (IOException e) {
-            Logging.errorLog("Failed to deserialize Ingredients", e);
-            return new BIngredients();
-        }
     }
 
 }

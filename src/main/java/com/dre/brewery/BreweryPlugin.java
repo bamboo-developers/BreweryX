@@ -30,16 +30,8 @@ import com.dre.brewery.integration.PlaceholderAPIHook;
 import com.dre.brewery.integration.bstats.BreweryStats;
 import com.dre.brewery.integration.bstats.BreweryXStats;
 import com.dre.brewery.integration.listeners.IntegrationListener;
-import com.dre.brewery.listeners.BlockListener;
-import com.dre.brewery.listeners.CauldronListener;
-import com.dre.brewery.listeners.EntityListener;
-import com.dre.brewery.listeners.InventoryListener;
-import com.dre.brewery.listeners.PlayerListener;
-import com.dre.brewery.recipe.CustomItem;
-import com.dre.brewery.recipe.Ingredient;
-import com.dre.brewery.recipe.ItemLoader;
-import com.dre.brewery.recipe.PluginItem;
-import com.dre.brewery.recipe.SimpleItem;
+import com.dre.brewery.listeners.*;
+import com.dre.brewery.recipe.*;
 import com.dre.brewery.storage.DataManager;
 import com.dre.brewery.storage.StorageInitException;
 import com.dre.brewery.utility.Logging;
@@ -72,12 +64,17 @@ import java.util.stream.Collectors;
 @Getter
 public final class BreweryPlugin extends JavaPlugin {
 
-    private @Getter static AddonManager addonManager;
-    private static FoliaLib foliaLib;
-    private @Getter static PlatformScheduler scheduler;
-    private @Getter static BreweryPlugin instance;
-    private @Getter static MinecraftVersion MCVersion;
-    private @Getter @Setter static DataManager dataManager;
+    @Getter
+    private static AddonManager addonManager;
+    @Getter
+    private static final PlatformScheduler scheduler;
+    @Getter
+    private static final BreweryPlugin instance;
+    @Getter
+    private static final MinecraftVersion MCVersion;
+    @Getter
+    @Setter
+    private static DataManager dataManager;
 
 
     private final Map<String, Function<ItemLoader, Ingredient>> ingredientLoaders = new HashMap<>(); // Registrations
@@ -90,7 +87,7 @@ public final class BreweryPlugin extends JavaPlugin {
         instance = this;
         this.migrateBreweryDataFolder();
         MCVersion = MinecraftVersion.getIt();
-        foliaLib = new FoliaLib(this);
+        FoliaLib foliaLib = new FoliaLib(this);
         scheduler = foliaLib.getScheduler();
         TranslationManager.newInstance(this.getDataFolder());
     }
@@ -100,7 +97,7 @@ public final class BreweryPlugin extends JavaPlugin {
 
         if (getMCVersion().isOrLater(MinecraftVersion.V1_14)) {
             // Campfires are weird. Initialize once now, so it doesn't lag later when we check for campfires under Cauldrons
-            getServer().createBlockData(Material.CAMPFIRE);
+            this.getServer().createBlockData(Material.CAMPFIRE);
         }
     }
 
@@ -113,7 +110,7 @@ public final class BreweryPlugin extends JavaPlugin {
         PluginItem.registerItemLoader(this);
 
         // Load config
-        Config config = ConfigManager.getConfig(Config.class);
+        final var config = ConfigManager.getConfig(Config.class);
         if (config.isFirstCreation()) {
             config.onFirstCreation();
         }
@@ -145,7 +142,7 @@ public final class BreweryPlugin extends JavaPlugin {
         // Load DataManager
         try {
             dataManager = DataManager.createDataManager(config.getStorage());
-        } catch (StorageInitException e) {
+        } catch (final StorageInitException e) {
             Logging.errorLog("Failed to initialize DataManager!", e);
             Bukkit.getPluginManager().disablePlugin(this);
             return;
@@ -154,27 +151,27 @@ public final class BreweryPlugin extends JavaPlugin {
         // Load objects
         DataManager.loadMiscData(dataManager.getBreweryMiscData());
         dataManager.getAllBarrels().thenAcceptAsync(barrels -> barrels.stream()
-            .filter(Objects::nonNull)
-            .forEach(Barrel::registerBarrel)
+                .filter(Objects::nonNull)
+                .forEach(Barrel::registerBarrel)
         );
         BCauldron.getBcauldrons().putAll(dataManager.getAllCauldrons().stream()
-            .filter(Objects::nonNull)
-            .collect(Collectors.toMap(
-                BCauldron::getBlock, Function.identity(),
-                (existing, replacement) -> replacement // Issues#68
-            )));
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(
+                        BCauldron::getBlock, Function.identity(),
+                        (existing, replacement) -> replacement // Issues#68
+                )));
         BCauldron.startAllFoliaParticleTasks();
         BPlayer.getPlayers().putAll(dataManager.getAllPlayers()
-            .stream()
-            .filter(Objects::nonNull)
-            .collect(Collectors.toMap(
-                BPlayer::getUuid,
-                Function.identity()
-            )));
+                .stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(
+                        BPlayer::getUuid,
+                        Function.identity()
+                )));
         Wakeup.getWakeups().addAll(dataManager.getAllWakeups()
-            .stream()
-            .filter(Objects::nonNull)
-            .toList());
+                .stream()
+                .filter(Objects::nonNull)
+                .toList());
 
         addonManager.enableAddons();
         // Setup Metrics
@@ -182,24 +179,24 @@ public final class BreweryPlugin extends JavaPlugin {
         new BreweryXStats().setupBStats();
 
         // Register command and aliases
-        PluginCommand defaultCommand = getCommand("breweryx");
+        final var defaultCommand = this.getCommand("breweryx");
         defaultCommand.setExecutor(new CommandManager());
         try {
             // This has to be done reflectively because Spigot doesn't expose the CommandMap through the API
-            Field bukkitCommandMap = getServer().getClass().getDeclaredField("commandMap");
+            final var bukkitCommandMap = this.getServer().getClass().getDeclaredField("commandMap");
             bukkitCommandMap.setAccessible(true);
 
-            CommandMap commandMap = (CommandMap) bukkitCommandMap.get(getServer());
+            final var commandMap = (CommandMap) bukkitCommandMap.get(this.getServer());
 
-            for (String alias : config.getCommandAliases()) {
+            for (final var alias : config.getCommandAliases()) {
                 commandMap.register(alias, "breweryx", defaultCommand);
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             Logging.errorLog("Failed to register command aliases!", e);
         }
 
         // Register Listeners
-        PluginManager pluginManager = getServer().getPluginManager();
+        final var pluginManager = this.getServer().getPluginManager();
         pluginManager.registerEvents(new BlockListener(), this);
         pluginManager.registerEvents(new PlayerListener(), this);
         pluginManager.registerEvents(new EntityListener(), this);
@@ -216,7 +213,7 @@ public final class BreweryPlugin extends JavaPlugin {
 
 
         // Register PlaceholderAPI Placeholders
-        PlaceholderAPIHook placeholderAPIHook = PlaceholderAPIHook.PLACEHOLDERAPI;
+        final var placeholderAPIHook = PlaceholderAPIHook.PLACEHOLDERAPI;
         if (placeholderAPIHook.isEnabled()) {
             placeholderAPIHook.getInstance().register();
         }
@@ -228,10 +225,8 @@ public final class BreweryPlugin extends JavaPlugin {
         }
         Logging.log("BreweryX enabled!");
 
-        ReleaseChecker releaseChecker = ReleaseChecker.getInstance();
-        releaseChecker.checkForUpdate().thenAccept(updateAvailable -> {
-            releaseChecker.notify(Bukkit.getConsoleSender());
-        });
+        final var releaseChecker = ReleaseChecker.getInstance();
+        releaseChecker.checkForUpdate().thenAccept(updateAvailable -> releaseChecker.notify(Bukkit.getConsoleSender()));
     }
 
     @Override
@@ -249,7 +244,7 @@ public final class BreweryPlugin extends JavaPlugin {
         // save Data to Disk
         if (dataManager != null) dataManager.exit(true, false);
 
-        PlaceholderAPIHook placeholderAPIHook = PlaceholderAPIHook.PLACEHOLDERAPI;
+        final var placeholderAPIHook = PlaceholderAPIHook.PLACEHOLDERAPI;
         if (placeholderAPIHook.isEnabled()) {
             placeholderAPIHook.getInstance().unregister();
         }
@@ -267,8 +262,8 @@ public final class BreweryPlugin extends JavaPlugin {
      * @param loadFct The Static Function that loads the Item, i.e.
      *                public static AItem loadFrom(ItemLoader loader)
      */
-    public void registerForItemLoader(String saveID, Function<ItemLoader, Ingredient> loadFct) {
-        ingredientLoaders.put(saveID, loadFct);
+    public void registerForItemLoader(final String saveID, final Function<ItemLoader, Ingredient> loadFct) {
+        this.ingredientLoaders.put(saveID, loadFct);
     }
 
     /**
@@ -276,30 +271,57 @@ public final class BreweryPlugin extends JavaPlugin {
      *
      * @param saveID the chosen SaveID
      */
-    public void unRegisterItemLoader(String saveID) {
-        ingredientLoaders.remove(saveID);
+    public void unRegisterItemLoader(final String saveID) {
+        this.ingredientLoaders.remove(saveID);
     }
 
 
     // Runnables
 
-    public static class DrunkRunnable implements Runnable {
+    // Lots of users migrate from the original Brewery. Because of this,
+    // we need to rename our 'Brewery' folder to 'BreweryX' ASAP. Before Okaeri loads.
+    public void migrateBreweryDataFolder() {
+        final var pluginsFolder = this.getDataFolder().getParentFile().getPath();
+
+        final var breweryFolder = new File(pluginsFolder + File.separator + "Brewery");
+        final var breweryXFolder = new File(pluginsFolder + File.separator + "BreweryX");
+
+        if (breweryFolder.exists() && !breweryXFolder.exists()) {
+            if (!breweryXFolder.exists()) {
+                breweryXFolder.mkdirs();
+            }
+
+            final var files = breweryFolder.listFiles();
+            if (files != null) {
+                for (final var file : files) {
+                    try {
+                        Files.copy(file.toPath(), new File(breweryXFolder, file.getName()).toPath());
+                    } catch (final IOException e) {
+                        Logging.errorLog("Failed to move file: " + file.getName(), e);
+                    }
+                }
+                Logging.log("&5Moved files from Brewery to BreweryX's data folder");
+            }
+        }
+    }
+
+    public static final class DrunkRunnable implements Runnable {
         @Override
-        public void run() {
+        public final void run() {
             if (!BPlayer.isEmpty()) {
                 BPlayer.drunkenness();
             }
         }
     }
 
-    public static class BreweryRunnable implements Runnable {
+    public static final class BreweryRunnable implements Runnable {
         @Override
-        public void run() {
-            long start = System.currentTimeMillis();
+        public final void run() {
+            final var start = System.currentTimeMillis();
 
             // runs every min to update cooking time
 
-            for (BCauldron bCauldron : BCauldron.bcauldrons.values()) {
+            for (final var bCauldron : BCauldron.bcauldrons.values()) {
                 BreweryPlugin.getScheduler().runAtLocationLater(bCauldron.getBlock().getLocation(), () -> {
                     if (!bCauldron.onUpdate()) {
                         BCauldron.remove(bCauldron.getBlock());
@@ -323,46 +345,18 @@ public final class BreweryPlugin extends JavaPlugin {
 
     }
 
-    public static class CauldronParticles implements Runnable {
+    public static final class CauldronParticles implements Runnable {
 
 
         @Override
-        public void run() {
-            Config config = ConfigManager.getConfig(Config.class);
+        public final void run() {
+            final var config = ConfigManager.getConfig(Config.class);
 
             if (!config.isEnableCauldronParticles()) return;
             if (config.isMinimalParticles() && ThreadLocalRandom.current().nextFloat() > 0.5f) {
                 return;
             }
             BCauldron.processCookEffects();
-        }
-    }
-
-
-    // Lots of users migrate from the original Brewery. Because of this,
-    // we need to rename our 'Brewery' folder to 'BreweryX' ASAP. Before Okaeri loads.
-    public void migrateBreweryDataFolder() {
-        String pluginsFolder = getDataFolder().getParentFile().getPath();
-
-        File breweryFolder = new File(pluginsFolder + File.separator + "Brewery");
-        File breweryXFolder = new File(pluginsFolder + File.separator + "BreweryX");
-
-        if (breweryFolder.exists() && !breweryXFolder.exists()) {
-            if (!breweryXFolder.exists()) {
-                breweryXFolder.mkdirs();
-            }
-
-            File[] files = breweryFolder.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    try {
-                        Files.copy(file.toPath(), new File(breweryXFolder, file.getName()).toPath());
-                    } catch (IOException e) {
-                        Logging.errorLog("Failed to move file: " + file.getName(), e);
-                    }
-                }
-                Logging.log("&5Moved files from Brewery to BreweryX's data folder");
-            }
         }
     }
 }

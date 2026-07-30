@@ -20,12 +20,7 @@
 
 package com.dre.brewery.integration.bstats;
 
-import com.dre.brewery.BCauldron;
-import com.dre.brewery.BPlayer;
-import com.dre.brewery.Barrel;
-import com.dre.brewery.Brew;
-import com.dre.brewery.BreweryPlugin;
-import com.dre.brewery.Wakeup;
+import com.dre.brewery.*;
 import com.dre.brewery.configuration.ConfigManager;
 import com.dre.brewery.configuration.files.Config;
 import com.dre.brewery.integration.bstats.Metrics.AdvancedPie;
@@ -42,63 +37,67 @@ import java.util.Map;
 /**
  * General stats written by the original author of Brewery.
  */
-public class BreweryStats {
+public final class BreweryStats {
 
     private static final int BSTATS_ID = 3494;
 
     private final Config config = ConfigManager.getConfig(Config.class);
     public int brewsCreated;
     public int brewsCreatedCmd; // Created by command
-    public int exc, good, norm, bad, terr; // Brews drunken with quality
+    public int exc;
+    public int good;
+    public int norm;
+    public int bad;
+    public int terr; // Brews drunken with quality
 
-    public void metricsForCreate(boolean byCmd) {
-        if (brewsCreated == Integer.MAX_VALUE) return;
-        brewsCreated++;
+    public final void metricsForCreate(final boolean byCmd) {
+        if (this.brewsCreated == Integer.MAX_VALUE) return;
+        this.brewsCreated++;
         if (byCmd) {
-            if (brewsCreatedCmd == Integer.MAX_VALUE) return;
-            brewsCreatedCmd++;
+            if (this.brewsCreatedCmd == Integer.MAX_VALUE) return;
+            this.brewsCreatedCmd++;
         }
     }
 
-    public void forDrink(Brew brew) {
+    public final void forDrink(final Brew brew) {
         if (brew.getQuality() >= 9) {
-            exc++;
+            this.exc++;
         } else if (brew.getQuality() >= 7) {
-            good++;
+            this.good++;
         } else if (brew.getQuality() >= 5) {
-            norm++;
+            this.norm++;
         } else if (brew.getQuality() >= 3) {
-            bad++;
+            this.bad++;
         } else {
-            terr++;
+            this.terr++;
         }
     }
 
-    public void setupBStats() {
+    public final void setupBStats() {
         try {
-            Metrics metrics = new Metrics(BreweryPlugin.getInstance(), BSTATS_ID);
+            final var metrics = new Metrics(BreweryPlugin.getInstance(), BSTATS_ID);
             metrics.addCustomChart(new SingleLineChart("drunk_players", BPlayer::numDrunkPlayers));
-            metrics.addCustomChart(new SingleLineChart("brews_in_existence", () -> brewsCreated));
+            metrics.addCustomChart(new SingleLineChart("brews_in_existence", () -> this.brewsCreated));
             metrics.addCustomChart(new SingleLineChart("barrels_built", Barrel.getAllBarrels()::size));
             metrics.addCustomChart(new SingleLineChart("cauldrons_boiling", BCauldron.bcauldrons::size));
             metrics.addCustomChart(new AdvancedPie("brew_quality", () -> {
-                Map<String, Integer> map = new HashMap<>(8);
-                map.put("excellent", exc);
-                map.put("good", good);
-                map.put("normal", norm);
-                map.put("bad", bad);
-                map.put("terrible", terr);
+                final Map<String, Integer> map = new HashMap<>(8);
+                map.put("excellent", this.exc);
+                map.put("good", this.good);
+                map.put("normal", this.norm);
+                map.put("bad", this.bad);
+                map.put("terrible", this.terr);
                 return map;
             }));
             metrics.addCustomChart(new AdvancedPie("brews_created", () -> {
-                Map<String, Integer> map = new HashMap<>(4);
-                map.put("by command", brewsCreatedCmd);
-                map.put("brewing", brewsCreated - brewsCreatedCmd);
+                final Map<String, Integer> map = new HashMap<>(4);
+                map.put("by command", this.brewsCreatedCmd);
+                map.put("brewing", this.brewsCreated - this.brewsCreatedCmd);
                 return map;
             }));
 
             metrics.addCustomChart(new SimplePie("number_of_recipes", () -> {
-                int recipes = BRecipe.getAllRecipes().size();
+                final var recipes = BRecipe.getAllRecipes().size();
                 if (recipes < 7) {
                     return "Less than 7";
                 } else if (recipes < 11) {
@@ -129,19 +128,19 @@ public class BreweryStats {
 
             }));
             metrics.addCustomChart(new SimplePie("cauldron_particles", () -> {
-                if (!config.isEnableCauldronParticles()) {
+                if (!this.config.isEnableCauldronParticles()) {
                     return "disabled";
                 }
-                if (config.isMinimalParticles()) {
+                if (this.config.isMinimalParticles()) {
                     return "minimal";
                 }
                 return "enabled";
             }));
             metrics.addCustomChart(new SimplePie("wakeups", () -> {
-                if (!config.isEnableWake()) {
+                if (!this.config.isEnableWake()) {
                     return "disabled";
                 }
-                int wakeups = Wakeup.wakeups.size();
+                final var wakeups = Wakeup.wakeups.size();
                 if (wakeups == 0) {
                     return "0";
                 } else if (wakeups <= 5) {
@@ -155,9 +154,9 @@ public class BreweryStats {
                 }
             }));
             metrics.addCustomChart(new SimplePie("v2_mc_version", () -> {
-                String mcv = Bukkit.getBukkitVersion();
+                var mcv = Bukkit.getBukkitVersion();
                 mcv = mcv.substring(0, mcv.indexOf('.', 2));
-                int index = mcv.indexOf('-');
+                final var index = mcv.indexOf('-');
                 if (index > -1) {
                     mcv = mcv.substring(0, index);
                 }
@@ -169,10 +168,10 @@ public class BreweryStats {
                 }
             }));
             metrics.addCustomChart(new DrilldownPie("plugin_mc_version", () -> {
-                Map<String, Map<String, Integer>> map = new HashMap<>(3);
-                String mcv = Bukkit.getBukkitVersion();
+                final Map<String, Map<String, Integer>> map = new HashMap<>(3);
+                var mcv = Bukkit.getBukkitVersion();
                 mcv = mcv.substring(0, mcv.indexOf('.', 2));
-                int index = mcv.indexOf('-');
+                final var index = mcv.indexOf('-');
                 if (index > -1) {
                     mcv = mcv.substring(0, index);
                 }
@@ -182,22 +181,22 @@ public class BreweryStats {
                 } else {
                     mcv = "undef";
                 }
-                Map<String, Integer> innerMap = new HashMap<>(3);
+                final Map<String, Integer> innerMap = new HashMap<>(3);
                 innerMap.put(mcv, 1);
                 map.put(BreweryPlugin.getInstance().getDescription().getVersion(), innerMap);
                 return map;
             }));
-            metrics.addCustomChart(new SimplePie("language", config::getLanguage));
-            metrics.addCustomChart(new SimplePie("config_scramble", () -> config.isEnableEncode() ? "enabled" : "disabled"));
+            metrics.addCustomChart(new SimplePie("language", this.config::getLanguage));
+            metrics.addCustomChart(new SimplePie("config_scramble", () -> this.config.isEnableEncode() ? "enabled" : "disabled"));
             metrics.addCustomChart(new SimplePie("config_lore_color", () -> {
-                if (config.isColorInBarrels()) {
-                    if (config.isColorInBrewer()) {
+                if (this.config.isColorInBarrels()) {
+                    if (this.config.isColorInBrewer()) {
                         return "both";
                     } else {
                         return "in barrels";
                     }
                 } else {
-                    if (config.isColorInBrewer()) {
+                    if (this.config.isColorInBrewer()) {
                         return "in distiller";
                     } else {
                         return "none";
@@ -205,21 +204,21 @@ public class BreweryStats {
                 }
             }));
             metrics.addCustomChart(new SimplePie("config_always_show", () -> {
-                if (config.isAlwaysShowQuality()) {
-                    if (config.isAlwaysShowAlc()) {
+                if (this.config.isAlwaysShowQuality()) {
+                    if (this.config.isAlwaysShowAlc()) {
                         return "both";
                     } else {
                         return "quality stars";
                     }
                 } else {
-                    if (config.isAlwaysShowAlc()) {
+                    if (this.config.isAlwaysShowAlc()) {
                         return "alc content";
                     } else {
                         return "none";
                     }
                 }
             }));
-        } catch (Exception | LinkageError e) {
+        } catch (final Exception | LinkageError e) {
             Logging.errorLog("Failed to submit stats data to bStats.org", e);
         }
     }

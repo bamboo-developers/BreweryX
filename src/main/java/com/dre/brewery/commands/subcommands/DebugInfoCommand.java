@@ -25,11 +25,7 @@ import com.dre.brewery.Brew;
 import com.dre.brewery.BreweryPlugin;
 import com.dre.brewery.commands.SubCommand;
 import com.dre.brewery.configuration.files.Lang;
-import com.dre.brewery.recipe.BRecipe;
-import com.dre.brewery.recipe.BestRecipeResult;
-import com.dre.brewery.recipe.Ingredient;
-import com.dre.brewery.recipe.RecipeEvaluation;
-import com.dre.brewery.recipe.RecipeItem;
+import com.dre.brewery.recipe.*;
 import com.dre.brewery.utility.Logging;
 import com.dre.brewery.utility.MinecraftVersion;
 import org.bukkit.ChatColor;
@@ -39,16 +35,63 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 
-public class DebugInfoCommand implements SubCommand {
+public final class DebugInfoCommand implements SubCommand {
 
 
-    @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
-        debugInfo(sender, args.length > 1 ? args[1] : null);
+    private static void logAllRecipes(final BIngredients ingredients, final Brew brew) {
+        Logging.log("&lIngredients:");
+        for (final var ing : ingredients.getIngredientList()) {
+            Logging.log(ing.toString());
+        }
+        Logging.log("&lTesting Recipes");
+        for (final var recipe : BRecipe.getAllRecipes()) {
+            logRecipe(recipe, brew);
+        }
+        final var distill = ingredients.getBestRecipeFull(brew.getWood(), brew.getAgeTime(), true);
+        Logging.log("&lDistill-Recipe: &r" + ChatColor.stripColor(distill.toString()));
+        final var nonDistill = ingredients.getBestRecipeFull(brew.getWood(), brew.getAgeTime(), false);
+        Logging.log("&lRecipe: &r" + ChatColor.stripColor(nonDistill.toString()));
+    }
+
+    private static void logSpecificRecipe(final Player player, final BIngredients ingredients, final Brew brew, final String recipeName) {
+        final var recipe = BRecipe.getMatching(recipeName);
+        if (recipe == null) {
+            Logging.msg(player, "Could not find Recipe " + recipeName);
+            return;
+        }
+        Logging.log("&lIngredients in Recipe " + recipe.getRecipeName() + "&r&l:&r");
+        for (final var ri : recipe.getIngredients()) {
+            Logging.log(ri.toString());
+        }
+        Logging.log("&lIngredients in Brew:");
+        for (final var ingredient : ingredients.getIngredientList()) {
+            final var amountInRecipe = recipe.amountOf(ingredient);
+            Logging.log(ingredient.toString() + ": " + amountInRecipe + " of this are in the Recipe");
+        }
+        logRecipe(recipe, brew);
+    }
+
+    private static void logRecipe(final BRecipe recipe, final Brew brew) {
+        final var ingredients = brew.getIngredients();
+        final var ingQ = ingredients.getIngredientQualityFull(recipe);
+        Logging.log(String.format("%s&r ingQlty: %s", recipe.getRecipeName(), ingQ));
+        final var cookQ = ingredients.getCookingQualityFull(recipe, false);
+        Logging.log(String.format("%s&r cookQlty: %s", recipe.getRecipeName(), cookQ));
+        final var cookDistQ = ingredients.getCookingQualityFull(recipe, true);
+        Logging.log(String.format("%s&r cook+DistQlty: %s", recipe.getRecipeName(), cookDistQ));
+        final var ageQ = ingredients.getAgeQualityFull(recipe, brew.getAgeTime());
+        Logging.log(String.format("%s&r ageQlty: %s", recipe.getRecipeName(), ageQ));
+        final var woodQ = ingredients.getWoodQualityFull(recipe, brew.getWood());
+        Logging.log(String.format("%s&r woodQlty: %s", recipe.getRecipeName(), woodQ));
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
+        this.debugInfo(sender, args.length > 1 ? args[1] : null);
+    }
+
+    @Override
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return null;
     }
 
@@ -62,17 +105,17 @@ public class DebugInfoCommand implements SubCommand {
         return true;
     }
 
-    public void debugInfo(CommandSender sender, String recipeName) {
+    public final void debugInfo(final CommandSender sender, final String recipeName) {
         if (BreweryPlugin.getMCVersion().isOrEarlier(MinecraftVersion.V1_9)) return;
 
-        Player player = (Player) sender;
-        ItemStack hand = player.getInventory().getItemInMainHand();
-        Brew brew = Brew.get(hand);
+        final var player = (Player) sender;
+        final var hand = player.getInventory().getItemInMainHand();
+        final var brew = Brew.get(hand);
 
         if (brew == null) return;
 
         Logging.log(brew.toString());
-        BIngredients ingredients = brew.getIngredients();
+        final var ingredients = brew.getIngredients();
 
         if (recipeName == null) {
             logAllRecipes(ingredients, brew);
@@ -81,53 +124,6 @@ public class DebugInfoCommand implements SubCommand {
         }
 
         Logging.msg(player, "Debug Info for item written into Log");
-    }
-
-    private static void logAllRecipes(BIngredients ingredients, Brew brew) {
-        Logging.log("&lIngredients:");
-        for (Ingredient ing : ingredients.getIngredientList()) {
-            Logging.log(ing.toString());
-        }
-        Logging.log("&lTesting Recipes");
-        for (BRecipe recipe : BRecipe.getAllRecipes()) {
-            logRecipe(recipe, brew);
-        }
-        BestRecipeResult distill = ingredients.getBestRecipeFull(brew.getWood(), brew.getAgeTime(), true);
-        Logging.log("&lDistill-Recipe: &r" + ChatColor.stripColor(distill.toString()));
-        BestRecipeResult nonDistill = ingredients.getBestRecipeFull(brew.getWood(), brew.getAgeTime(), false);
-        Logging.log("&lRecipe: &r" + ChatColor.stripColor(nonDistill.toString()));
-    }
-
-    private static void logSpecificRecipe(Player player, BIngredients ingredients, Brew brew, String recipeName) {
-        BRecipe recipe = BRecipe.getMatching(recipeName);
-        if (recipe == null) {
-            Logging.msg(player, "Could not find Recipe " + recipeName);
-            return;
-        }
-        Logging.log("&lIngredients in Recipe " + recipe.getRecipeName() + "&r&l:&r");
-        for (RecipeItem ri : recipe.getIngredients()) {
-            Logging.log(ri.toString());
-        }
-        Logging.log("&lIngredients in Brew:");
-        for (Ingredient ingredient : ingredients.getIngredientList()) {
-            int amountInRecipe = recipe.amountOf(ingredient);
-            Logging.log(ingredient.toString() + ": " + amountInRecipe + " of this are in the Recipe");
-        }
-        logRecipe(recipe, brew);
-    }
-
-    private static void logRecipe(BRecipe recipe, Brew brew) {
-        BIngredients ingredients = brew.getIngredients();
-        RecipeEvaluation ingQ = ingredients.getIngredientQualityFull(recipe);
-        Logging.log(String.format("%s&r ingQlty: %s", recipe.getRecipeName(), ingQ));
-        RecipeEvaluation cookQ = ingredients.getCookingQualityFull(recipe, false);
-        Logging.log(String.format("%s&r cookQlty: %s", recipe.getRecipeName(), cookQ));
-        RecipeEvaluation cookDistQ = ingredients.getCookingQualityFull(recipe, true);
-        Logging.log(String.format("%s&r cook+DistQlty: %s", recipe.getRecipeName(), cookDistQ));
-        RecipeEvaluation ageQ = ingredients.getAgeQualityFull(recipe, brew.getAgeTime());
-        Logging.log(String.format("%s&r ageQlty: %s", recipe.getRecipeName(), ageQ));
-        RecipeEvaluation woodQ = ingredients.getWoodQualityFull(recipe, brew.getWood());
-        Logging.log(String.format("%s&r woodQlty: %s", recipe.getRecipeName(), woodQ));
     }
 
 }

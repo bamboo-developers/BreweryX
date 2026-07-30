@@ -28,7 +28,7 @@ import java.net.URL;
 import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 
-public class SpigotReleaseChecker extends ReleaseChecker {
+public final class SpigotReleaseChecker extends ReleaseChecker {
 
     private static final String CONST_URL = "https://api.spigotmc.org/legacy/update.php?resource=%s/~";
     private static final String CONST_RELEASE_URL = "https://www.spigotmc.org/resources/%s";
@@ -36,20 +36,20 @@ public class SpigotReleaseChecker extends ReleaseChecker {
     private final String link;
     private final int resourceId;
 
-    public SpigotReleaseChecker(int resourceId) {
+    public SpigotReleaseChecker(final int resourceId) {
         this.link = String.format(CONST_URL, resourceId);
         this.resourceId = resourceId;
     }
 
     @Override
-    public CompletableFuture<String> resolveLatest() {
+    public final CompletableFuture<String> resolveLatest() {
         return CompletableFuture.supplyAsync(() -> {
-            try (Scanner scanner = new Scanner(new URL(link).openStream())) {
+            try (final var scanner = new Scanner(new URL(this.link).openStream())) {
                 if (scanner.hasNext()) {
                     this.resolvedLatestVersion = scanner.next();
                     return this.resolvedLatestVersion;
                 }
-            } catch (IOException ignored) {
+            } catch (final IOException ignored) {
 
             }
             return this.failedToResolve();
@@ -58,10 +58,10 @@ public class SpigotReleaseChecker extends ReleaseChecker {
 
     @Override
     public CompletableFuture<Boolean> checkForUpdate() {
-        return resolveLatest().thenApply(ignored -> isUpdateAvailable());
+        return this.resolveLatest().thenApply(ignored -> this.isUpdateAvailable());
     }
 
-    public String failedToResolve() {
+    public final String failedToResolve() {
         Logging.warningLog("Failed to resolve latest BreweryX version from SpigotMC. (No connection?)");
         this.resolvedLatestVersion = CONST_UNRESOLVED;
         return CONST_UNRESOLVED;
@@ -69,6 +69,6 @@ public class SpigotReleaseChecker extends ReleaseChecker {
 
     @Override
     public String getDownloadURL() {
-        return String.format(CONST_RELEASE_URL, resourceId);
+        return String.format(CONST_RELEASE_URL, this.resourceId);
     }
 }

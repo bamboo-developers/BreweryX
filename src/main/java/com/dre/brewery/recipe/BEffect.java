@@ -30,7 +30,7 @@ import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-public class BEffect implements Cloneable {
+public final class BEffect implements Cloneable {
 
     private final PotionEffectType type;
     private short minlvl;
@@ -40,7 +40,7 @@ public class BEffect implements Cloneable {
     private boolean hidden = false;
 
 
-    public BEffect(PotionEffectType type, short minlvl, short maxlvl, short minduration, short maxduration, boolean hidden) {
+    public BEffect(final PotionEffectType type, final short minlvl, final short maxlvl, final short minduration, final short maxduration, final boolean hidden) {
         this.type = type;
         this.minlvl = minlvl;
         this.maxlvl = maxlvl;
@@ -49,141 +49,140 @@ public class BEffect implements Cloneable {
         this.hidden = hidden;
     }
 
-    public BEffect(String effectString) {
-        String[] effectSplit = effectString.split("/");
-        String effect = effectSplit[0];
+    public BEffect(final String effectString) {
+        final var effectSplit = effectString.split("/");
+        var effect = effectSplit[0];
         if (effect.equalsIgnoreCase("WEAKNESS") ||
-            effect.equalsIgnoreCase("INCREASE_DAMAGE") ||
-            effect.equalsIgnoreCase("SLOW") ||
-            effect.equalsIgnoreCase("SPEED") ||
-            effect.equalsIgnoreCase("REGENERATION")) {
+                effect.equalsIgnoreCase("INCREASE_DAMAGE") ||
+                effect.equalsIgnoreCase("SLOW") ||
+                effect.equalsIgnoreCase("SPEED") ||
+                effect.equalsIgnoreCase("REGENERATION")) {
             // hide these effects as they put crap into lore
             // Dont write Regeneration into Lore, its already there storing data!
-            hidden = true;
+            this.hidden = true;
         } else if (effect.endsWith("X")) {
-            hidden = true;
+            this.hidden = true;
             effect = effect.substring(0, effect.length() - 1);
         }
-        type = BukkitConstants.nullablePotionEffectType(effect.toLowerCase());
-        if (type == null) {
+        this.type = BukkitConstants.nullablePotionEffectType(effect.toLowerCase());
+        if (this.type == null) {
             Logging.errorLog("Effect: " + effect + " does not exist!");
             return;
         }
 
         if (effectSplit.length == 3) {
-            String[] range = effectSplit[1].split("-");
-            if (type.isInstant()) {
-                setLvl(range);
+            var range = effectSplit[1].split("-");
+            if (this.type.isInstant()) {
+                this.setLvl(range);
             } else {
-                setLvl(range);
+                this.setLvl(range);
                 range = effectSplit[2].split("-");
-                setDuration(range);
+                this.setDuration(range);
             }
         } else if (effectSplit.length == 2) {
-            String[] range = effectSplit[1].split("-");
-            if (type.isInstant()) {
-                setLvl(range);
+            final var range = effectSplit[1].split("-");
+            if (this.type.isInstant()) {
+                this.setLvl(range);
             } else {
-                setDuration(range);
-                maxlvl = 3;
-                minlvl = 1;
+                this.setDuration(range);
+                this.maxlvl = 3;
+                this.minlvl = 1;
             }
         } else {
-            maxduration = 20;
-            minduration = 10;
-            maxlvl = 3;
-            minlvl = 1;
+            this.maxduration = 20;
+            this.minduration = 10;
+            this.maxlvl = 3;
+            this.minlvl = 1;
         }
     }
 
-    private void setLvl(String[] range) {
+    private void setLvl(final String[] range) {
         if (range.length == 1) {
-            maxlvl = (short) BUtil.getRandomIntInRange(range[0]);
-            minlvl = 1;
+            this.maxlvl = (short) BUtil.getRandomIntInRange(range[0]);
+            this.minlvl = 1;
         } else {
-            maxlvl = (short) BUtil.getRandomIntInRange(range[1]);
-            minlvl = (short) BUtil.getRandomIntInRange(range[0]);
+            this.maxlvl = (short) BUtil.getRandomIntInRange(range[1]);
+            this.minlvl = (short) BUtil.getRandomIntInRange(range[0]);
         }
     }
 
-    private void setDuration(String[] range) {
+    private void setDuration(final String[] range) {
         if (range.length == 1) {
-            maxduration = (short) BUtil.getRandomIntInRange(range[0]);
-            minduration = (short) (maxduration / 8);
+            this.maxduration = (short) BUtil.getRandomIntInRange(range[0]);
+            this.minduration = (short) (this.maxduration / 8);
         } else {
-            maxduration = (short) BUtil.getRandomIntInRange(range[1]);
-            minduration = (short) BUtil.getRandomIntInRange(range[0]);
+            this.maxduration = (short) BUtil.getRandomIntInRange(range[1]);
+            this.minduration = (short) BUtil.getRandomIntInRange(range[0]);
         }
     }
 
-    public PotionEffect generateEffect(int quality) {
-        int duration = calcDuration(quality);
-        int lvl = calcLvl(quality);
+    public final PotionEffect generateEffect(final int quality) {
+        var duration = this.calcDuration(quality);
+        final var lvl = this.calcLvl(quality);
 
-        if (lvl < 1 || (duration < 1 && !type.isInstant())) {
+        if (lvl < 1 || (duration < 1 && !this.type.isInstant())) {
             return null;
         }
 
         duration *= 20;
         if (BreweryPlugin.getMCVersion().isOrEarlier(MinecraftVersion.V1_14)) {
-            @SuppressWarnings("deprecation")
-            double modifier = type.getDurationModifier();
+            @SuppressWarnings("deprecation") final var modifier = this.type.getDurationModifier();
             duration /= modifier;
         }
-        return type.createEffect(duration, lvl - 1);
+        return this.type.createEffect(duration, lvl - 1);
     }
 
-    public void apply(int quality, Player player) {
-        PotionEffect effect = generateEffect(quality);
+    public final void apply(final int quality, final Player player) {
+        final var effect = this.generateEffect(quality);
         if (effect != null) {
             BUtil.reapplyPotionEffect(player, effect, true);
         }
     }
 
-    public int calcDuration(float quality) {
-        return (int) Math.round(minduration + ((maxduration - minduration) * (quality / 10.0)));
+    public final int calcDuration(final float quality) {
+        return (int) Math.round(this.minduration + ((this.maxduration - this.minduration) * (quality / 10.0)));
     }
 
-    public int calcLvl(float quality) {
-        return (int) Math.round(minlvl + ((maxlvl - minlvl) * (quality / 10.0)));
+    public final int calcLvl(final float quality) {
+        return (int) Math.round(this.minlvl + ((this.maxlvl - this.minlvl) * (quality / 10.0)));
     }
 
-    public void writeInto(PotionMeta meta, int quality) {
-        if ((calcDuration(quality) > 0 || type.isInstant()) && calcLvl(quality) > 0) {
-            meta.addCustomEffect(type.createEffect(0, 0), true);
+    public final void writeInto(final PotionMeta meta, final int quality) {
+        if ((this.calcDuration(quality) > 0 || this.type.isInstant()) && this.calcLvl(quality) > 0) {
+            meta.addCustomEffect(this.type.createEffect(0, 0), true);
         } else {
-            meta.removeCustomEffect(type);
+            meta.removeCustomEffect(this.type);
         }
     }
 
-    public boolean isValid() {
-        return type != null && minlvl >= 0 && maxlvl >= 0 && minduration >= 0 && maxduration >= 0;
+    public final boolean isValid() {
+        return this.type != null && this.minlvl >= 0 && this.maxlvl >= 0 && this.minduration >= 0 && this.maxduration >= 0;
     }
 
-    public boolean isHidden() {
-        return hidden;
+    public final boolean isHidden() {
+        return this.hidden;
     }
 
     public PotionEffectType getType() {
-        return type;
+        return this.type;
     }
 
     @Override
-    public String toString() {
-        return type.getName() + "/" + minlvl + "-" + maxlvl + "/" + minduration + "-" + maxduration;
+    public final String toString() {
+        return this.type.getName() + "/" + this.minlvl + "-" + this.maxlvl + "/" + this.minduration + "-" + this.maxduration;
     }
 
     @Override
-    public BEffect clone() {
+    public final BEffect clone() {
         try {
-            BEffect clone = (BEffect) super.clone();
-            clone.minlvl = minlvl;
-            clone.maxlvl = maxlvl;
-            clone.minduration = minduration;
-            clone.maxduration = maxduration;
-            clone.hidden = hidden;
+            final var clone = (BEffect) super.clone();
+            clone.minlvl = this.minlvl;
+            clone.maxlvl = this.maxlvl;
+            clone.minduration = this.minduration;
+            clone.maxduration = this.maxduration;
+            clone.hidden = this.hidden;
             return clone;
-        } catch (CloneNotSupportedException e) {
+        } catch (final CloneNotSupportedException e) {
             throw new AssertionError();
         }
     }

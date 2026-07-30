@@ -42,66 +42,64 @@ import java.util.Map;
 @Setter
 public abstract class BarrelBody {
 
-    protected Block spigot;
+    private static final Map<BlockVector, BarrelPart> UNTRANSFORMED_SMALL_BARREL_PART_MAP = Map.of(
+            new BlockVector(1, 0, 0), BarrelPart.BOTTOM_RIGHT,
+            new BlockVector(1, 0, 1), BarrelPart.BOTTOM_LEFT,
+            new BlockVector(1, 1, 0), BarrelPart.TOP_RIGHT,
+            new BlockVector(1, 1, 1), BarrelPart.TOP_LEFT,
+            new BlockVector(2, 0, 0), BarrelPart.BOTTOM_RIGHT,
+            new BlockVector(2, 0, 1), BarrelPart.BOTTOM_LEFT,
+            new BlockVector(2, 1, 0), BarrelPart.TOP_RIGHT,
+            new BlockVector(2, 1, 1), BarrelPart.TOP_LEFT
+    );
+    private static final Map<BlockVector, BarrelPart> UNTRANSFORMED_LARGE_BARREL_PART_MAP = new ImmutableMap.Builder<BlockVector, BarrelPart>()
+            .put(new BlockVector(1, 0, -1), BarrelPart.BOTTOM_RIGHT)
+            .put(new BlockVector(1, 0, 1), BarrelPart.BOTTOM_LEFT)
+            .put(new BlockVector(1, 0, 0), BarrelPart.BLOCK)
+            .put(new BlockVector(1, 1, 1), BarrelPart.BLOCK)
+            .put(new BlockVector(1, 1, -1), BarrelPart.BLOCK)
+            .put(new BlockVector(1, 2, -1), BarrelPart.TOP_RIGHT)
+            .put(new BlockVector(1, 2, 1), BarrelPart.TOP_LEFT)
+            .put(new BlockVector(1, 2, 0), BarrelPart.BLOCK)
+            .put(new BlockVector(1, 1, 0), BarrelPart.BLOCK)
+            .put(new BlockVector(2, 0, -1), BarrelPart.BOTTOM_RIGHT)
+            .put(new BlockVector(2, 0, 1), BarrelPart.BOTTOM_LEFT)
+            .put(new BlockVector(2, 0, 0), BarrelPart.BLOCK)
+            .put(new BlockVector(2, 1, 1), BarrelPart.BLOCK)
+            .put(new BlockVector(2, 1, -1), BarrelPart.BLOCK)
+            .put(new BlockVector(2, 2, -1), BarrelPart.TOP_RIGHT)
+            .put(new BlockVector(2, 2, 1), BarrelPart.TOP_LEFT)
+            .put(new BlockVector(2, 2, 0), BarrelPart.BLOCK)
+            .put(new BlockVector(3, 0, -1), BarrelPart.BOTTOM_RIGHT)
+            .put(new BlockVector(3, 0, 1), BarrelPart.BOTTOM_LEFT)
+            .put(new BlockVector(3, 0, 0), BarrelPart.BLOCK)
+            .put(new BlockVector(3, 1, 1), BarrelPart.BLOCK)
+            .put(new BlockVector(3, 1, -1), BarrelPart.BLOCK)
+            .put(new BlockVector(3, 2, -1), BarrelPart.TOP_RIGHT)
+            .put(new BlockVector(3, 2, 1), BarrelPart.TOP_LEFT)
+            .put(new BlockVector(3, 2, 0), BarrelPart.BLOCK)
+            .put(new BlockVector(4, 0, -1), BarrelPart.BOTTOM_RIGHT)
+            .put(new BlockVector(4, 0, 1), BarrelPart.BOTTOM_LEFT)
+            .put(new BlockVector(4, 0, 0), BarrelPart.BLOCK)
+            .put(new BlockVector(4, 1, 1), BarrelPart.BLOCK)
+            .put(new BlockVector(4, 1, -1), BarrelPart.BLOCK)
+            .put(new BlockVector(4, 2, -1), BarrelPart.TOP_RIGHT)
+            .put(new BlockVector(4, 2, 1), BarrelPart.TOP_LEFT)
+            .put(new BlockVector(4, 2, 0), BarrelPart.BLOCK)
+            .put(new BlockVector(4, 1, 0), BarrelPart.BLOCK)
+            .build();
     protected final BoundingBox bounds;
+    protected Block spigot;
     protected byte signoffset;
 
-    private static final Map<BlockVector, BarrelPart> UNTRANSFORMED_SMALL_BARREL_PART_MAP = Map.of(
-        new BlockVector(1, 0, 0), BarrelPart.BOTTOM_RIGHT,
-        new BlockVector(1, 0, 1), BarrelPart.BOTTOM_LEFT,
-        new BlockVector(1, 1, 0), BarrelPart.TOP_RIGHT,
-        new BlockVector(1, 1, 1), BarrelPart.TOP_LEFT,
-        new BlockVector(2, 0, 0), BarrelPart.BOTTOM_RIGHT,
-        new BlockVector(2, 0, 1), BarrelPart.BOTTOM_LEFT,
-        new BlockVector(2, 1, 0), BarrelPart.TOP_RIGHT,
-        new BlockVector(2, 1, 1), BarrelPart.TOP_LEFT
-    );
-
-    private static final Map<BlockVector, BarrelPart> UNTRANSFORMED_LARGE_BARREL_PART_MAP = new ImmutableMap.Builder<BlockVector, BarrelPart>()
-        .put(new BlockVector(1, 0, -1), BarrelPart.BOTTOM_RIGHT)
-        .put(new BlockVector(1, 0, 1), BarrelPart.BOTTOM_LEFT)
-        .put(new BlockVector(1, 0, 0), BarrelPart.BLOCK)
-        .put(new BlockVector(1, 1, 1), BarrelPart.BLOCK)
-        .put(new BlockVector(1, 1, -1), BarrelPart.BLOCK)
-        .put(new BlockVector(1, 2, -1), BarrelPart.TOP_RIGHT)
-        .put(new BlockVector(1, 2, 1), BarrelPart.TOP_LEFT)
-        .put(new BlockVector(1, 2, 0), BarrelPart.BLOCK)
-        .put(new BlockVector(1, 1, 0), BarrelPart.BLOCK)
-        .put(new BlockVector(2, 0, -1), BarrelPart.BOTTOM_RIGHT)
-        .put(new BlockVector(2, 0, 1), BarrelPart.BOTTOM_LEFT)
-        .put(new BlockVector(2, 0, 0), BarrelPart.BLOCK)
-        .put(new BlockVector(2, 1, 1), BarrelPart.BLOCK)
-        .put(new BlockVector(2, 1, -1), BarrelPart.BLOCK)
-        .put(new BlockVector(2, 2, -1), BarrelPart.TOP_RIGHT)
-        .put(new BlockVector(2, 2, 1), BarrelPart.TOP_LEFT)
-        .put(new BlockVector(2, 2, 0), BarrelPart.BLOCK)
-        .put(new BlockVector(3, 0, -1), BarrelPart.BOTTOM_RIGHT)
-        .put(new BlockVector(3, 0, 1), BarrelPart.BOTTOM_LEFT)
-        .put(new BlockVector(3, 0, 0), BarrelPart.BLOCK)
-        .put(new BlockVector(3, 1, 1), BarrelPart.BLOCK)
-        .put(new BlockVector(3, 1, -1), BarrelPart.BLOCK)
-        .put(new BlockVector(3, 2, -1), BarrelPart.TOP_RIGHT)
-        .put(new BlockVector(3, 2, 1), BarrelPart.TOP_LEFT)
-        .put(new BlockVector(3, 2, 0), BarrelPart.BLOCK)
-        .put(new BlockVector(4, 0, -1), BarrelPart.BOTTOM_RIGHT)
-        .put(new BlockVector(4, 0, 1), BarrelPart.BOTTOM_LEFT)
-        .put(new BlockVector(4, 0, 0), BarrelPart.BLOCK)
-        .put(new BlockVector(4, 1, 1), BarrelPart.BLOCK)
-        .put(new BlockVector(4, 1, -1), BarrelPart.BLOCK)
-        .put(new BlockVector(4, 2, -1), BarrelPart.TOP_RIGHT)
-        .put(new BlockVector(4, 2, 1), BarrelPart.TOP_LEFT)
-        .put(new BlockVector(4, 2, 0), BarrelPart.BLOCK)
-        .put(new BlockVector(4, 1, 0), BarrelPart.BLOCK)
-        .build();
-
-    public BarrelBody(Block spigot, byte signoffset) {
+    public BarrelBody(final Block spigot, final byte signoffset) {
         this.spigot = spigot;
         this.signoffset = signoffset;
         this.bounds = new BoundingBox(0, 0, 0, 0, 0, 0);
 
         if (MinecraftVersion.isFolia()) { // Issues#70
             BreweryPlugin.getScheduler().runAtLocationLater(spigot.getLocation(), () -> {
-                Block broken = getBrokenBlock(true);
+                final var broken = this.getBrokenBlock(true);
                 if (broken != null) {
                     this.remove(broken, null, true);
                 }
@@ -112,7 +110,7 @@ public abstract class BarrelBody {
     /**
      * Loading from file
      */
-    public BarrelBody(Block spigot, byte signoffset, BoundingBox bounds) {
+    public BarrelBody(final Block spigot, final byte signoffset, final BoundingBox bounds) {
         this.spigot = spigot;
         this.signoffset = signoffset;
         this.bounds = bounds;
@@ -122,21 +120,12 @@ public abstract class BarrelBody {
         }
     }
 
-
-    /**
-     * If the Sign of a Large Barrel gets destroyed, set signOffset to 0
-     */
-    public void destroySign() {
-        signoffset = 0;
-    }
-
-
     /**
      * direction of the barrel from the spigot
      */
-    public static @Nullable BarrelFacing getDirection(Block spigot) {
+    public static @Nullable BarrelFacing getDirection(final Block spigot) {
         BarrelFacing direction = null;// 1=x+ 2=x- 3=z+ 4=z-
-        Material type = spigot.getRelative(0, 0, 1).getType();
+        var type = spigot.getRelative(0, 0, 1).getType();
         if (BarrelAsset.isBarrelAsset(BarrelAsset.PLANKS, type) || BarrelAsset.isBarrelAsset(BarrelAsset.STAIRS, type)) {
             direction = BarrelFacing.SOUTH;
         }
@@ -168,14 +157,38 @@ public abstract class BarrelBody {
     }
 
     /**
+     * returns the fence above/below a block, itself if there is none
+     */
+    public static Block getSpigotOfSign(final Block block) {
+
+        var y = -2;
+        while (y <= 1) {
+            // Fence and Netherfence
+            final var relative = block.getRelative(0, y, 0);
+            if (BarrelAsset.isBarrelAsset(BarrelAsset.FENCE, relative.getType())) {
+                return relative;
+            }
+            y++;
+        }
+        return block;
+    }
+
+    /**
+     * If the Sign of a Large Barrel gets destroyed, set signOffset to 0
+     */
+    public final void destroySign() {
+        this.signoffset = 0;
+    }
+
+    /**
      * woodtype of the block the spigot is attached to
      */
-    public BarrelWoodType getWood() {
-        BarrelFacing direction = getDirection(spigot);
+    public final BarrelWoodType getWood() {
+        final var direction = getDirection(this.spigot);
         if (direction == null) {
             return BarrelWoodType.ANY;
         }
-        Block wood = spigot.getRelative(direction.getFace());
+        final var wood = this.spigot.getRelative(direction.getFace());
         return BarrelWoodType.fromMaterial(wood.getType());
     }
 
@@ -185,13 +198,13 @@ public abstract class BarrelBody {
      * @param block the block to check
      * @return true if the given block is part of this Barrel
      */
-    public boolean hasBlock(Block block) {
+    public final boolean hasBlock(final Block block) {
         if (block != null) {
-            if (spigot.equals(block)) {
+            if (this.spigot.equals(block)) {
                 return true;
             }
-            if (spigot.getWorld().equals(block.getWorld())) {
-                return bounds != null && bounds.contains(block.getX(), block.getY(), block.getZ());
+            if (this.spigot.getWorld().equals(block.getWorld())) {
+                return this.bounds != null && this.bounds.contains(block.getX(), block.getY(), block.getZ());
             }
         }
         return false;
@@ -201,44 +214,27 @@ public abstract class BarrelBody {
      * Returns true if the Offset of the clicked Sign matches the Barrel.
      * <p>This prevents adding another sign to the barrel and clicking that.
      */
-    public boolean isSignOfBarrel(byte offset) {
-        return offset == 0 || signoffset == 0 || signoffset == offset;
+    public final boolean isSignOfBarrel(final byte offset) {
+        return offset == 0 || this.signoffset == 0 || this.signoffset == offset;
     }
 
     /**
      * returns the Sign of a large barrel, the spigot if there is none
      */
     public Block getSignOfSpigot() {
-        if (signoffset != 0) {
-            if (BarrelAsset.isBarrelAsset(BarrelAsset.SIGN, spigot.getType())) {
-                return spigot;
+        if (this.signoffset != 0) {
+            if (BarrelAsset.isBarrelAsset(BarrelAsset.SIGN, this.spigot.getType())) {
+                return this.spigot;
             }
 
-            Block relative = spigot.getRelative(0, signoffset, 0);
+            final var relative = this.spigot.getRelative(0, this.signoffset, 0);
             if (BarrelAsset.isBarrelAsset(BarrelAsset.SIGN, relative.getType())) {
                 return relative;
             } else {
-                signoffset = 0;
+                this.signoffset = 0;
             }
         }
-        return spigot;
-    }
-
-    /**
-     * returns the fence above/below a block, itself if there is none
-     */
-    public static Block getSpigotOfSign(Block block) {
-
-        int y = -2;
-        while (y <= 1) {
-            // Fence and Netherfence
-            Block relative = block.getRelative(0, y, 0);
-            if (BarrelAsset.isBarrelAsset(BarrelAsset.FENCE, relative.getType())) {
-                return relative;
-            }
-            y++;
-        }
-        return block;
+        return this.spigot;
     }
 
     public abstract void remove(@Nullable Block broken, @Nullable Player breaker, boolean dropItems);
@@ -256,72 +252,72 @@ public abstract class BarrelBody {
      *
      * @param force to also check even if chunk is not loaded
      */
-    public Block getBrokenBlock(boolean force) {
-        if (force || BUtil.isChunkLoaded(spigot)) {
+    public final Block getBrokenBlock(final boolean force) {
+        if (force || BUtil.isChunkLoaded(this.spigot)) {
             //spigot = getSpigotOfSign(spigot);
-            if (BarrelAsset.isBarrelAsset(BarrelAsset.SIGN, spigot.getType())) {
-                return checkSBarrel();
+            if (BarrelAsset.isBarrelAsset(BarrelAsset.SIGN, this.spigot.getType())) {
+                return this.checkSBarrel();
             } else {
-                return checkLBarrel();
+                return this.checkLBarrel();
             }
         }
         return null;
     }
 
-    public Block checkSBarrel() {
-        BarrelFacing direction = getDirection(spigot);// 1=x+ 2=x- 3=z+ 4=z-
+    public final Block checkSBarrel() {
+        final var direction = getDirection(this.spigot);// 1=x+ 2=x- 3=z+ 4=z-
         if (direction == null) {
-            return spigot;
+            return this.spigot;
         }
-        BarrelFacing orthogonal = direction.rotate90degrees();
-        int dx1 = direction.getDx();
-        int dx2 = orthogonal.getDx();
-        int dz1 = direction.getDz();
-        int dz2 = orthogonal.getDz();
+        final var orthogonal = direction.rotate90degrees();
+        final var dx1 = direction.getDx();
+        final var dx2 = orthogonal.getDx();
+        final var dz1 = direction.getDz();
+        final var dz2 = orthogonal.getDz();
 
-        Block brokenBlock = validateStructure(direction, dx1, dx2, dz1, dz2, UNTRANSFORMED_SMALL_BARREL_PART_MAP);
+        final var brokenBlock = this.validateStructure(direction, dx1, dx2, dz1, dz2, UNTRANSFORMED_SMALL_BARREL_PART_MAP);
         if (brokenBlock != null) {
             return brokenBlock;
         }
 
-        BlockVector spigotPos = spigot.getLocation().toVector().toBlockVector();
-        BlockVector minBarrel = (BlockVector) new BlockVector(dx1, 0, dz1).add(spigotPos);
-        BlockVector maxBarrel = (BlockVector) new BlockVector(2 * dx1 + dx2, 1, 2 * dz1 + dz2).add(spigotPos);
+        final var spigotPos = this.spigot.getLocation().toVector().toBlockVector();
+        final var minBarrel = (BlockVector) new BlockVector(dx1, 0, dz1).add(spigotPos);
+        final var maxBarrel = (BlockVector) new BlockVector(2 * dx1 + dx2, 1, 2 * dz1 + dz2).add(spigotPos);
         this.bounds.resize(minBarrel.getBlockX(), minBarrel.getBlockY(), minBarrel.getBlockZ(), maxBarrel.getBlockX(), maxBarrel.getBlockY(), maxBarrel.getBlockZ());
         return null;
     }
 
-    public Block checkLBarrel() {
-        BarrelFacing direction = getDirection(spigot);
+    public final Block checkLBarrel() {
+        final var direction = getDirection(this.spigot);
         if (direction == null) {
-            return spigot;
+            return this.spigot;
         }
-        BarrelFacing orthogonal = direction.rotate90degrees();
-        int dx1 = direction.getDx();
-        int dx2 = orthogonal.getDx();
-        int dz1 = direction.getDz();
-        int dz2 = orthogonal.getDz();
+        final var orthogonal = direction.rotate90degrees();
+        final var dx1 = direction.getDx();
+        final var dx2 = orthogonal.getDx();
+        final var dz1 = direction.getDz();
+        final var dz2 = orthogonal.getDz();
 
-        Block brokenBlock = validateStructure(direction, dx1, dx2, dz1, dz2, UNTRANSFORMED_LARGE_BARREL_PART_MAP);
+        final var brokenBlock = this.validateStructure(direction, dx1, dx2, dz1, dz2, UNTRANSFORMED_LARGE_BARREL_PART_MAP);
         if (brokenBlock != null) {
             return brokenBlock;
         }
-        BlockVector spigotPos = spigot.getLocation().toVector().toBlockVector();
-        BlockVector minBarrel = (BlockVector) new BlockVector(dx1 - dx2, 0, dz1 - dz2).add(spigotPos);
-        BlockVector maxBarrel = (BlockVector) new BlockVector(4 * dx1 + dx2, 2, 4 * dz1 + dz2).add(spigotPos);
+        final var spigotPos = this.spigot.getLocation().toVector().toBlockVector();
+        final var minBarrel = (BlockVector) new BlockVector(dx1 - dx2, 0, dz1 - dz2).add(spigotPos);
+        final var maxBarrel = (BlockVector) new BlockVector(4 * dx1 + dx2, 2, 4 * dz1 + dz2).add(spigotPos);
         this.bounds.resize(minBarrel.getBlockX(), minBarrel.getBlockY(), minBarrel.getBlockZ(), maxBarrel.getBlockX(), maxBarrel.getBlockY(), maxBarrel.getBlockZ());
         return null;
     }
 
     @Nullable
-    private Block validateStructure(BarrelFacing direction, int dx1, int dx2, int dz1, int dz2, Map<BlockVector, BarrelPart> untransformedBarrelPartMap) {
-        BarrelWoodType woodType = getWood();
-        for (Map.Entry<BlockVector, BarrelPart> entry : untransformedBarrelPartMap.entrySet()) {
-            int relativeX = dx1 * entry.getKey().getBlockX() + dx2 * entry.getKey().getBlockZ();
-            int relativeZ = dz1 * entry.getKey().getBlockX() + dz2 * entry.getKey().getBlockZ();
-            int relativeY = entry.getKey().getBlockY();
-            Block block = spigot.getRelative(relativeX, relativeY, relativeZ);
-            BlockData blockData = block.getBlockData();
+    private Block validateStructure(final BarrelFacing direction, final int dx1, final int dx2, final int dz1, final int dz2, final Map<BlockVector, BarrelPart> untransformedBarrelPartMap) {
+        final var woodType = this.getWood();
+        for (final var entry : untransformedBarrelPartMap.entrySet()) {
+            final var relativeX = dx1 * entry.getKey().getBlockX() + dx2 * entry.getKey().getBlockZ();
+            final var relativeZ = dz1 * entry.getKey().getBlockX() + dz2 * entry.getKey().getBlockZ();
+            final var relativeY = entry.getKey().getBlockY();
+            final var block = this.spigot.getRelative(relativeX, relativeY, relativeZ);
+            final var blockData = block.getBlockData();
             if (!entry.getValue().matches(woodType, blockData, direction)) {
                 return block;
             }

@@ -37,24 +37,24 @@ import java.util.Objects;
  */
 public abstract class AbstractOkaeriConfigSector<T extends OkaeriConfig> extends OkaeriConfig {
 
-    public Map<String, T> getCapsules() {
-        Map<String, T> map = new LinkedHashMap<>();
+    public final Map<String, T> getCapsules() {
+        final Map<String, T> map = new LinkedHashMap<>();
 
         // Get the actual class of the generic type T
-        Class<?> typeOfT = getTypeOfT();
+        final var typeOfT = this.getTypeOfT();
 
-        for (Field field : this.getClass().getDeclaredFields()) {
+        for (final var field : this.getClass().getDeclaredFields()) {
             field.setAccessible(true);
             // Check if the field's type matches T
             if (Objects.equals(field.getType(), typeOfT)) {
                 try {
-                    T obj = (T) field.get(this);
+                    final var obj = (T) field.get(this);
                     if (field.isAnnotationPresent(CustomKey.class)) {
                         map.put(field.getAnnotation(CustomKey.class).value(), obj);
                     } else {
                         map.put(field.getName(), obj);
                     }
-                } catch (IllegalAccessException e) {
+                } catch (final IllegalAccessException e) {
                     Logging.errorLog("Failed to access field: " + field.getName(), e);
                 }
             }
@@ -66,7 +66,7 @@ public abstract class AbstractOkaeriConfigSector<T extends OkaeriConfig> extends
     private Class<?> getTypeOfT() {
         // Check the generic type of the superclass
         // For example, OkaeriConfigSector<ConfigRecipe> would give us ConfigRecipe as the type
-        ParameterizedType parameterizedType = (ParameterizedType) getClass().getGenericSuperclass();
+        final var parameterizedType = (ParameterizedType) this.getClass().getGenericSuperclass();
         return (Class<?>) parameterizedType.getActualTypeArguments()[0];
     }
 }

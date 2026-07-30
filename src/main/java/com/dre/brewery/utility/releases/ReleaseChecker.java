@@ -41,39 +41,11 @@ public abstract class ReleaseChecker {
 
     protected String resolvedLatestVersion = CONST_UNRESOLVED; // Latest version of BX resolved from the source
 
-
-    public abstract CompletableFuture<String> resolveLatest();
-
-    public abstract CompletableFuture<Boolean> checkForUpdate();
-
-    public abstract String getDownloadURL();
-
-
-    public void notify(CommandSender receiver) {
-        if (receiver.hasPermission("brewery.update") && isUpdateAvailable()) {
-            Lang lang = ConfigManager.getConfig(Lang.class);
-            lang.sendEntry(receiver, "Etc_NewRelease", "v" + localVersion(), "v" + resolvedLatestVersion, getDownloadURL());
-        }
-    }
-
-
-    public boolean isUpdateAvailable() {
-        if (resolvedLatestVersion.equals(CONST_UNRESOLVED)) {
-            return false;
-        }
-        int local = parseVersion(localVersion());
-        int resolved = parseVersion(resolvedLatestVersion);
-        return resolved > local;
-    }
-
-
-    // Singleton
-
-    public static ReleaseChecker getInstance(boolean newInstance) {
+    public static ReleaseChecker getInstance(final boolean newInstance) {
         if (instance != null && !newInstance) {
             return instance;
         }
-        Config config = ConfigManager.getConfig(Config.class);
+        final var config = ConfigManager.getConfig(Config.class);
         switch (config.getResolveUpdatesFrom()) {
             case GITHUB -> instance = new GitHubReleaseChecker("BreweryTeam", "BreweryX");
             case SNAPSHOTS -> instance = new GithubSnapshotsReleaseChecker("BreweryTeam", "BreweryX");
@@ -87,10 +59,34 @@ public abstract class ReleaseChecker {
         return getInstance(false);
     }
 
+    public abstract CompletableFuture<String> resolveLatest();
+
+    public abstract CompletableFuture<Boolean> checkForUpdate();
+
+    public abstract String getDownloadURL();
+
+
+    // Singleton
+
+    public void notify(final CommandSender receiver) {
+        if (receiver.hasPermission("brewery.update") && this.isUpdateAvailable()) {
+            final var lang = ConfigManager.getConfig(Lang.class);
+            lang.sendEntry(receiver, "Etc_NewRelease", "v" + this.localVersion(), "v" + this.resolvedLatestVersion, this.getDownloadURL());
+        }
+    }
+
+    public boolean isUpdateAvailable() {
+        if (this.resolvedLatestVersion.equals(CONST_UNRESOLVED)) {
+            return false;
+        }
+        final var local = this.parseVersion(this.localVersion());
+        final var resolved = this.parseVersion(this.resolvedLatestVersion);
+        return resolved > local;
+    }
 
     // Util
-    public String localVersion() {
-        String versionString = BreweryPlugin.getInstance().getDescription().getVersion();
+    public final String localVersion() {
+        final var versionString = BreweryPlugin.getInstance().getDescription().getVersion();
         if (versionString.contains(";")) {
             // I don't care about the branch
             return versionString.split(";")[0];
@@ -98,9 +94,9 @@ public abstract class ReleaseChecker {
         return versionString;
     }
 
-    public int parseVersion(String version) {
-        StringBuilder sb = new StringBuilder();
-        for (char c : version.toCharArray()) {
+    public final int parseVersion(final String version) {
+        final var sb = new StringBuilder();
+        for (final var c : version.toCharArray()) {
             if (Character.isDigit(c)) {
                 sb.append(c);
             }

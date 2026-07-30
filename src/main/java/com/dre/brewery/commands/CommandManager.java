@@ -21,28 +21,7 @@
 package com.dre.brewery.commands;
 
 import com.dre.brewery.BreweryPlugin;
-import com.dre.brewery.commands.subcommands.AgeCommand;
-import com.dre.brewery.commands.subcommands.CopyCommand;
-import com.dre.brewery.commands.subcommands.CreateCommand;
-import com.dre.brewery.commands.subcommands.DataManagerCommand;
-import com.dre.brewery.commands.subcommands.DebugInfoCommand;
-import com.dre.brewery.commands.subcommands.DeleteCommand;
-import com.dre.brewery.commands.subcommands.DistillCommand;
-import com.dre.brewery.commands.subcommands.DrinkCommand;
-import com.dre.brewery.commands.subcommands.HelpCommand;
-import com.dre.brewery.commands.subcommands.InfoCommand;
-import com.dre.brewery.commands.subcommands.ItemName;
-import com.dre.brewery.commands.subcommands.PukeCommand;
-import com.dre.brewery.commands.subcommands.ReloadAddonsCommand;
-import com.dre.brewery.commands.subcommands.ReloadCommand;
-import com.dre.brewery.commands.subcommands.SealCommand;
-import com.dre.brewery.commands.subcommands.SetCommand;
-import com.dre.brewery.commands.subcommands.ShowStatsCommand;
-import com.dre.brewery.commands.subcommands.SimulateCommand;
-import com.dre.brewery.commands.subcommands.StaticCommand;
-import com.dre.brewery.commands.subcommands.UnLabelCommand;
-import com.dre.brewery.commands.subcommands.VersionCommand;
-import com.dre.brewery.commands.subcommands.WakeupCommand;
+import com.dre.brewery.commands.subcommands.*;
 import com.dre.brewery.configuration.ConfigManager;
 import com.dre.brewery.configuration.files.Lang;
 import com.dre.brewery.utility.Logging;
@@ -58,7 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class CommandManager implements TabExecutor {
+public final class CommandManager implements TabExecutor {
 
     private static final BreweryPlugin plugin = BreweryPlugin.getInstance();
     private static final Lang lang = ConfigManager.getConfig(Lang.class);
@@ -91,20 +70,61 @@ public class CommandManager implements TabExecutor {
         addSubCommand(new CreateCommand(), "create", "give");
     }
 
+    public static void addSubCommand(final String name, final SubCommand subCommand) {
+        if (subCommands.containsKey(name)) {
+            Logging.warningLog("SubCommand with name: &6" + name + " &ealready exists! It's being overwritten!");
+        }
+        subCommands.put(name, subCommand);
+    }
+
+    public static void addSubCommand(final SubCommand subCommand, final String... names) {
+        for (final var name : names) {
+            addSubCommand(name, subCommand);
+        }
+    }
+
+    public static void removeSubCommand(final String name) {
+        subCommands.remove(name);
+    }
+
+    public static void removeSubCommand(final String... names) {
+        for (final var name : names) {
+            subCommands.remove(name);
+        }
+    }
+
+    public static void removeSubCommand(final SubCommand subCommand) {
+        final List<String> keys = new ArrayList<>();
+        for (final var entry : subCommands.entrySet()) {
+            if (entry.getValue() == subCommand) {
+                keys.add(entry.getKey());
+            }
+        }
+        for (final var key : keys) {
+            subCommands.remove(key);
+        }
+    }
+
+    public static void execute(final Class<? extends SubCommand> clazz, final CommandSender sender, final String label, final String[] args) {
+        subCommands.values().stream()
+                .filter(subCommand -> subCommand.getClass().equals(clazz))
+                .forEach(subCommand -> subCommand.execute(plugin, lang, sender, label, args));
+    }
+
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {
+    public final boolean onCommand(@NotNull final CommandSender sender, @NotNull final Command command, @NotNull final String s, @NotNull final String[] args) {
         if (args.length < 1) {
             CommandUtil.cmdHelp(sender, args);
             return true;
         }
 
-        SubCommand subCommand = subCommands.get(args[0]);
+        final var subCommand = subCommands.get(args[0]);
         if (subCommand == null) {
             CommandUtil.cmdHelp(sender, args);
             return true;
         }
-        boolean playerOnly = subCommand.playerOnly();
-        String permission = subCommand.permission();
+        final var playerOnly = subCommand.playerOnly();
+        final var permission = subCommand.permission();
 
         if (playerOnly && !(sender instanceof Player)) {
             lang.sendEntry(sender, "Error_NotPlayer");
@@ -120,11 +140,11 @@ public class CommandManager implements TabExecutor {
 
     @Nullable
     @Override
-    public List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {
+    public final List<String> onTabComplete(@NotNull final CommandSender commandSender, @NotNull final Command command, @NotNull final String s, @NotNull final String[] strings) {
         if (strings.length == 1) {
-            List<String> commands = new ArrayList<>();
-            for (Map.Entry<String, SubCommand> entry : subCommands.entrySet()) {
-                String perm = entry.getValue().permission();
+            final List<String> commands = new ArrayList<>();
+            for (final var entry : subCommands.entrySet()) {
+                final var perm = entry.getValue().permission();
                 if (perm != null && commandSender.hasPermission(perm)) {
                     commands.add(entry.getKey());
                 }
@@ -132,51 +152,10 @@ public class CommandManager implements TabExecutor {
             return commands;
         }
 
-        SubCommand subCommand = subCommands.get(strings[0].toLowerCase());
+        final var subCommand = subCommands.get(strings[0].toLowerCase());
         if (subCommand != null) {
             return subCommand.tabComplete(plugin, commandSender, s, strings);
         }
         return null;
-    }
-
-    public static void addSubCommand(String name, SubCommand subCommand) {
-        if (subCommands.containsKey(name)) {
-            Logging.warningLog("SubCommand with name: &6" + name + " &ealready exists! It's being overwritten!");
-        }
-        subCommands.put(name, subCommand);
-    }
-
-    public static void addSubCommand(SubCommand subCommand, String... names) {
-        for (String name : names) {
-            addSubCommand(name, subCommand);
-        }
-    }
-
-    public static void removeSubCommand(String name) {
-        subCommands.remove(name);
-    }
-
-    public static void removeSubCommand(String... names) {
-        for (String name : names) {
-            subCommands.remove(name);
-        }
-    }
-
-    public static void removeSubCommand(SubCommand subCommand) {
-        List<String> keys = new ArrayList<>();
-        for (Map.Entry<String, SubCommand> entry : subCommands.entrySet()) {
-            if (entry.getValue() == subCommand) {
-                keys.add(entry.getKey());
-            }
-        }
-        for (String key : keys) {
-            subCommands.remove(key);
-        }
-    }
-
-    public static void execute(Class<? extends SubCommand> clazz, CommandSender sender, String label, String[] args) {
-        subCommands.values().stream()
-            .filter(subCommand -> subCommand.getClass().equals(clazz))
-            .forEach(subCommand -> subCommand.execute(plugin, lang, sender, label, args));
     }
 }

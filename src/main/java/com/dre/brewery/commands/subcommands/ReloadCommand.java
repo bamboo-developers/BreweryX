@@ -38,13 +38,13 @@ import org.bukkit.command.ConsoleCommandSender;
 
 import java.util.List;
 
-public class ReloadCommand implements SubCommand {
+public final class ReloadCommand implements SubCommand {
 
     @Getter
     private static CommandSender reloader;
 
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
         if (!sender.equals(Bukkit.getConsoleSender())) {
             reloader = sender;
         }
@@ -56,10 +56,10 @@ public class ReloadCommand implements SubCommand {
             TranslationManager.getInstance().updateTranslationFiles();
 
             // Reload each config
-            for (var file : ConfigManager.LOADED_CONFIGS.values()) {
+            for (final var file : ConfigManager.LOADED_CONFIGS.values()) {
                 try {
                     file.reload();
-                } catch (Throwable e) {
+                } catch (final Throwable e) {
                     Logging.errorLog("Something went wrong trying to load " + file.getBindFile().getFileName() + "!", e);
                 }
             }
@@ -84,8 +84,8 @@ public class ReloadCommand implements SubCommand {
             BreweryPlugin.getAddonManager().reloadAddons();
 
             // Reload Recipes <-- TODO: Not really sure what this is doing...? - Jsinco
-            boolean successful = true;
-            for (Brew brew : Brew.legacyPotions.values()) {
+            var successful = true;
+            for (final var brew : Brew.legacyPotions.values()) {
                 if (!brew.reloadRecipe()) {
                     successful = false;
                 }
@@ -97,15 +97,15 @@ public class ReloadCommand implements SubCommand {
                 lang.sendEntry(sender, "CMD_Reload");
             }
 
-            ReleaseChecker releaseChecker = ReleaseChecker.getInstance(true);
+            final var releaseChecker = ReleaseChecker.getInstance(true);
             releaseChecker.checkForUpdate().thenAccept(updateAvailable -> {
-                if (!(sender instanceof ConsoleCommandSender consoleSender)) {
+                if (!(sender instanceof final ConsoleCommandSender consoleSender)) {
                     releaseChecker.notify(sender);
                 } else {
                     releaseChecker.notify(consoleSender);
                 }
             });
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             Logging.errorLog("Something went wrong trying to reload Brewery!", e);
         }
         // Make sure this reloader is set to null after
@@ -113,7 +113,7 @@ public class ReloadCommand implements SubCommand {
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return null;
     }
 

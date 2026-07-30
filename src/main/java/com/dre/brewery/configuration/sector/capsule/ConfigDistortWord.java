@@ -21,18 +21,14 @@
 package com.dre.brewery.configuration.sector.capsule;
 
 import eu.okaeri.configs.OkaeriConfig;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 @Getter
 @Setter
 @Builder
 @ToString
 @AllArgsConstructor
-public class ConfigDistortWord extends OkaeriConfig {
+public final class ConfigDistortWord extends OkaeriConfig {
 
     private String replace;
     private String to;

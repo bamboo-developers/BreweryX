@@ -33,20 +33,25 @@ import org.jetbrains.annotations.NotNull;
  * <p>Called each time before pushing the Player with the Vector push 10 times
  * <p>The Push Vector can be changed or multiplied
  */
-public class PlayerPushEvent extends PlayerEvent implements Cancellable {
+public final class PlayerPushEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final BPlayer bPlayer;
     private Vector push;
     private boolean cancelled;
 
-    public PlayerPushEvent(Player who, Vector push, BPlayer bPlayer) {
+    public PlayerPushEvent(final Player who, final Vector push, final BPlayer bPlayer) {
         super(who);
         this.push = push;
         this.bPlayer = bPlayer;
     }
 
+    // Required by Bukkit
+    public static HandlerList getHandlerList() {
+        return handlers;
+    }
+
     public BPlayer getBPlayer() {
-        return bPlayer;
+        return this.bPlayer;
     }
 
     /**
@@ -55,8 +60,8 @@ public class PlayerPushEvent extends PlayerEvent implements Cancellable {
      *
      * @return The current push vector
      */
-    public Vector getPush() {
-        return push;
+    public final Vector getPush() {
+        return this.push;
     }
 
     /**
@@ -64,7 +69,7 @@ public class PlayerPushEvent extends PlayerEvent implements Cancellable {
      *
      * @param push The new push vector, not null
      */
-    public void setPush(@NotNull Vector push) {
+    public void setPush(@NotNull final Vector push) {
         if (push == null) {
             throw new NullPointerException("Push Vector is null");
         }
@@ -72,23 +77,18 @@ public class PlayerPushEvent extends PlayerEvent implements Cancellable {
     }
 
     @Override
-    public boolean isCancelled() {
-        return cancelled;
+    public final boolean isCancelled() {
+        return this.cancelled;
     }
 
     @Override
-    public void setCancelled(boolean cancelled) {
+    public final void setCancelled(final boolean cancelled) {
         this.cancelled = cancelled;
     }
 
     @NotNull
     @Override
-    public HandlerList getHandlers() {
-        return handlers;
-    }
-
-    // Required by Bukkit
-    public static HandlerList getHandlerList() {
+    public final HandlerList getHandlers() {
         return handlers;
     }
 

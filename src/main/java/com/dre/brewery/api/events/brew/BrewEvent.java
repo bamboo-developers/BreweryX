@@ -29,21 +29,21 @@ public abstract class BrewEvent extends Event {
     protected final Brew brew;
     protected final ItemMeta meta;
 
-    public BrewEvent(@NotNull Brew brew, @NotNull ItemMeta meta) {
+    public BrewEvent(@NotNull final Brew brew, @NotNull final ItemMeta meta) {
         this.brew = brew;
         this.meta = meta;
     }
 
     @NotNull
-    public Brew getBrew() {
-        return brew;
+    public final Brew getBrew() {
+        return this.brew;
     }
 
     /**
      * Gets the Meta of the Item this Brew is attached to
      */
     @NotNull
-    public ItemMeta getItemMeta() {
-        return meta;
+    public final ItemMeta getItemMeta() {
+        return this.meta;
     }
 }

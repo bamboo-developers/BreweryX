@@ -31,13 +31,13 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 
-public class DeleteCommand implements SubCommand {
+public final class DeleteCommand implements SubCommand {
 
 
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
-        Player player = (Player) sender;
-        ItemStack hand = player.getInventory().getItemInMainHand();
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
+        final var player = (Player) sender;
+        final var hand = player.getInventory().getItemInMainHand();
         if (Brew.isBrew(hand)) {
             player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
             return;
@@ -47,7 +47,7 @@ public class DeleteCommand implements SubCommand {
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return null;
     }
 

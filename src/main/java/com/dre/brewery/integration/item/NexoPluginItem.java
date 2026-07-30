@@ -28,12 +28,12 @@ import org.bukkit.persistence.PersistentDataType;
 
 // Nexo is written using Java 21, to not sacrifice current compatability with lower MC versions, we will not be using Nexo's API.
 // We'll be using Bukkit's PDC to check it the ItemStack is a Nexo item (which Nexo uses anyway)
-public class NexoPluginItem extends PluginItem {
+public final class NexoPluginItem extends PluginItem {
 
     private final NamespacedKey ITEM_ID = new NamespacedKey(Hook.NEXO.getPlugin(), "id");
 
     @Override
-    public boolean matches(ItemStack itemStack) {
+    public boolean matches(final ItemStack itemStack) {
         if (!Hook.NEXO.isEnabled()) {
             return false;
         }
@@ -42,7 +42,7 @@ public class NexoPluginItem extends PluginItem {
             return false;
         }
 
-        String itemId = itemStack.getItemMeta().getPersistentDataContainer().get(ITEM_ID, PersistentDataType.STRING);
+        final var itemId = itemStack.getItemMeta().getPersistentDataContainer().get(this.ITEM_ID, PersistentDataType.STRING);
         if (itemId == null) {
             return false;
         }

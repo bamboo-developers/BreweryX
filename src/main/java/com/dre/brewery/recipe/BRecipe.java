@@ -20,21 +20,13 @@
 
 package com.dre.brewery.recipe;
 
-import com.dre.brewery.BIngredients;
-import com.dre.brewery.BarrelWoodType;
-import com.dre.brewery.Brew;
-import com.dre.brewery.BreweryPlugin;
-import com.dre.brewery.Translatable;
+import com.dre.brewery.*;
 import com.dre.brewery.configuration.ConfigManager;
 import com.dre.brewery.configuration.files.CustomItemsFile;
 import com.dre.brewery.configuration.files.Lang;
 import com.dre.brewery.configuration.sector.capsule.ConfigRecipe;
 import com.dre.brewery.integration.PlaceholderAPIHook;
-import com.dre.brewery.utility.BUtil;
-import com.dre.brewery.utility.Logging;
-import com.dre.brewery.utility.MaterialUtil;
-import com.dre.brewery.utility.StringParser;
-import com.dre.brewery.utility.Tuple;
+import com.dre.brewery.utility.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -48,22 +40,19 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * A Recipe used to Brew a Brewery Potion.
  */
 @Getter
 @Setter
-public class BRecipe implements Cloneable {
+public final class BRecipe implements Cloneable {
 
     @Getter
     private static final List<BRecipe> recipes = new ArrayList<>();
-    @Getter @Setter
+    @Getter
+    @Setter
     public static int numConfigRecipes; // The number of recipes in the list that are from config
 
     // info
@@ -104,10 +93,10 @@ public class BRecipe implements Cloneable {
      *
      * @param name The name for all qualities
      */
-    public BRecipe(String name, @NotNull PotionColor color) {
-        this.name = new String[]{ name };
+    public BRecipe(final String name, @NotNull final PotionColor color) {
+        this.name = new String[]{name};
         this.color = color;
-        difficulty = 5;
+        this.difficulty = 5;
     }
 
     /**
@@ -116,19 +105,19 @@ public class BRecipe implements Cloneable {
      *
      * @param names {name bad, name normal, name good}
      */
-    public BRecipe(String[] names, @NotNull PotionColor color) {
+    public BRecipe(final String[] names, @NotNull final PotionColor color) {
         this.name = names;
         this.color = color;
-        difficulty = 5;
+        this.difficulty = 5;
     }
 
     @Nullable
-    public static BRecipe fromConfig(String recipeId, ConfigRecipe configRecipe) {
-        BRecipe recipe = new BRecipe();
+    public static BRecipe fromConfig(final String recipeId, final ConfigRecipe configRecipe) {
+        final var recipe = new BRecipe();
         recipe.id = recipeId;
-        String nameList = configRecipe.getName();
+        final var nameList = configRecipe.getName();
         if (nameList != null) {
-            String[] name = nameList.split("/");
+            final var name = nameList.split("/");
             if (name.length > 2) {
                 recipe.name = name;
             } else {
@@ -150,7 +139,7 @@ public class BRecipe implements Cloneable {
             return null;
         }
         recipe.cookingTime = configRecipe.getCookingTime() != null ? configRecipe.getCookingTime() : 0;
-        int dis = configRecipe.getDistillRuns() != null ? configRecipe.getDistillRuns() : 0;
+        final var dis = configRecipe.getDistillRuns() != null ? configRecipe.getDistillRuns() : 0;
         if (dis > Byte.MAX_VALUE) {
             recipe.distillruns = Byte.MAX_VALUE;
         } else {
@@ -162,7 +151,7 @@ public class BRecipe implements Cloneable {
         recipe.difficulty = configRecipe.getDifficulty() != null ? configRecipe.getDifficulty() : 0;
         recipe.alcohol = configRecipe.getAlcohol() != null ? configRecipe.getAlcohol() : 0;
 
-        String col = configRecipe.getColor() != null ? configRecipe.getColor() : "BLUE";
+        final var col = configRecipe.getColor() != null ? configRecipe.getColor() : "BLUE";
         recipe.color = PotionColor.fromString(col);
         if (recipe.color == PotionColor.WATER && !col.equals("WATER")) {
             Logging.errorLog("Invalid Color '" + col + "' in Recipe: " + recipe.getRecipeName());
@@ -179,9 +168,9 @@ public class BRecipe implements Cloneable {
         recipe.glint = configRecipe.getGlint() != null ? configRecipe.getGlint() : false;
 
         if (configRecipe.getCustomModelData() != null) {
-            String[] cmdParts = configRecipe.getCustomModelData().split("/");
-            int[] cmData = new int[3];
-            for (int i = 0; i < 3; i++) {
+            final var cmdParts = configRecipe.getCustomModelData().split("/");
+            final var cmData = new int[3];
+            for (var i = 0; i < 3; i++) {
                 if (cmdParts.length > i) {
                     cmData[i] = BUtil.getRandomIntInRange(cmdParts[i]);
                 } else {
@@ -192,9 +181,9 @@ public class BRecipe implements Cloneable {
         }
 
         if (configRecipe.getItemModel() != null) {
-            String[] cmdParts = configRecipe.getItemModel().split(";");
-            String[] cmData = new String[3];
-            for (int i = 0; i < 3; i++) {
+            final var cmdParts = configRecipe.getItemModel().split(";");
+            final var cmData = new String[3];
+            for (var i = 0; i < 3; i++) {
                 if (cmdParts.length > i) {
                     cmData[i] = cmdParts[i];
                 } else {
@@ -204,9 +193,9 @@ public class BRecipe implements Cloneable {
             recipe.itemModel = cmData;
         }
 
-        List<String> effectStringList = configRecipe.getEffects() != null ? configRecipe.getEffects() : Collections.emptyList();
-        for (String effectString : effectStringList) {
-            BEffect effect = new BEffect(effectString);
+        final List<String> effectStringList = configRecipe.getEffects() != null ? configRecipe.getEffects() : Collections.emptyList();
+        for (final var effectString : effectStringList) {
+            final var effect = new BEffect(effectString);
             if (effect.isValid()) {
                 recipe.effects.add(effect);
             } else {
@@ -216,8 +205,8 @@ public class BRecipe implements Cloneable {
         return recipe;
     }
 
-    public static List<RecipeItem> loadIngredients(ConfigurationSection cfg, String recipeId) {
-        List<String> ingredientsList;
+    public static List<RecipeItem> loadIngredients(final ConfigurationSection cfg, final String recipeId) {
+        final List<String> ingredientsList;
         if (cfg.isString(recipeId + ".ingredients")) {
             ingredientsList = new ArrayList<>(1);
             ingredientsList.add(cfg.getString(recipeId + ".ingredients", "x"));
@@ -227,19 +216,19 @@ public class BRecipe implements Cloneable {
         return loadIngredients(ingredientsList, recipeId);
     }
 
-    public static List<RecipeItem> loadIngredients(List<String> stringList, String recipeId) {
+    public static List<RecipeItem> loadIngredients(List<String> stringList, final String recipeId) {
         if (stringList == null) {
             stringList = Collections.emptyList();
         }
-        List<RecipeItem> ingredients = new ArrayList<>();
-        for (String s : stringList) {
-            IngredientResult result = loadIngredientVerbose(s);
-            if (result instanceof IngredientResult.Success success) {
-                ingredients.add(success.ingredient);
+        final List<RecipeItem> ingredients = new ArrayList<>();
+        for (final var s : stringList) {
+            final var result = loadIngredientVerbose(s);
+            if (result instanceof IngredientResult.Success(final var ingredient)) {
+                ingredients.add(ingredient);
             } else {
-                IngredientResult.Error error = (IngredientResult.Error) result;
-                Lang lang = ConfigManager.getConfig(Lang.class);
-                String errorMessage = lang.getEntry(error.error().getTranslationKey(), error.invalidPart());
+                final var error = (IngredientResult.Error) result;
+                final var lang = ConfigManager.getConfig(Lang.class);
+                final var errorMessage = lang.getEntry(error.error().getTranslationKey(), error.invalidPart());
                 Logging.errorLog(recipeId + ": " + errorMessage);
                 return null;
             }
@@ -247,16 +236,16 @@ public class BRecipe implements Cloneable {
         return ingredients;
     }
 
-    public static IngredientResult loadIngredientVerbose(String item) {
-        String[] ingredParts = item.split("/");
-        int amount = 1;
+    public static IngredientResult loadIngredientVerbose(final String item) {
+        final var ingredParts = item.split("/");
+        var amount = 1;
         if (ingredParts.length == 2) {
             amount = BUtil.getRandomIntInRange(ingredParts[1]);
             if (amount < 1) {
                 return new IngredientResult.Error(IngredientError.INVALID_AMOUNT, ingredParts[1]);
             }
         }
-        String[] matParts;
+        final String[] matParts;
         if (ingredParts[0].contains(",")) {
             matParts = ingredParts[0].split(",");
         } else if (ingredParts[0].contains(";")) {
@@ -267,9 +256,9 @@ public class BRecipe implements Cloneable {
 
 
         // Check if this is a Plugin Item
-        String[] pluginItem = matParts[0].split(":", 2);
+        final var pluginItem = matParts[0].split(":", 2);
         if (pluginItem.length > 1) {
-            RecipeItem custom = PluginItem.fromConfig(pluginItem[0], pluginItem[1]);
+            final RecipeItem custom = PluginItem.fromConfig(pluginItem[0], pluginItem[1]);
             if (custom != null) {
                 custom.setAmount(amount);
                 custom.makeImmutable();
@@ -282,7 +271,7 @@ public class BRecipe implements Cloneable {
         }
 
         // Try to find this Ingredient as Custom Item
-        for (RecipeItem custom : ConfigManager.getConfig(CustomItemsFile.class).getRecipeItems().stream().filter(Objects::nonNull).toList()) {
+        for (var custom : ConfigManager.getConfig(CustomItemsFile.class).getRecipeItems().stream().filter(Objects::nonNull).toList()) {
             if (custom.getConfigId().equalsIgnoreCase(matParts[0])) {
                 custom = custom.getMutableCopy();
                 custom.setAmount(amount);
@@ -298,13 +287,13 @@ public class BRecipe implements Cloneable {
             }
         }
 
-        Material mat = MaterialUtil.getMaterialSafely(matParts[0]);
+        final var mat = MaterialUtil.getMaterialSafely(matParts[0]);
         short durability = -1;
         if (matParts.length == 2) {
             durability = (short) BUtil.getRandomIntInRange(matParts[1]);
         }
         if (mat != null) {
-            RecipeItem rItem;
+            final RecipeItem rItem;
             if (durability > -1) {
                 rItem = new SimpleItem(mat, durability);
             } else {
@@ -320,467 +309,27 @@ public class BRecipe implements Cloneable {
         }
     }
 
-    public sealed interface IngredientResult {
-        record Success(RecipeItem ingredient) implements IngredientResult {
-        }
-
-        record Error(IngredientError error, String invalidPart) implements IngredientResult {
-        }
-    }
-
-    @AllArgsConstructor
-    @Getter
-    public enum IngredientError implements Translatable {
-        INVALID_AMOUNT("Error_InvalidAmount"),
-        INVALID_PLUGIN_ITEM("Error_InvalidPluginItem"),
-        INVALID_MATERIAL("Error_InvalidMaterial");
-
-        private final String translationKey;
-    }
-
     /**
      * Load a list of strings from a ConfigurationSection and parse the quality
      */
     @Nullable
-    public static List<Tuple<Integer, String>> loadQualityStringList(ConfigurationSection cfg, String path, StringParser.ParseType parseType) {
-        List<String> load = BUtil.loadCfgStringList(cfg, path);
+    public static List<Tuple<Integer, String>> loadQualityStringList(final ConfigurationSection cfg, final String path, final StringParser.ParseType parseType) {
+        final var load = BUtil.loadCfgStringList(cfg, path);
         if (load != null) {
             return loadQualityStringList(load, parseType);
         }
         return null;
     }
 
-    public static List<Tuple<Integer, String>> loadQualityStringList(List<String> stringList, StringParser.ParseType parseType) {
-        List<Tuple<Integer, String>> result = new ArrayList<>();
+    public static List<Tuple<Integer, String>> loadQualityStringList(final List<String> stringList, final StringParser.ParseType parseType) {
+        final List<Tuple<Integer, String>> result = new ArrayList<>();
         if (stringList == null) {
             return result;
         }
-        for (String line : stringList) {
+        for (final var line : stringList) {
             result.add(StringParser.parseQuality(line, parseType));
         }
         return result;
-    }
-
-    public boolean isAlcoholic() {
-        return alcohol > 0;
-    }
-
-    /**
-     * check every part of the recipe for validity.
-     */
-    public boolean isValid() {
-        if (ingredients == null || ingredients.isEmpty()) {
-            Logging.errorLog("No ingredients could be loaded for Recipe: " + getRecipeName());
-            return false;
-        }
-        if (cookingTime < 1) {
-            Logging.errorLog("Invalid cooking time '" + cookingTime + "' in Recipe: " + getRecipeName());
-            return false;
-        }
-        if (distillruns < 0) {
-            Logging.errorLog("Invalid distillruns '" + distillruns + "' in Recipe: " + getRecipeName());
-            return false;
-        }
-        if (distillTime < 0) {
-            Logging.errorLog("Invalid distilltime '" + distillTime + "' in Recipe: " + getRecipeName());
-            return false;
-        }
-//		if (wood < 0 || wood > LegacyUtil.TOTAL_WOOD_TYPES) {
-//			Logging.errorLog("Invalid wood type '" + wood + "' in Recipe: " + getRecipeName());
-//			return false;
-//		}
-        if (age < 0) {
-            Logging.errorLog("Invalid age time '" + age + "' in Recipe: " + getRecipeName());
-            return false;
-        }
-        if (difficulty < 0 || difficulty > 10) {
-            Logging.errorLog("Invalid difficulty '" + difficulty + "' in Recipe: " + getRecipeName());
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * allowed deviation to the recipes count of ingredients at the given difficulty
-     */
-    public int allowedCountDiff(int count) {
-        if (count < 8) {
-            count = 8;
-        }
-        int allowedCountDiff = Math.round((float) ((11.0 - difficulty) * (count / 10.0)));
-
-        if (allowedCountDiff == 0) {
-            return 1;
-        }
-        return allowedCountDiff;
-    }
-
-    /**
-     * allowed deviation to the recipes cooking-time at the given difficulty
-     */
-    public int allowedTimeDiff(int time) {
-        if (time < 8) {
-            time = 8;
-        }
-        int allowedTimeDiff = Math.round((float) ((11.0 - difficulty) * (time / 10.0)));
-
-        if (allowedTimeDiff == 0) {
-            return 1;
-        }
-        return allowedTimeDiff;
-    }
-
-    /**
-     * Gets the <strong>primary</strong> barrel type out of all supported.
-     *
-     * @return the barrel type
-     * @see #getBarrelTypes() for the full list
-     */
-    public BarrelWoodType getWood() {
-        return barrelTypes.isEmpty() ? BarrelWoodType.ANY : barrelTypes.get(0);
-    }
-
-    public boolean usesAnyWood() {
-        return getWood() == BarrelWoodType.ANY;
-    }
-
-    public void setWood(BarrelWoodType wood) {
-        barrelTypes = Collections.singletonList(wood);
-    }
-
-    public void setBarrelTypes(List<BarrelWoodType> barrelTypes) {
-        if (barrelTypes.stream().anyMatch(b -> b == BarrelWoodType.ANY)) {
-            setWood(BarrelWoodType.ANY);
-        } else {
-            this.barrelTypes = barrelTypes;
-        }
-    }
-
-    /**
-     * difference between given and recipe-wanted woodtype
-     */
-    public float getWoodDiff(float wood) {
-        return (float) barrelTypes.stream()
-            .mapToDouble(w -> Math.abs(wood - w.getIndex()))
-            .min()
-            .orElse(0.0);
-    }
-
-    public boolean isCookingOnly() {
-        return age == 0 && distillruns == 0;
-    }
-
-    public boolean needsDistilling() {
-        return distillruns != 0;
-    }
-
-    public boolean needsToAge() {
-        return age != 0;
-    }
-
-    /**
-     * true if given list misses an ingredient
-     */
-    public boolean isMissingIngredients(List<Ingredient> list) {
-        if (list.size() < ingredients.size()) {
-            return true;
-        }
-        for (RecipeItem rItem : ingredients) {
-            boolean matches = false;
-            for (Ingredient used : list) {
-                if (rItem.matches(used)) {
-                    matches = true;
-                    break;
-                }
-            }
-            if (!matches) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public List<RecipeItem> getMissingIngredients(List<Ingredient> list) {
-        List<RecipeItem> missing = new ArrayList<>();
-        for (RecipeItem rItem : ingredients) {
-            boolean matches = false;
-            for (Ingredient used : list) {
-                if (rItem.matches(used)) {
-                    matches = true;
-                    break;
-                }
-            }
-            if (!matches) {
-                missing.add(rItem);
-            }
-        }
-        return missing;
-    }
-
-    public void applyDrinkFeatures(Player player, int quality) {
-        List<String> playerCmdsForQuality = getPlayercmdsForQuality(quality);
-        if (playerCmdsForQuality != null) {
-            for (String cmd : playerCmdsForQuality) {
-                scheduleCommand(player, cmd, player.getName(), quality, false);
-            }
-        }
-        List<String> serverCmdsForQuality = getServercmdsForQuality(quality);
-        if (serverCmdsForQuality != null) {
-            for (String cmd : serverCmdsForQuality) {
-                scheduleCommand(player, cmd, player.getName(), quality, true);
-            }
-        }
-        if (drinkMsg != null) {
-            player.sendMessage(BUtil.applyPlaceholders(drinkMsg, player.getName(), quality));
-        }
-        if (drinkTitle != null) {
-            player.sendTitle("", BUtil.applyPlaceholders(drinkTitle, player.getName(), quality), 10, 90, 30);
-        }
-    }
-
-    private void scheduleCommand(Player player, String cmd, String playerName, int quality, boolean isServerCommand) {
-        if (cmd.startsWith("/")) cmd = cmd.substring(1);
-        if (cmd.contains("/")) {
-            String[] parts = cmd.split("/");
-            String command = parts[0].trim(); // Needs to be effectively final for scheduling
-            cmd = parts[0].trim();
-            String delay = parts[1].trim();
-            long delayTicks = parseDelayToTicks(delay);
-            if (delayTicks > 0) {
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        executeCommand(player, command, playerName, quality, isServerCommand);
-                    }
-                }.runTaskLater(BreweryPlugin.getInstance(), delayTicks);
-                return;
-            }
-        }
-        // Execute command immediately if no delay is specified
-        executeCommand(player, cmd, playerName, quality, isServerCommand);
-    }
-
-    private long parseDelayToTicks(String delay) {
-        try {
-            if (delay.endsWith("s")) {
-                int seconds = Integer.parseInt(delay.substring(0, delay.length() - 1));
-                return seconds * 20L; // 20 ticks per second
-            } else if (delay.endsWith("m")) {
-                int minutes = Integer.parseInt(delay.substring(0, delay.length() - 1));
-                return minutes * 1200L; // 1200 ticks per minute
-            }
-        } catch (NumberFormatException e) {
-            // Invalid format: Default to 0
-        }
-        return 0; // Immediately execute command
-    }
-
-    private void executeCommand(Player player, String cmd, String playerName, int quality, boolean isServerCommand) {
-        String finalCommand = PlaceholderAPIHook.PLACEHOLDERAPI.setPlaceholders(player, BUtil.applyPlaceholders(cmd, playerName, quality));
-        BreweryPlugin.getScheduler().runLater(() -> {
-                if (isServerCommand) {
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), finalCommand);
-                } else {
-                    Bukkit.dispatchCommand(player, finalCommand);
-                }
-            }, 0
-        );
-    }
-
-    /**
-     * Create a Potion from this Recipe with best values.
-     * Quality can be set, but will reset to 10 if unset immutable and put in a barrel
-     *
-     * @param quality The Quality of the Brew
-     * @return The Created Item
-     */
-    public ItemStack create(int quality, Player player) {
-        return createBrew(quality).createItem(this, player);
-    }
-
-    public ItemStack create(int quality) {
-        return createBrew(quality).createItem(this);
-    }
-
-    /**
-     * Create a Brew from this Recipe with best values.
-     * Quality can be set, but will reset to 10 if unset immutable and put in a barrel
-     *
-     * @param quality The Quality of the Brew
-     * @return The created Brew
-     */
-    public Brew createBrew(int quality) {
-        List<Ingredient> list = new ArrayList<>(ingredients.size());
-        for (RecipeItem rItem : ingredients) {
-            Ingredient ing = rItem.toIngredientGeneric();
-            ing.setAmount(rItem.getAmount());
-            list.add(ing);
-        }
-
-        BIngredients bIngredients = new BIngredients(list, cookingTime);
-
-        return new Brew(bIngredients, quality, 0, distillruns, getAge(), getWood(), getRecipeName(), false, true, 0);
-    }
-
-    public void updateAcceptedLists() {
-        for (RecipeItem ingredient : getIngredients()) {
-            if (ingredient.hasMaterials()) {
-                BCauldronRecipe.acceptedMaterials.addAll(ingredient.getMaterials());
-            }
-            if (ingredient instanceof SimpleItem) {
-                BCauldronRecipe.acceptedSimple.add(((SimpleItem) ingredient).getMaterial());
-            } else {
-                // Add it as acceptedCustom
-                if (!BCauldronRecipe.acceptedCustom.contains(ingredient)) {
-                    BCauldronRecipe.acceptedCustom.add(ingredient);
-                }
-            }
-        }
-    }
-
-
-    // Getter
-
-    /**
-     * how many of a specific ingredient in the recipe
-     */
-    public int amountOf(Ingredient ing) {
-        for (RecipeItem rItem : ingredients) {
-            if (rItem.matches(ing)) {
-                return rItem.getAmount();
-            }
-        }
-        return 0;
-    }
-
-    /**
-     * how many of a specific ingredient in the recipe
-     */
-    public int amountOf(ItemStack item) {
-        for (RecipeItem rItem : ingredients) {
-            if (rItem.matches(item)) {
-                return rItem.getAmount();
-            }
-        }
-        return 0;
-    }
-
-    /**
-     * Same as getName(5)
-     */
-    public String getRecipeName() {
-        return getName(5);
-    }
-
-    /**
-     * name that fits the quality
-     */
-    public String getName(int quality) {
-        if (name.length > 2) {
-            if (quality <= 3) {
-                return name[0];
-            } else if (quality <= 7) {
-                return name[1];
-            } else {
-                return name[2];
-            }
-        } else {
-            return name[0];
-        }
-    }
-
-    /**
-     * If one of the quality names equalIgnoreCase given name
-     */
-    public boolean hasName(String name) {
-        for (String test : this.name) {
-            if (test.equalsIgnoreCase(name)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @NotNull
-    public PotionColor getColor() {
-        return color;
-    }
-
-    public boolean hasLore() {
-        return lore != null && !lore.isEmpty();
-    }
-
-    @Nullable
-    public List<Tuple<Integer, String>> getLore() {
-        return lore;
-    }
-
-    @Nullable
-    public List<String> getLoreForQuality(int quality) {
-        return getStringsForQuality(quality, lore);
-    }
-
-    @Nullable
-    public List<String> getPlayercmdsForQuality(int quality) {
-        return getStringsForQuality(quality, playercmds);
-    }
-
-    @Nullable
-    public List<String> getServercmdsForQuality(int quality) {
-        return getStringsForQuality(quality, servercmds);
-    }
-
-    /**
-     * Get a quality filtered list of supported attributes
-     */
-    @Nullable
-    public List<String> getStringsForQuality(int quality, List<Tuple<Integer, String>> source) {
-        if (source == null) return null;
-        int plus;
-        if (quality <= 3) {
-            plus = 1;
-        } else if (quality <= 7) {
-            plus = 2;
-        } else {
-            plus = 3;
-        }
-        List<String> list = new ArrayList<>(source.size());
-        for (Tuple<Integer, String> line : source) {
-            if (line.first() == 0 || line.first() == plus) {
-                list.add(line.second());
-            }
-        }
-        return list;
-    }
-
-
-    public void setColor(@NotNull PotionColor color) {
-        this.color = color;
-    }
-
-
-    @Override
-    public String toString() {
-        return "BRecipe{" +
-            "name=" + Arrays.toString(name) +
-            ", ingredients=" + ingredients +
-            ", difficulty=" + difficulty +
-            ", cookingTime=" + cookingTime +
-            ", distillruns=" + distillruns +
-            ", distillTime=" + distillTime +
-            ", barrelTypes=" + barrelTypes +
-            ", age=" + age +
-            ", color=" + color +
-            ", alcohol=" + alcohol +
-            ", lore=" + lore +
-            ", cmData=" + Arrays.toString(cmData) +
-            ", effects=" + effects +
-            ", playercmds=" + playercmds +
-            ", servercmds=" + servercmds +
-            ", drinkMsg='" + drinkMsg + '\'' +
-            ", drinkTitle='" + drinkTitle + '\'' +
-            ", glint=" + glint +
-            '}';
     }
 
     /**
@@ -810,24 +359,23 @@ public class BRecipe implements Cloneable {
         return recipes;
     }
 
-
     /**
      * Get the BRecipe that has the given name as one of its quality names.
      */
     @Nullable
-    public static BRecipe getMatching(String name) {
-        BRecipe mainNameRecipe = get(name);
+    public static BRecipe getMatching(final String name) {
+        final var mainNameRecipe = get(name);
         if (mainNameRecipe != null) {
             return mainNameRecipe;
         }
-        for (BRecipe recipe : recipes) {
+        for (final var recipe : recipes) {
             if (recipe.getName(1).equalsIgnoreCase(name)) {
                 return recipe;
             } else if (recipe.getName(10).equalsIgnoreCase(name)) {
                 return recipe;
             }
         }
-        for (BRecipe recipe : recipes) {
+        for (final var recipe : recipes) {
             if (name.equalsIgnoreCase(recipe.getId())) {
                 return recipe;
             }
@@ -836,8 +384,8 @@ public class BRecipe implements Cloneable {
     }
 
     @Nullable
-    public static BRecipe getById(String id) {
-        for (BRecipe recipe : recipes) {
+    public static BRecipe getById(final String id) {
+        for (final var recipe : recipes) {
             if (id.equals(recipe.getId())) {
                 return recipe;
             }
@@ -845,13 +393,12 @@ public class BRecipe implements Cloneable {
         return null;
     }
 
-
     /**
      * Get the BRecipe that has that name as its name
      */
     @Nullable
-    public static BRecipe get(String name) {
-        for (BRecipe recipe : recipes) {
+    public static BRecipe get(final String name) {
+        for (final var recipe : recipes) {
             if (recipe.getRecipeName().equalsIgnoreCase(name)) {
                 return recipe;
             }
@@ -859,20 +406,436 @@ public class BRecipe implements Cloneable {
         return null;
     }
 
-    @Override
-    public BRecipe clone() {
+    public final boolean isAlcoholic() {
+        return this.alcohol > 0;
+    }
+
+    /**
+     * check every part of the recipe for validity.
+     */
+    public final boolean isValid() {
+        if (this.ingredients == null || this.ingredients.isEmpty()) {
+            Logging.errorLog("No ingredients could be loaded for Recipe: " + this.getRecipeName());
+            return false;
+        }
+        if (this.cookingTime < 1) {
+            Logging.errorLog("Invalid cooking time '" + this.cookingTime + "' in Recipe: " + this.getRecipeName());
+            return false;
+        }
+        if (this.distillruns < 0) {
+            Logging.errorLog("Invalid distillruns '" + this.distillruns + "' in Recipe: " + this.getRecipeName());
+            return false;
+        }
+        if (this.distillTime < 0) {
+            Logging.errorLog("Invalid distilltime '" + this.distillTime + "' in Recipe: " + this.getRecipeName());
+            return false;
+        }
+        if (this.age < 0) {
+            Logging.errorLog("Invalid age time '" + this.age + "' in Recipe: " + this.getRecipeName());
+            return false;
+        }
+        if (this.difficulty < 0 || this.difficulty > 10) {
+            Logging.errorLog("Invalid difficulty '" + this.difficulty + "' in Recipe: " + this.getRecipeName());
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * allowed deviation to the recipes count of ingredients at the given difficulty
+     */
+    public final int allowedCountDiff(int count) {
+        if (count < 8) {
+            count = 8;
+        }
+        final var allowedCountDiff = Math.round((float) ((11.0 - this.difficulty) * (count / 10.0)));
+
+        if (allowedCountDiff == 0) {
+            return 1;
+        }
+        return allowedCountDiff;
+    }
+
+    /**
+     * allowed deviation to the recipes cooking-time at the given difficulty
+     */
+    public final int allowedTimeDiff(int time) {
+        if (time < 8) {
+            time = 8;
+        }
+        final var allowedTimeDiff = Math.round((float) ((11.0 - this.difficulty) * (time / 10.0)));
+
+        if (allowedTimeDiff == 0) {
+            return 1;
+        }
+        return allowedTimeDiff;
+    }
+
+    /**
+     * Gets the <strong>primary</strong> barrel type out of all supported.
+     *
+     * @return the barrel type
+     * @see #getBarrelTypes() for the full list
+     */
+    public final BarrelWoodType getWood() {
+        return this.barrelTypes.isEmpty() ? BarrelWoodType.ANY : this.barrelTypes.getFirst();
+    }
+
+    public final void setWood(final BarrelWoodType wood) {
+        this.barrelTypes = Collections.singletonList(wood);
+    }
+
+    public final boolean usesAnyWood() {
+        return this.getWood() == BarrelWoodType.ANY;
+    }
+
+    public final void setBarrelTypes(final List<BarrelWoodType> barrelTypes) {
+        if (barrelTypes.stream().anyMatch(b -> b == BarrelWoodType.ANY)) {
+            this.setWood(BarrelWoodType.ANY);
+        } else {
+            this.barrelTypes = barrelTypes;
+        }
+    }
+
+    /**
+     * difference between given and recipe-wanted woodtype
+     */
+    public final float getWoodDiff(final float wood) {
+        return (float) this.barrelTypes.stream()
+                .mapToDouble(w -> Math.abs(wood - w.getIndex()))
+                .min()
+                .orElse(0.0);
+    }
+
+    public final boolean isCookingOnly() {
+        return this.age == 0 && this.distillruns == 0;
+    }
+
+    public final boolean needsDistilling() {
+        return this.distillruns != 0;
+    }
+
+    public final boolean needsToAge() {
+        return this.age != 0;
+    }
+
+    /**
+     * true if given list misses an ingredient
+     */
+    public boolean isMissingIngredients(final List<Ingredient> list) {
+        if (list.size() < this.ingredients.size()) {
+            return true;
+        }
+        for (final var rItem : this.ingredients) {
+            var matches = false;
+            for (final var used : list) {
+                if (rItem.matches(used)) {
+                    matches = true;
+                    break;
+                }
+            }
+            if (!matches) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public final List<RecipeItem> getMissingIngredients(final List<Ingredient> list) {
+        final List<RecipeItem> missing = new ArrayList<>();
+        for (final var rItem : this.ingredients) {
+            var matches = false;
+            for (final var used : list) {
+                if (rItem.matches(used)) {
+                    matches = true;
+                    break;
+                }
+            }
+            if (!matches) {
+                missing.add(rItem);
+            }
+        }
+        return missing;
+    }
+
+    public final void applyDrinkFeatures(final Player player, final int quality) {
+        final var playerCmdsForQuality = this.getPlayercmdsForQuality(quality);
+        if (playerCmdsForQuality != null) {
+            for (final var cmd : playerCmdsForQuality) {
+                this.scheduleCommand(player, cmd, player.getName(), quality, false);
+            }
+        }
+        final var serverCmdsForQuality = this.getServercmdsForQuality(quality);
+        if (serverCmdsForQuality != null) {
+            for (final var cmd : serverCmdsForQuality) {
+                this.scheduleCommand(player, cmd, player.getName(), quality, true);
+            }
+        }
+        if (this.drinkMsg != null) {
+            player.sendMessage(BUtil.applyPlaceholders(this.drinkMsg, player.getName(), quality));
+        }
+        if (this.drinkTitle != null) {
+            player.sendTitle("", BUtil.applyPlaceholders(this.drinkTitle, player.getName(), quality), 10, 90, 30);
+        }
+    }
+
+    private void scheduleCommand(final Player player, String cmd, final String playerName, final int quality, final boolean isServerCommand) {
+        if (cmd.startsWith("/")) cmd = cmd.substring(1);
+        if (cmd.contains("/")) {
+            final var parts = cmd.split("/");
+            final var command = parts[0].trim(); // Needs to be effectively final for scheduling
+            cmd = parts[0].trim();
+            final var delay = parts[1].trim();
+            final var delayTicks = this.parseDelayToTicks(delay);
+            if (delayTicks > 0) {
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        BRecipe.this.executeCommand(player, command, playerName, quality, isServerCommand);
+                    }
+                }.runTaskLater(BreweryPlugin.getInstance(), delayTicks);
+                return;
+            }
+        }
+        // Execute command immediately if no delay is specified
+        this.executeCommand(player, cmd, playerName, quality, isServerCommand);
+    }
+
+    private long parseDelayToTicks(final String delay) {
         try {
-            BRecipe clone = (BRecipe) super.clone();
+            if (delay.endsWith("s")) {
+                final var seconds = Integer.parseInt(delay.substring(0, delay.length() - 1));
+                return seconds * 20L; // 20 ticks per second
+            } else if (delay.endsWith("m")) {
+                final var minutes = Integer.parseInt(delay.substring(0, delay.length() - 1));
+                return minutes * 1200L; // 1200 ticks per minute
+            }
+        } catch (final NumberFormatException e) {
+            // Invalid format: Default to 0
+        }
+        return 0; // Immediately execute command
+    }
+
+    private void executeCommand(final Player player, final String cmd, final String playerName, final int quality, final boolean isServerCommand) {
+        final var finalCommand = PlaceholderAPIHook.PLACEHOLDERAPI.setPlaceholders(player, BUtil.applyPlaceholders(cmd, playerName, quality));
+        BreweryPlugin.getScheduler().runLater(() -> {
+                    if (isServerCommand) {
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), finalCommand);
+                    } else {
+                        Bukkit.dispatchCommand(player, finalCommand);
+                    }
+                }, 0
+        );
+    }
+
+
+    // Getter
+
+    /**
+     * Create a Potion from this Recipe with best values.
+     * Quality can be set, but will reset to 10 if unset immutable and put in a barrel
+     *
+     * @param quality The Quality of the Brew
+     * @return The Created Item
+     */
+    public final ItemStack create(final int quality, final Player player) {
+        return this.createBrew(quality).createItem(this, player);
+    }
+
+    public final ItemStack create(final int quality) {
+        return this.createBrew(quality).createItem(this);
+    }
+
+    /**
+     * Create a Brew from this Recipe with best values.
+     * Quality can be set, but will reset to 10 if unset immutable and put in a barrel
+     *
+     * @param quality The Quality of the Brew
+     * @return The created Brew
+     */
+    public final Brew createBrew(final int quality) {
+        final List<Ingredient> list = new ArrayList<>(this.ingredients.size());
+        for (final var rItem : this.ingredients) {
+            final var ing = rItem.toIngredientGeneric();
+            ing.setAmount(rItem.getAmount());
+            list.add(ing);
+        }
+
+        final var bIngredients = new BIngredients(list, this.cookingTime);
+
+        return new Brew(bIngredients, quality, 0, this.distillruns, this.getAge(), this.getWood(), this.getRecipeName(), false, true, 0);
+    }
+
+    public final void updateAcceptedLists() {
+        for (final var ingredient : this.getIngredients()) {
+            if (ingredient.hasMaterials()) {
+                BCauldronRecipe.acceptedMaterials.addAll(ingredient.getMaterials());
+            }
+            if (ingredient instanceof SimpleItem) {
+                BCauldronRecipe.acceptedSimple.add(((SimpleItem) ingredient).getMaterial());
+            } else {
+                // Add it as acceptedCustom
+                if (!BCauldronRecipe.acceptedCustom.contains(ingredient)) {
+                    BCauldronRecipe.acceptedCustom.add(ingredient);
+                }
+            }
+        }
+    }
+
+    /**
+     * how many of a specific ingredient in the recipe
+     */
+    public final int amountOf(final Ingredient ing) {
+        for (final var rItem : this.ingredients) {
+            if (rItem.matches(ing)) {
+                return rItem.getAmount();
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * how many of a specific ingredient in the recipe
+     */
+    public int amountOf(final ItemStack item) {
+        for (final var rItem : this.ingredients) {
+            if (rItem.matches(item)) {
+                return rItem.getAmount();
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Same as getName(5)
+     */
+    public final String getRecipeName() {
+        return this.getName(5);
+    }
+
+    /**
+     * name that fits the quality
+     */
+    public final String getName(final int quality) {
+        if (this.name.length > 2) {
+            if (quality <= 3) {
+                return this.name[0];
+            } else if (quality <= 7) {
+                return this.name[1];
+            } else {
+                return this.name[2];
+            }
+        } else {
+            return this.name[0];
+        }
+    }
+
+    /**
+     * If one of the quality names equalIgnoreCase given name
+     */
+    public boolean hasName(final String name) {
+        for (final var test : this.name) {
+            if (test.equalsIgnoreCase(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @NotNull
+    public final PotionColor getColor() {
+        return this.color;
+    }
+
+    public void setColor(@NotNull final PotionColor color) {
+        this.color = color;
+    }
+
+    public final boolean hasLore() {
+        return this.lore != null && !this.lore.isEmpty();
+    }
+
+    @Nullable
+    public List<Tuple<Integer, String>> getLore() {
+        return this.lore;
+    }
+
+    @Nullable
+    public final List<String> getLoreForQuality(final int quality) {
+        return this.getStringsForQuality(quality, this.lore);
+    }
+
+    @Nullable
+    public final List<String> getPlayercmdsForQuality(final int quality) {
+        return this.getStringsForQuality(quality, this.playercmds);
+    }
+
+    @Nullable
+    public final List<String> getServercmdsForQuality(final int quality) {
+        return this.getStringsForQuality(quality, this.servercmds);
+    }
+
+    /**
+     * Get a quality filtered list of supported attributes
+     */
+    @Nullable
+    public final List<String> getStringsForQuality(final int quality, final List<Tuple<Integer, String>> source) {
+        if (source == null) return null;
+        final int plus;
+        if (quality <= 3) {
+            plus = 1;
+        } else if (quality <= 7) {
+            plus = 2;
+        } else {
+            plus = 3;
+        }
+        final List<String> list = new ArrayList<>(source.size());
+        for (final var line : source) {
+            if (line.first() == 0 || line.first() == plus) {
+                list.add(line.second());
+            }
+        }
+        return list;
+    }
+
+    @Override
+    public final String toString() {
+        return "BRecipe{" +
+                "name=" + Arrays.toString(this.name) +
+                ", ingredients=" + this.ingredients +
+                ", difficulty=" + this.difficulty +
+                ", cookingTime=" + this.cookingTime +
+                ", distillruns=" + this.distillruns +
+                ", distillTime=" + this.distillTime +
+                ", barrelTypes=" + this.barrelTypes +
+                ", age=" + this.age +
+                ", color=" + this.color +
+                ", alcohol=" + this.alcohol +
+                ", lore=" + this.lore +
+                ", cmData=" + Arrays.toString(this.cmData) +
+                ", effects=" + this.effects +
+                ", playercmds=" + this.playercmds +
+                ", servercmds=" + this.servercmds +
+                ", drinkMsg='" + this.drinkMsg + '\'' +
+                ", drinkTitle='" + this.drinkTitle + '\'' +
+                ", glint=" + this.glint +
+                '}';
+    }
+
+    @Override
+    public final BRecipe clone() {
+        try {
+            final var clone = (BRecipe) super.clone();
             clone.name = this.name.clone();
             clone.ingredients = new ArrayList<>(this.ingredients.size());
-            for (RecipeItem item : this.ingredients) {
+            for (final var item : this.ingredients) {
                 clone.ingredients.add(item.getMutableCopy());
             }
             clone.lore = (this.lore != null) ? new ArrayList<>(this.lore) : null;
             clone.playercmds = (this.playercmds != null) ? new ArrayList<>(this.playercmds) : null;
             clone.servercmds = (this.servercmds != null) ? new ArrayList<>(this.servercmds) : null;
             clone.effects = new ArrayList<>(this.effects.size());
-            for (BEffect effect : this.effects) {
+            for (final var effect : this.effects) {
                 clone.effects.add(effect.clone());
             }
             clone.cmData = (this.cmData != null) ? this.cmData.clone() : null;
@@ -890,100 +853,109 @@ public class BRecipe implements Cloneable {
             clone.color = this.color;
             clone.alcohol = this.alcohol;
             return clone;
-        } catch (CloneNotSupportedException e) {
+        } catch (final CloneNotSupportedException e) {
             throw new AssertionError();
         }
     }
 
-	/*public static void saveAddedRecipes(ConfigurationSection cfg) {
-		int i = 0;
-		for (BRecipe recipe : getAddedRecipes()) {
-			if (recipe.isSaveInData()) {
-				cfg.set(i + ".name", recipe.name);
-			}
-		}
-	}*/
 
+    @AllArgsConstructor
+    @Getter
+    public enum IngredientError implements Translatable {
+        INVALID_AMOUNT("Error_InvalidAmount"),
+        INVALID_PLUGIN_ITEM("Error_InvalidPluginItem"),
+        INVALID_MATERIAL("Error_InvalidMaterial");
+
+        private final String translationKey;
+    }
+
+    public sealed interface IngredientResult {
+        record Success(RecipeItem ingredient) implements IngredientResult {
+        }
+
+        record Error(IngredientError error, String invalidPart) implements IngredientResult {
+        }
+    }
 
     /**
      * Builder to easily create Recipes
      */
-    public static class Builder {
-        private BRecipe recipe;
+    public static final class Builder {
+        private final BRecipe recipe;
 
-        public Builder(String name) {
-            recipe = new BRecipe(name, PotionColor.WATER);
+        public Builder(final String name) {
+            this.recipe = new BRecipe(name, PotionColor.WATER);
         }
 
-        public Builder(String... names) {
-            recipe = new BRecipe(names, PotionColor.WATER);
+        public Builder(final String... names) {
+            this.recipe = new BRecipe(names, PotionColor.WATER);
         }
 
 
-        public Builder addIngredient(RecipeItem... item) {
-            Collections.addAll(recipe.ingredients, item);
+        public Builder addIngredient(final RecipeItem... item) {
+            Collections.addAll(this.recipe.ingredients, item);
             return this;
         }
 
-        public Builder addIngredient(ItemStack... item) {
-            for (ItemStack i : item) {
-                CustomItem customItem = new CustomItem(i);
+        public Builder addIngredient(final ItemStack... item) {
+            for (final var i : item) {
+                final var customItem = new CustomItem(i);
                 customItem.setAmount(i.getAmount());
-                recipe.ingredients.add(customItem);
+                this.recipe.ingredients.add(customItem);
             }
             return this;
         }
 
-        public Builder difficulty(int difficulty) {
-            recipe.difficulty = difficulty;
+        public Builder difficulty(final int difficulty) {
+            this.recipe.difficulty = difficulty;
             return this;
         }
 
-        public Builder color(String colorString) {
-            recipe.color = PotionColor.fromString(colorString);
+        public Builder color(final String colorString) {
+            this.recipe.color = PotionColor.fromString(colorString);
             return this;
         }
 
-        public Builder color(PotionColor color) {
-            recipe.color = color;
+        public Builder color(final PotionColor color) {
+            this.recipe.color = color;
             return this;
         }
 
-        public Builder color(Color color) {
-            recipe.color = PotionColor.fromColor(color);
+        public Builder color(final Color color) {
+            this.recipe.color = PotionColor.fromColor(color);
             return this;
         }
 
-        public Builder cook(int cookTime) {
-            recipe.cookingTime = cookTime;
+        public Builder cook(final int cookTime) {
+            this.recipe.cookingTime = cookTime;
             return this;
         }
 
-        public Builder distill(byte distillRuns, int distillTime) {
-            recipe.distillruns = distillRuns;
-            recipe.distillTime = distillTime;
+        public Builder distill(final byte distillRuns, final int distillTime) {
+            this.recipe.distillruns = distillRuns;
+            this.recipe.distillTime = distillTime;
             return this;
         }
 
-        public Builder age(int age, BarrelWoodType wood) {
-            recipe.age = age;
-            recipe.setWood(wood);
+        public Builder age(final int age, final BarrelWoodType wood) {
+            this.recipe.age = age;
+            this.recipe.setWood(wood);
             return this;
         }
 
-        public Builder age(int age, BarrelWoodType... barrelTypes) {
-            recipe.age = age;
-            recipe.setBarrelTypes(List.of(barrelTypes));
+        public Builder age(final int age, final BarrelWoodType... barrelTypes) {
+            this.recipe.age = age;
+            this.recipe.setBarrelTypes(List.of(barrelTypes));
             return this;
         }
 
-        public Builder alcohol(int alcohol) {
-            recipe.alcohol = alcohol;
+        public Builder alcohol(final int alcohol) {
+            this.recipe.alcohol = alcohol;
             return this;
         }
 
-        public Builder addLore(String line) {
-            return addLore(0, line);
+        public Builder addLore(final String line) {
+            return this.addLore(0, line);
         }
 
         /**
@@ -993,30 +965,30 @@ public class BRecipe implements Cloneable {
          * @param line    The Line for custom lore to add
          * @return this
          */
-        public Builder addLore(int quality, String line) {
+        public final Builder addLore(final int quality, final String line) {
             if (quality < 0 || quality > 3) {
                 throw new IllegalArgumentException("Lore Quality must be 0 - 3");
             }
-            if (recipe.lore == null) {
-                recipe.lore = new ArrayList<>();
+            if (this.recipe.lore == null) {
+                this.recipe.lore = new ArrayList<>();
             }
-            recipe.lore.add(new Tuple<>(quality, line));
+            this.recipe.lore.add(new Tuple<>(quality, line));
             return this;
         }
 
         /**
          * Add Commands that are executed by the player on drinking
          */
-        public Builder addPlayerCmds(String... cmds) {
-            List<Tuple<Integer, String>> playercmds = new ArrayList<>(cmds.length);
+        public Builder addPlayerCmds(final String... cmds) {
+            final List<Tuple<Integer, String>> playercmds = new ArrayList<>(cmds.length);
 
-            for (String cmd : cmds) {
+            for (final var cmd : cmds) {
                 playercmds.add(StringParser.parseQuality(cmd, StringParser.ParseType.CMD));
             }
-            if (recipe.playercmds == null) {
-                recipe.playercmds = playercmds;
+            if (this.recipe.playercmds == null) {
+                this.recipe.playercmds = playercmds;
             } else {
-                recipe.playercmds.addAll(playercmds);
+                this.recipe.playercmds.addAll(playercmds);
             }
             return this;
         }
@@ -1024,16 +996,16 @@ public class BRecipe implements Cloneable {
         /**
          * Add Commands that are executed by the server on drinking
          */
-        public Builder addServerCmds(String... cmds) {
-            List<Tuple<Integer, String>> servercmds = new ArrayList<>(cmds.length);
+        public Builder addServerCmds(final String... cmds) {
+            final List<Tuple<Integer, String>> servercmds = new ArrayList<>(cmds.length);
 
-            for (String cmd : cmds) {
+            for (final var cmd : cmds) {
                 servercmds.add(StringParser.parseQuality(cmd, StringParser.ParseType.CMD));
             }
-            if (recipe.servercmds == null) {
-                recipe.servercmds = servercmds;
+            if (this.recipe.servercmds == null) {
+                this.recipe.servercmds = servercmds;
             } else {
-                recipe.servercmds.addAll(servercmds);
+                this.recipe.servercmds.addAll(servercmds);
             }
             return this;
         }
@@ -1041,68 +1013,68 @@ public class BRecipe implements Cloneable {
         /**
          * Add Message that is sent to the player in chat when he drinks the brew
          */
-        public Builder drinkMsg(String msg) {
-            recipe.drinkMsg = msg;
+        public Builder drinkMsg(final String msg) {
+            this.recipe.drinkMsg = msg;
             return this;
         }
 
         /**
          * Add Message that is sent to the player as a small title when he drinks the brew
          */
-        public Builder drinkTitle(String title) {
-            recipe.drinkTitle = title;
+        public Builder drinkTitle(final String title) {
+            this.recipe.drinkTitle = title;
             return this;
         }
 
         /**
          * Add a Glint to the Potion
          */
-        public Builder glint(boolean glint) {
-            recipe.glint = glint;
+        public Builder glint(final boolean glint) {
+            this.recipe.glint = glint;
             return this;
         }
 
         /**
          * Set the Optional ID of this recipe
          */
-        public Builder setID(String id) {
-            recipe.id = id;
+        public Builder setID(final String id) {
+            this.recipe.id = id;
             return this;
         }
 
         /**
          * Add Custom Model Data for each Quality
          */
-        public Builder addCustomModelData(int bad, int normal, int good) {
-            recipe.cmData = new int[]{ bad, normal, good };
+        public Builder addCustomModelData(final int bad, final int normal, final int good) {
+            this.recipe.cmData = new int[]{bad, normal, good};
             return this;
         }
 
-        public Builder addEffects(BEffect... effects) {
-            Collections.addAll(recipe.effects, effects);
+        public Builder addEffects(final BEffect... effects) {
+            Collections.addAll(this.recipe.effects, effects);
             return this;
         }
 
         public BRecipe get() {
-            if (recipe.name == null) {
+            if (this.recipe.name == null) {
                 throw new IllegalArgumentException("Recipe name is null");
             }
-            if (recipe.name.length != 1 && recipe.name.length != 3) {
+            if (this.recipe.name.length != 1 && this.recipe.name.length != 3) {
                 throw new IllegalArgumentException("Recipe name neither 1 nor 3");
             }
-            if (recipe.color == null) {
+            if (this.recipe.color == null) {
                 throw new IllegalArgumentException("Recipe has no color");
             }
-            if (recipe.ingredients == null || recipe.ingredients.isEmpty()) {
+            if (this.recipe.ingredients == null || this.recipe.ingredients.isEmpty()) {
                 throw new IllegalArgumentException("Recipe has no ingredients");
             }
-            if (!recipe.isValid()) {
+            if (!this.recipe.isValid()) {
                 throw new IllegalArgumentException("Recipe has not valid");
             }
-            for (RecipeItem ingredient : recipe.ingredients) {
+            for (final var ingredient : this.recipe.ingredients) {
                 ingredient.makeImmutable();
             }
-            return recipe;
+            return this.recipe;
         }
     }
 }

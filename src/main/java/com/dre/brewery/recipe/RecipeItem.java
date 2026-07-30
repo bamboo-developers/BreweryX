@@ -22,7 +22,6 @@ package com.dre.brewery.recipe;
 
 import com.dre.brewery.BreweryPlugin;
 import com.dre.brewery.configuration.sector.capsule.ConfigCustomItem;
-import com.dre.brewery.integration.Hook;
 import com.dre.brewery.utility.BUtil;
 import com.dre.brewery.utility.Logging;
 import com.dre.brewery.utility.MaterialUtil;
@@ -52,6 +51,122 @@ public abstract class RecipeItem implements Cloneable, DebuggableItem {
     private int amount;
     private boolean immutable = false;
 
+    /**
+     * Tries to find a matching RecipeItem for this item. It checks custom items and if it has found a unique custom item
+     * it will return that. If there are multiple matching custom items, a new CustomItem with all item info is returned.
+     * <br>If there is no matching CustomItem, it will return a SimpleItem with the items type
+     *
+     * @param item      The Item for which to find a matching RecipeItem
+     * @param acceptAll If true it will accept any item and return a SimpleItem even if not on the accepted list
+     *                  <br>If false it will return null if the item is not acceptable by the Cauldron
+     * @return The Matched CustomItem, new CustomItem with all item info or SimpleItem
+     */
+    @Nullable
+    @Contract("_, true -> !null")
+    public static RecipeItem getMatchingRecipeItem(final ItemStack item, final boolean acceptAll) {
+        RecipeItem rItem = null;
+        var multiMatch = false;
+        for (final var ri : BCauldronRecipe.acceptedCustom) {
+            // If we already have a multi match, only check if there is a PluginItem that matches more strictly
+            if (!multiMatch || (ri instanceof PluginItem)) {
+                if (ri.matches(item)) {
+                    // If we match a plugin item, that's a very strict match, so immediately return it
+                    if (ri instanceof PluginItem) {
+                        return ri;
+                    }
+                    if (rItem == null) {
+                        rItem = ri;
+                    } else {
+                        multiMatch = true;
+                    }
+                }
+            }
+        }
+        if (multiMatch) {
+            // We have multiple Custom Items matching, so just store all item info
+            return new CustomItem(item);
+        }
+        if (rItem == null && (acceptAll || BCauldronRecipe.acceptedSimple.contains(item.getType()))) {
+            // No Custom item found
+            if (VERSION.isOrLater(MinecraftVersion.V1_13)) {
+                return new SimpleItem(item.getType());
+            } else {
+                @SuppressWarnings("deprecation") final var durability = item.getDurability();
+                return new SimpleItem(item.getType(), durability);
+            }
+        }
+        return rItem;
+    }
+
+    @Nullable
+    public static RecipeItem fromConfigCustom(final String id, final ConfigCustomItem configCustomItem) {
+        final RecipeItem rItem;
+        if (configCustomItem.getMatchAny() != null && configCustomItem.getMatchAny()) {
+            rItem = new CustomMatchAnyItem();
+        } else {
+            rItem = new CustomItem();
+        }
+
+        rItem.cfgId = id;
+        rItem.immutable = true;
+
+        final var materials = BUtil.getListSafely(configCustomItem.getMaterial(), Material.class);
+        final var names = BUtil.colorArrayList(BUtil.getListSafely(configCustomItem.getName()));
+        final var lore = BUtil.colorArrayList(BUtil.getListSafely(configCustomItem.getLore()));
+        final List<Integer> customModelDatas = BUtil.getListSafely(configCustomItem.getCustomModelData());
+
+        if ((materials == null || materials.isEmpty()) && (names == null || names.isEmpty()) && (lore == null || lore.isEmpty()) && (customModelDatas == null || customModelDatas.isEmpty())) {
+            return null;
+        }
+
+        if (rItem instanceof final CustomItem cItem) {
+            if (!materials.isEmpty()) {
+                cItem.setMat(materials.getFirst());
+            }
+            if (!names.isEmpty()) {
+                cItem.setName(names.getFirst());
+            }
+            cItem.setLore(lore);
+            if (!customModelDatas.isEmpty()) {
+                cItem.setCustomModelData(customModelDatas.getFirst());
+            }
+        } else {
+            final var maItem = (CustomMatchAnyItem) rItem;
+            maItem.setMaterials(materials);
+            maItem.setNames(names);
+            maItem.setLore(lore);
+            maItem.setCustomModelDatas(customModelDatas);
+        }
+
+        return rItem;
+    }
+
+    @Nullable
+    protected static List<Material> loadMaterials(final List<String> ingredientsList) {
+        final List<Material> materials = new ArrayList<>(ingredientsList.size());
+        for (final var item : ingredientsList) {
+            final var ingredParts = item.split("/");
+            if (ingredParts.length == 2) {
+                Logging.errorLog("Item Amount can not be specified for Custom Items: " + item);
+                return null;
+            }
+            final var mat = MaterialUtil.getMaterialSafely(ingredParts[0]);
+
+            if (mat == null && VERSION.isOrEarlier(MinecraftVersion.V1_14) && ingredParts[0].equalsIgnoreCase("cornflower")) {
+                // Using this in default custom-items, but will error on < 1.14
+                materials.add(Material.BEDROCK);
+                continue;
+            }
+
+            if (mat != null) {
+                materials.add(mat);
+            } else {
+                Logging.errorLog("Unknown Material: " + ingredParts[0]);
+                return null;
+            }
+        }
+        return materials;
+    }
 
     /**
      * Does this RecipeItem match the given ItemStack?
@@ -102,15 +217,15 @@ public abstract class RecipeItem implements Cloneable, DebuggableItem {
     /**
      * @return The Id this Item uses in the config in the custom-items section
      */
-    public String getConfigId() {
-        return cfgId;
+    public final String getConfigId() {
+        return this.cfgId;
     }
 
     /**
      * @return The Amount of this Item in a Recipe
      */
-    public int getAmount() {
-        return amount;
+    public final int getAmount() {
+        return this.amount;
     }
 
     /**
@@ -120,8 +235,8 @@ public abstract class RecipeItem implements Cloneable, DebuggableItem {
      *
      * @param amount The new amount
      */
-    public void setAmount(int amount) {
-        if (immutable) throw new IllegalStateException("Setting amount only possible on mutable copy");
+    public final void setAmount(final int amount) {
+        if (this.immutable) throw new IllegalStateException("Setting amount only possible on mutable copy");
         this.amount = amount;
     }
 
@@ -129,8 +244,8 @@ public abstract class RecipeItem implements Cloneable, DebuggableItem {
      * Makes this Item immutable, for example when loaded from config. Used so if this is added to BIngredients,
      * it needs to be cloned before changing anything like amount
      */
-    public void makeImmutable() {
-        immutable = true;
+    public final void makeImmutable() {
+        this.immutable = true;
     }
 
     /**
@@ -138,159 +253,41 @@ public abstract class RecipeItem implements Cloneable, DebuggableItem {
      *
      * @return A mutable copy of this
      */
-    public RecipeItem getMutableCopy() {
+    public final RecipeItem getMutableCopy() {
         try {
-            RecipeItem i = (RecipeItem) super.clone();
+            final var i = (RecipeItem) super.clone();
             i.immutable = false;
             return i;
-        } catch (CloneNotSupportedException e) {
+        } catch (final CloneNotSupportedException e) {
             throw new InternalError(e);
         }
     }
 
-    /**
-     * Tries to find a matching RecipeItem for this item. It checks custom items and if it has found a unique custom item
-     * it will return that. If there are multiple matching custom items, a new CustomItem with all item info is returned.
-     * <br>If there is no matching CustomItem, it will return a SimpleItem with the items type
-     *
-     * @param item      The Item for which to find a matching RecipeItem
-     * @param acceptAll If true it will accept any item and return a SimpleItem even if not on the accepted list
-     *                  <br>If false it will return null if the item is not acceptable by the Cauldron
-     * @return The Matched CustomItem, new CustomItem with all item info or SimpleItem
-     */
-    @Nullable
-    @Contract("_, true -> !null")
-    public static RecipeItem getMatchingRecipeItem(ItemStack item, boolean acceptAll) {
-        RecipeItem rItem = null;
-        boolean multiMatch = false;
-        for (RecipeItem ri : BCauldronRecipe.acceptedCustom) {
-            // If we already have a multi match, only check if there is a PluginItem that matches more strictly
-            if (!multiMatch || (ri instanceof PluginItem)) {
-                if (ri.matches(item)) {
-                    // If we match a plugin item, that's a very strict match, so immediately return it
-                    if (ri instanceof PluginItem) {
-                        return ri;
-                    }
-                    if (rItem == null) {
-                        rItem = ri;
-                    } else {
-                        multiMatch = true;
-                    }
-                }
-            }
-        }
-        if (multiMatch) {
-            // We have multiple Custom Items matching, so just store all item info
-            return new CustomItem(item);
-        }
-        if (rItem == null && (acceptAll || BCauldronRecipe.acceptedSimple.contains(item.getType()))) {
-            // No Custom item found
-            if (VERSION.isOrLater(MinecraftVersion.V1_13)) {
-                return new SimpleItem(item.getType());
-            } else {
-                @SuppressWarnings("deprecation")
-                short durability = item.getDurability();
-                return new SimpleItem(item.getType(), durability);
-            }
-        }
-        return rItem;
-    }
-
-    @Nullable
-    public static RecipeItem fromConfigCustom(String id, ConfigCustomItem configCustomItem) {
-        RecipeItem rItem;
-        if (configCustomItem.getMatchAny() != null && configCustomItem.getMatchAny()) {
-            rItem = new CustomMatchAnyItem();
-        } else {
-            rItem = new CustomItem();
-        }
-
-        rItem.cfgId = id;
-        rItem.immutable = true;
-
-        List<Material> materials = BUtil.getListSafely(configCustomItem.getMaterial(), Material.class);
-        List<String> names = BUtil.colorArrayList(BUtil.getListSafely(configCustomItem.getName()));
-        List<String> lore = BUtil.colorArrayList(BUtil.getListSafely(configCustomItem.getLore()));
-        List<Integer> customModelDatas = BUtil.getListSafely(configCustomItem.getCustomModelData());
-
-        if ((materials == null || materials.isEmpty()) && (names == null || names.isEmpty()) && (lore == null || lore.isEmpty()) && (customModelDatas == null || customModelDatas.isEmpty())) {
-            return null;
-        }
-
-        if (rItem instanceof CustomItem cItem) {
-            if (!materials.isEmpty()) {
-                cItem.setMat(materials.get(0));
-            }
-            if (!names.isEmpty()) {
-                cItem.setName(names.get(0));
-            }
-            cItem.setLore(lore);
-            if (!customModelDatas.isEmpty()) {
-                cItem.setCustomModelData(customModelDatas.get(0));
-            }
-        } else {
-            CustomMatchAnyItem maItem = (CustomMatchAnyItem) rItem;
-            maItem.setMaterials(materials);
-            maItem.setNames(names);
-            maItem.setLore(lore);
-            maItem.setCustomModelDatas(customModelDatas);
-        }
-
-        return rItem;
-    }
-
-    @Nullable
-    protected static List<Material> loadMaterials(List<String> ingredientsList) {
-        List<Material> materials = new ArrayList<>(ingredientsList.size());
-        for (String item : ingredientsList) {
-            String[] ingredParts = item.split("/");
-            if (ingredParts.length == 2) {
-                Logging.errorLog("Item Amount can not be specified for Custom Items: " + item);
-                return null;
-            }
-            Material mat = MaterialUtil.getMaterialSafely(ingredParts[0]);
-
-            if (mat == null && VERSION.isOrEarlier(MinecraftVersion.V1_14) && ingredParts[0].equalsIgnoreCase("cornflower")) {
-                // Using this in default custom-items, but will error on < 1.14
-                materials.add(Material.BEDROCK);
-                continue;
-            }
-
-            if (mat != null) {
-                materials.add(mat);
-            } else {
-                Logging.errorLog("Unknown Material: " + ingredParts[0]);
-                return null;
-            }
-        }
-        return materials;
-    }
-
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof RecipeItem that)) return false;
-        return amount == that.amount &&
-            immutable == that.immutable &&
-            Objects.equals(cfgId, that.cfgId);
+        if (!(o instanceof final RecipeItem that)) return false;
+        return this.amount == that.amount &&
+                this.immutable == that.immutable &&
+                Objects.equals(this.cfgId, that.cfgId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(cfgId, amount, immutable);
+        return Objects.hash(this.cfgId, this.amount, this.immutable);
     }
 
     @Override
     public String toString() {
-        return "RecipeItem{(" + getClass().getSimpleName() + ") ID: " + getConfigId() + " Materials: " + (hasMaterials() ? getMaterials().size() : 0) + " Amount: " + getAmount();
+        return "RecipeItem{(" + this.getClass().getSimpleName() + ") ID: " + this.getConfigId() + " Materials: " + (this.hasMaterials() ? this.getMaterials().size() : 0) + " Amount: " + this.getAmount();
     }
 
     @Override
     public String debug() {
-        if (getAmount() == 1) {
-            return getDebugID();
+        if (this.getAmount() == 1) {
+            return this.getDebugID();
         }
-        return getDebugID() + "/" + getAmount();
+        return this.getDebugID() + "/" + this.getAmount();
     }
 
     /**
@@ -299,17 +296,18 @@ public abstract class RecipeItem implements Cloneable, DebuggableItem {
      * @return The config String
      */
     public String toConfigString() {
-        return toConfigStringNoAmount() + "/" + getAmount();
+        return this.toConfigStringNoAmount() + "/" + this.getAmount();
     }
+
     /**
      * Converts this RecipeItem to a String that can be used in a config
      *
      * @return The config String
      */
-    public String toConfigStringNoAmount() {
-        if (this instanceof SimpleItem simpleItem) {
+    public final String toConfigStringNoAmount() {
+        if (this instanceof final SimpleItem simpleItem) {
             return simpleItem.getMaterial().toString().toLowerCase();
-        } else if (this instanceof PluginItem pluginItem) {
+        } else if (this instanceof final PluginItem pluginItem) {
             return pluginItem.getPlugin() + ":" + pluginItem.getItemId();
         } else if (this instanceof CustomItem || this instanceof CustomMatchAnyItem) {
             return this.getConfigId();
@@ -319,7 +317,7 @@ public abstract class RecipeItem implements Cloneable, DebuggableItem {
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException {
+    protected final Object clone() throws CloneNotSupportedException {
         return super.clone();
     }
 }

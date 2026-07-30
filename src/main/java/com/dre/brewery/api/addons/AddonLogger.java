@@ -27,31 +27,31 @@ import com.dre.brewery.utility.Logging;
  *
  * @see BreweryAddon#getAddonLogger()
  */
-public class AddonLogger {
+public final class AddonLogger {
 
     private final String prefix;
 
-    public AddonLogger(Class<? extends BreweryAddon> addonUninstantiated) {
+    public AddonLogger(final Class<? extends BreweryAddon> addonUninstantiated) {
         this.prefix = "&2[" + addonUninstantiated.getSimpleName() + "] &r";
     }
 
-    public AddonLogger(AddonInfo addonInfo) {
+    public AddonLogger(final AddonInfo addonInfo) {
         this.prefix = "&2[" + addonInfo.name() + "] &r";
     }
 
-    public void info(String message) {
-        Logging.log(prefix + message);
+    public final void info(final String message) {
+        Logging.log(this.prefix + message);
     }
 
-    public void warning(String message) {
-        Logging.warningLog(prefix + message);
+    public void warning(final String message) {
+        Logging.warningLog(this.prefix + message);
     }
 
-    public void severe(String message) {
-        Logging.errorLog(prefix + message);
+    public void severe(final String message) {
+        Logging.errorLog(this.prefix + message);
     }
 
-    public void severe(String message, Throwable throwable) {
-        Logging.errorLog(prefix + message, throwable);
+    public final void severe(final String message, final Throwable throwable) {
+        Logging.errorLog(this.prefix + message, throwable);
     }
 }

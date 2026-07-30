@@ -22,11 +22,7 @@ package com.dre.brewery.configuration.sector.capsule;
 
 import eu.okaeri.configs.OkaeriConfig;
 import eu.okaeri.configs.annotation.CustomKey;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import java.util.List;
 
@@ -35,7 +31,7 @@ import java.util.List;
 @Builder
 @ToString
 @AllArgsConstructor
-public class ConfigRecipe extends OkaeriConfig {
+public final class ConfigRecipe extends OkaeriConfig {
 
     // Added because our configs don't support external comments yet
     private Boolean enabled;

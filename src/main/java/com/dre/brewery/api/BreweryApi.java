@@ -45,7 +45,7 @@ import java.util.List;
  * like Brew, Barrel, BCauldron, BRecipe, etc
  * <p>In the api package, you can also find custom Events.
  */
-public class BreweryApi {
+public final class BreweryApi {
 
     /**
      * Get the Current Version of the Brewery API.
@@ -63,7 +63,7 @@ public class BreweryApi {
      *
      * @return true if anything was removed
      */
-    public static boolean removeAny(Block block) {
+    public static boolean removeAny(final Block block) {
         if (removeCauldron(block)) return true;
         return removeBarrel(block, true);
     }
@@ -72,7 +72,7 @@ public class BreweryApi {
      * <p>Like removeAny() but removes data as if the given player broke the Block.
      * <p>Currently only makes a difference for Logging
      */
-    public static boolean removeAnyByPlayer(Block block, Player player) {
+    public static boolean removeAnyByPlayer(final Block block, final Player player) {
         if (removeCauldron(block)) return true;
         return removeBarrelByPlayer(block, player, true);
     }
@@ -85,7 +85,7 @@ public class BreweryApi {
     /**
      * Get the BPlayer for the given Player, containing drunkenness and hangover data.
      */
-    public static BPlayer getBPlayer(Player player) {
+    public static BPlayer getBPlayer(final Player player) {
         return BPlayer.get(player);
     }
 
@@ -97,14 +97,14 @@ public class BreweryApi {
      * @param quality     The Quality 1-10 the drunkenness of the player should have.
      *                    <br>zero Quality keeps the players current quality
      */
-    public static void setPlayerDrunk(Player player, int drunkenness, int quality) {
+    public static void setPlayerDrunk(final Player player, final int drunkenness, final int quality) {
         if (drunkenness < 0) {
             throw new IllegalArgumentException("Drunkeness can not be <0");
         }
         if (quality > 10) {
             throw new IllegalArgumentException("Quality can not be >10");
         }
-        BPlayer bPlayer = BPlayer.get(player);
+        var bPlayer = BPlayer.get(player);
         if (bPlayer == null && player != null) {
             if (drunkenness == 0) {
                 return;
@@ -144,7 +144,7 @@ public class BreweryApi {
      * <p>Returns null if item is not a Brew
      */
     @Nullable
-    public static Brew getBrew(ItemStack item) {
+    public static Brew getBrew(final ItemStack item) {
         return Brew.get(item);
     }
 
@@ -155,7 +155,7 @@ public class BreweryApi {
      * <p>Returns null if meta is not a Brew
      */
     @Nullable
-    public static Brew getBrew(ItemMeta meta) {
+    public static Brew getBrew(final ItemMeta meta) {
         return Brew.get(meta);
     }
 
@@ -163,7 +163,7 @@ public class BreweryApi {
      * Performant way to check if an item is a brew.
      * <p>Does not give any guarantees that getBrew() will return notnull for this item, i.e. if it is a brew but couldn't be loaded
      */
-    public static boolean isBrew(ItemStack item) {
+    public static boolean isBrew(final ItemStack item) {
         return Brew.isBrew(item);
     }
 
@@ -175,8 +175,8 @@ public class BreweryApi {
      * @since v3.0 (Api 3)
      */
     @Nullable
-    public static Brew createBrew(String recipeName, int quality) {
-        BRecipe matching = BRecipe.getMatching(recipeName);
+    public static Brew createBrew(final String recipeName, final int quality) {
+        final var matching = BRecipe.getMatching(recipeName);
         if (matching != null) {
             return matching.createBrew(quality);
         }
@@ -189,7 +189,7 @@ public class BreweryApi {
      * @param recipe The Recipe to create a brew from
      * @return The Brew that was created. Can use brew.createItem() to get an ItemStack
      */
-    public static Brew createBrew(BRecipe recipe, int quality) {
+    public static Brew createBrew(final BRecipe recipe, final int quality) {
         return recipe.createBrew(quality);
     }
 
@@ -202,13 +202,13 @@ public class BreweryApi {
      * @since v3.0 (Api 3)
      */
     @Nullable
-    public static ItemStack createBrewItem(String recipeName, int quality) {
+    public static ItemStack createBrewItem(final String recipeName, final int quality) {
         return createBrewItem(recipeName, quality, null);
     }
 
     @Nullable
-    public static ItemStack createBrewItem(String recipeName, int quality, Player player) {
-        BRecipe matching = BRecipe.getMatching(recipeName);
+    public static ItemStack createBrewItem(final String recipeName, final int quality, final Player player) {
+        final var matching = BRecipe.getMatching(recipeName);
         if (matching != null) {
             return matching.create(quality, player);
         }
@@ -223,7 +223,7 @@ public class BreweryApi {
      * @return The Brew- ItemStack with Brew information stored on it
      * @since v3.0 (Api 3)
      */
-    public static ItemStack createBrewItem(BRecipe recipe, int quality) {
+    public static ItemStack createBrewItem(final BRecipe recipe, final int quality) {
         return recipe.create(quality);
     }
 
@@ -235,8 +235,8 @@ public class BreweryApi {
      * @since v3.0 (Api 3)
      */
     @Nullable
-    public static String getRecipeName(ItemStack item) {
-        Brew brew = Brew.get(item);
+    public static String getRecipeName(final ItemStack item) {
+        final var brew = Brew.get(item);
         if (brew != null) {
             return getRecipeName(brew);
         }
@@ -251,8 +251,8 @@ public class BreweryApi {
      * @since v3.0 (Api 3)
      */
     @Nullable
-    public static String getRecipeName(Brew brew) {
-        BRecipe recipe = brew.getCurrentRecipe();
+    public static String getRecipeName(final Brew brew) {
+        final var recipe = brew.getCurrentRecipe();
         if (recipe != null) {
             return recipe.getRecipeName();
         }
@@ -269,7 +269,7 @@ public class BreweryApi {
      * <p>Returns null if block is not part of a Barrel
      */
     @Nullable
-    public static Barrel getBarrel(Block block) {
+    public static Barrel getBarrel(final Block block) {
         return Barrel.get(block);
     }
 
@@ -279,8 +279,8 @@ public class BreweryApi {
      * <p>Returns null if block is not part of a Barrel
      */
     @Nullable
-    public static Inventory getBarrelInventory(Block block) {
-        Barrel barrel = Barrel.get(block);
+    public static Inventory getBarrelInventory(final Block block) {
+        final var barrel = Barrel.get(block);
         if (barrel != null) {
             return barrel.getInventory();
         }
@@ -295,7 +295,7 @@ public class BreweryApi {
      * @param dropItems If the items in the barrels inventory should drop to the ground
      * @return True if a Barrel was removed
      */
-    public static boolean removeBarrel(Block block, boolean dropItems) {
+    public static boolean removeBarrel(final Block block, final boolean dropItems) {
         return removeBarrelByPlayer(block, null, dropItems);
     }
 
@@ -308,8 +308,8 @@ public class BreweryApi {
      * @param dropItems If the items in the barrels inventory should drop to the ground
      * @return True if a Barrel was removed
      */
-    public static boolean removeBarrelByPlayer(Block block, Player player, boolean dropItems) {
-        Barrel barrel = Barrel.get(block);
+    public static boolean removeBarrelByPlayer(final Block block, final Player player, final boolean dropItems) {
+        final var barrel = Barrel.get(block);
         if (barrel != null) {
             barrel.remove(block, player, dropItems);
             return true;
@@ -326,7 +326,7 @@ public class BreweryApi {
      * <p>Returns null if block is not a BCauldron
      */
     @Nullable
-    public static BCauldron getCauldron(Block block) {
+    public static BCauldron getCauldron(final Block block) {
         return BCauldron.get(block);
     }
 
@@ -335,7 +335,7 @@ public class BreweryApi {
      * <p>Returns true if a Cauldron was removed
      * <p>Does not remove the Block from the World
      */
-    public static boolean removeCauldron(Block block) {
+    public static boolean removeCauldron(final Block block) {
         return BCauldron.remove(block);
     }
 
@@ -350,7 +350,7 @@ public class BreweryApi {
      * <p>Returns null if recipe with that name does not exist
      */
     @Nullable
-    public static BRecipe getRecipe(String name) {
+    public static BRecipe getRecipe(final String name) {
         return BRecipe.get(name);
     }
 
@@ -362,7 +362,7 @@ public class BreweryApi {
      * @since v3.0 (Api 3)
      */
     @Nullable
-    public static BRecipe getRecipeMatch(String name) {
+    public static BRecipe getRecipeMatch(final String name) {
         return BRecipe.getMatching(name);
     }
 
@@ -378,7 +378,7 @@ public class BreweryApi {
      *                    <br>If False: Recipe will be removed when the Server restarts, existing potions using
      *                    <br>this Recipe will become bad after continued aging, if the recipe is not added again.
      */
-    public static void addRecipe(BRecipe recipe, boolean saveForever) {
+    public static void addRecipe(final BRecipe recipe, final boolean saveForever) {
         //recipe.setSaveInData(saveForever);
         if (saveForever) {
             throw new UnsupportedOperationException("SaveForever is not implemented yet");
@@ -395,11 +395,11 @@ public class BreweryApi {
      * @return The Recipe that was removed, null if none was removed
      */
     @Nullable
-    public static BRecipe removeRecipe(String name) {
-        List<BRecipe> recipes = BRecipe.getAllRecipes();
-        for (int i = 0; i < recipes.size(); i++) {
+    public static BRecipe removeRecipe(final String name) {
+        final var recipes = BRecipe.getAllRecipes();
+        for (var i = 0; i < recipes.size(); i++) {
             if (recipes.get(i).getRecipeName().equalsIgnoreCase(name)) {
-                BRecipe remove = recipes.remove(i);
+                final var remove = recipes.remove(i);
                 if (i < BRecipe.numConfigRecipes) {
                     // We removed one of the Config Recipes
                     BRecipe.numConfigRecipes--;
@@ -416,7 +416,7 @@ public class BreweryApi {
      * @param recipeNames Either 1 or 3 names. Sets the Name for Quality (Bad, Normal, Good)
      * @return A Recipe Builder
      */
-    public static BRecipe.Builder recipeBuilder(String... recipeNames) {
+    public static BRecipe.Builder recipeBuilder(final String... recipeNames) {
         return new BRecipe.Builder(recipeNames);
     }
 
@@ -430,7 +430,7 @@ public class BreweryApi {
      * <p>Returns null if recipe with that name does not exist
      */
     @Nullable
-    public static BCauldronRecipe getCauldronRecipe(String name) {
+    public static BCauldronRecipe getCauldronRecipe(final String name) {
         return BCauldronRecipe.get(name);
     }
 
@@ -445,7 +445,7 @@ public class BreweryApi {
      *                    <br>If True: Recipe will be saved until removed manually
      *                    <br>If False: Recipe will be removed when the Server restarts
      */
-    public static void addCauldronRecipe(BCauldronRecipe recipe, boolean saveForever) {
+    public static void addCauldronRecipe(final BCauldronRecipe recipe, final boolean saveForever) {
         //recipe.setSaveInData(saveForever);
         if (saveForever) {
             throw new UnsupportedOperationException();
@@ -463,11 +463,11 @@ public class BreweryApi {
      * @return The Cauldron Recipe that was removed, null if none was removed
      */
     @Nullable
-    public static BCauldronRecipe removeCauldronRecipe(String name) {
-        List<BCauldronRecipe> recipes = BCauldronRecipe.getAllRecipes();
-        for (int i = 0; i < recipes.size(); i++) {
+    public static BCauldronRecipe removeCauldronRecipe(final String name) {
+        final var recipes = BCauldronRecipe.getAllRecipes();
+        for (var i = 0; i < recipes.size(); i++) {
             if (recipes.get(i).getName().equalsIgnoreCase(name)) {
-                BCauldronRecipe remove = recipes.remove(i);
+                final var remove = recipes.remove(i);
                 if (i < BCauldronRecipe.numConfigRecipes) {
                     // We removed one of the Config Recipes
                     BCauldronRecipe.numConfigRecipes--;
@@ -486,7 +486,7 @@ public class BreweryApi {
      * @return A Cauldron Recipe Builder
      */
     @Deprecated
-    public static BCauldronRecipe.Builder cauldronRecipeBuilder(String name) {
+    public static BCauldronRecipe.Builder cauldronRecipeBuilder(final String name) {
         return new BCauldronRecipe.Builder(name, name);
     }
 
@@ -497,7 +497,7 @@ public class BreweryApi {
      * @param name The name of the new Cauldron Recipe
      * @return A Cauldron Recipe Builder
      */
-    public static BCauldronRecipe.Builder cauldronRecipeBuilder(String id, String name) {
+    public static BCauldronRecipe.Builder cauldronRecipeBuilder(final String id, final String name) {
         return new BCauldronRecipe.Builder(id, name);
     }
 }

@@ -34,31 +34,31 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 
-public class BlockListener implements Listener {
+public final class BlockListener implements Listener {
 
     private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
     private final Config config = ConfigManager.getConfig(Config.class);
     private final Lang lang = ConfigManager.getConfig(Lang.class);
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onSignChange(SignChangeEvent event) {
-        String[] lines = event.getLines();
+    public void onSignChange(final SignChangeEvent event) {
+        final var lines = event.getLines();
 
-        if (hasBarrelLine(lines) || !config.isRequireKeywordOnSigns()) {
-            Player player = event.getPlayer();
+        if (this.hasBarrelLine(lines) || !this.config.isRequireKeywordOnSigns()) {
+            final var player = event.getPlayer();
             if (!player.hasPermission("brewery.createbarrel.small") && !player.hasPermission("brewery.createbarrel.big")) {
-                lang.sendEntry(player, "Perms_NoBarrelCreate");
+                this.lang.sendEntry(player, "Perms_NoBarrelCreate");
                 return;
             }
             if (Barrel.create(event.getBlock(), player)) {
-                lang.sendEntry(player, "Player_BarrelCreated");
+                this.lang.sendEntry(player, "Player_BarrelCreated");
             }
         }
     }
 
-    public boolean hasBarrelLine(String[] lines) {
-        for (String line : lines) {
-            if (line.equalsIgnoreCase("Barrel") || line.equalsIgnoreCase(lang.getEntry("Etc_Barrel"))) {
+    public final boolean hasBarrelLine(final String[] lines) {
+        for (final var line : lines) {
+            if (line.equalsIgnoreCase("Barrel") || line.equalsIgnoreCase(this.lang.getEntry("Etc_Barrel"))) {
                 return true;
             }
         }
@@ -66,8 +66,8 @@ public class BlockListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    public void onSignChangeLow(SignChangeEvent event) {
-        if (config.isDistortSignText()) {
+    public void onSignChangeLow(final SignChangeEvent event) {
+        if (this.config.isDistortSignText()) {
             if (BPlayer.hasPlayer(event.getPlayer())) {
                 DistortChat.signWrite(event);
             }
@@ -75,30 +75,30 @@ public class BlockListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onBlockPlace(BlockPlaceEvent event) {
-        if (VERSION.isOrEarlier(MinecraftVersion.V1_14) || event.getBlock().getType() != config.getSealingTableBlock())
+    public void onBlockPlace(final BlockPlaceEvent event) {
+        if (VERSION.isOrEarlier(MinecraftVersion.V1_14) || event.getBlock().getType() != this.config.getSealingTableBlock())
             return;
         BSealer.blockPlace(event.getItemInHand(), event.getBlock());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onBlockBreak(BlockBreakEvent event) {
+    public void onBlockBreak(final BlockBreakEvent event) {
         if (!BUtil.blockDestroy(event.getBlock(), event.getPlayer(), BarrelDestroyEvent.Reason.PLAYER)) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onBlockBurn(BlockBurnEvent event) {
+    public void onBlockBurn(final BlockBurnEvent event) {
         if (!BUtil.blockDestroy(event.getBlock(), null, BarrelDestroyEvent.Reason.BURNED)) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onPistonRetract(BlockPistonRetractEvent event) {
+    public void onPistonRetract(final BlockPistonRetractEvent event) {
         if (event.isSticky()) {
-            for (Block block : event.getBlocks()) {
+            for (final var block : event.getBlocks()) {
                 if (Barrel.get(block) != null) {
                     event.setCancelled(true);
                     return;
@@ -108,8 +108,8 @@ public class BlockListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onPistonExtend(BlockPistonExtendEvent event) {
-        for (Block block : event.getBlocks()) {
+    public void onPistonExtend(final BlockPistonExtendEvent event) {
+        for (final var block : event.getBlocks()) {
             if (Barrel.get(block) != null) {
                 event.setCancelled(true);
                 return;

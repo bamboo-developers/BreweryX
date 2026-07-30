@@ -30,9 +30,9 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 
-public class PukeCommand implements SubCommand {
+public final class PukeCommand implements SubCommand {
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
         Player player = null;
         if (args.length > 1) {
             player = breweryPlugin.getServer().getPlayer(args[1]);
@@ -54,7 +54,7 @@ public class PukeCommand implements SubCommand {
                 return;
             }
         }
-        int count = 0;
+        var count = 0;
         if (args.length > 2) {
             count = BUtil.getRandomIntInRange(args[2]);
         }
@@ -65,7 +65,7 @@ public class PukeCommand implements SubCommand {
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return null;
     }
 

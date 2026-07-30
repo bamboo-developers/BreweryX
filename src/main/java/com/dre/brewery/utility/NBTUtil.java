@@ -18,12 +18,12 @@ public final class NBTUtil {
             Class.forName("org.bukkit.persistence.PersistentDataContainer");
             NewNbtVer = true;
             return true;
-        } catch (ClassNotFoundException e) {
+        } catch (final ClassNotFoundException e) {
             try {
                 Class.forName("org.bukkit.inventory.meta.tags.CustomItemTagContainer");
                 NewNbtVer = false;
                 return true;
-            } catch (ClassNotFoundException ex) {
+            } catch (final ClassNotFoundException ex) {
                 NewNbtVer = false;
                 return false;
             }
@@ -31,7 +31,7 @@ public final class NBTUtil {
     }
 
     @SuppressWarnings("deprecation")
-    public static void writeBytesItem(byte[] bytes, ItemMeta meta, NamespacedKey key) {
+    public static void writeBytesItem(final byte[] bytes, final ItemMeta meta, final NamespacedKey key) {
         if (NewNbtVer) {
             meta.getPersistentDataContainer().set(key, org.bukkit.persistence.PersistentDataType.BYTE_ARRAY, bytes);
         } else {
@@ -40,7 +40,7 @@ public final class NBTUtil {
     }
 
     @SuppressWarnings("deprecation")
-    public static byte[] readBytesItem(ItemMeta meta, NamespacedKey key) {
+    public static byte[] readBytesItem(final ItemMeta meta, final NamespacedKey key) {
         if (NewNbtVer) {
             return meta.getPersistentDataContainer().get(key, org.bukkit.persistence.PersistentDataType.BYTE_ARRAY);
         } else {
@@ -49,7 +49,7 @@ public final class NBTUtil {
     }
 
     @SuppressWarnings("deprecation")
-    public static boolean hasBytesItem(ItemMeta meta, NamespacedKey key) {
+    public static boolean hasBytesItem(final ItemMeta meta, final NamespacedKey key) {
         if (NewNbtVer) {
             return meta.getPersistentDataContainer().has(key, org.bukkit.persistence.PersistentDataType.BYTE_ARRAY);
         } else {

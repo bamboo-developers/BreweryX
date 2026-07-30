@@ -32,21 +32,26 @@ import lombok.Getter;
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
-public class QualityDeduction implements Comparable<QualityDeduction> {
+public final class QualityDeduction implements Comparable<QualityDeduction> {
 
-    /** The reason for this deduction */
+    /**
+     * The reason for this deduction
+     */
     private final BrewDefect defect;
-    /** The amount to deduct by, will be negative infinity if fatal */
+    /**
+     * The amount to deduct by, will be negative infinity if fatal
+     */
     private final float qualityDeduction;
 
     /**
      * Creates a quality deduction with the given amount.
-     * @param defect the defect that is the reason for this deduction
+     *
+     * @param defect           the defect that is the reason for this deduction
      * @param qualityDeduction the amount to deduct
      * @return the quality deduction
      * @throws IllegalArgumentException if qualityDeduction is not finite
      */
-    public static QualityDeduction deduction(BrewDefect defect, float qualityDeduction) {
+    public static QualityDeduction deduction(final BrewDefect defect, final float qualityDeduction) {
         if (!Float.isFinite(qualityDeduction)) {
             throw new IllegalArgumentException("qualityDeduction must be finite");
         }
@@ -55,45 +60,47 @@ public class QualityDeduction implements Comparable<QualityDeduction> {
 
     /**
      * Creates a fatal quality deduction, which prevents the brew from being used.
+     *
      * @param defect the defect that is the reason for this deduction
      * @return the quality deduction
      */
-    public static QualityDeduction fatal(BrewDefect defect) {
+    public static QualityDeduction fatal(final BrewDefect defect) {
         return new QualityDeduction(defect, Float.NEGATIVE_INFINITY);
     }
 
     /**
      * @return whether this defect is fatal, and should prevent the brew from being used
      */
-    public boolean isFatal() {
-        return qualityDeduction == Float.NEGATIVE_INFINITY;
+    public final boolean isFatal() {
+        return this.qualityDeduction == Float.NEGATIVE_INFINITY;
     }
 
     /**
      * Scales the deduction amount by the given factor.
+     *
      * @param f the factor to scale by
      * @return the scaled quality deduction
      * @throws IllegalArgumentException if f is negative
      */
-    public QualityDeduction scale(float f) {
+    public final QualityDeduction scale(final float f) {
         if (f < 0) {
             throw new IllegalArgumentException("f must be positive");
         }
         // ok since -inf * anything non-negative = -inf
-        return new QualityDeduction(defect, qualityDeduction * f);
+        return new QualityDeduction(this.defect, this.qualityDeduction * f);
     }
 
     @Override
-    public int compareTo(QualityDeduction other) {
-        return Float.compare(qualityDeduction, other.qualityDeduction);
+    public final int compareTo(final QualityDeduction other) {
+        return Float.compare(this.qualityDeduction, other.qualityDeduction);
     }
 
     @Override
-    public String toString() {
-        if (isFatal()) {
-            return "FATAL " + defect;
+    public final String toString() {
+        if (this.isFatal()) {
+            return "FATAL " + this.defect;
         }
-        return String.format("-%.3f %s", qualityDeduction, defect);
+        return String.format("-%.3f %s", this.qualityDeduction, this.defect);
     }
 
 }

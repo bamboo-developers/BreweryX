@@ -27,19 +27,19 @@ import eu.okaeri.configs.serdes.SerdesContext;
 import lombok.NonNull;
 import org.bukkit.Material;
 
-public class MaterialTransformer extends BidirectionalTransformer<String, Material> {
+public final class MaterialTransformer extends BidirectionalTransformer<String, Material> {
     @Override
-    public GenericsPair<String, Material> getPair() {
+    public final GenericsPair<String, Material> getPair() {
         return this.genericsPair(String.class, Material.class);
     }
 
     @Override
-    public Material leftToRight(@NonNull String data, @NonNull SerdesContext serdesContext) {
+    public final Material leftToRight(@NonNull final String data, @NonNull final SerdesContext serdesContext) {
         return MaterialUtil.getMaterialSafely(data); // handles grass -> short_grass
     }
 
     @Override
-    public String rightToLeft(@NonNull Material data, @NonNull SerdesContext serdesContext) {
+    public final String rightToLeft(@NonNull final Material data, @NonNull final SerdesContext serdesContext) {
         return data.toString();
     }
 }

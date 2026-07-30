@@ -30,9 +30,9 @@ import org.bukkit.command.CommandSender;
 
 import java.util.List;
 
-public class WakeupCommand implements SubCommand {
+public final class WakeupCommand implements SubCommand {
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
         if (args.length == 1) {
             CommandUtil.cmdHelp(sender, args);
             return;
@@ -44,7 +44,7 @@ public class WakeupCommand implements SubCommand {
 
         } else if (args[1].equalsIgnoreCase("list")) {
 
-            int page = 1;
+            var page = 1;
             String world = null;
             if (args.length > 2) {
                 page = BUtil.parseInt(args[2]).orElse(1);
@@ -57,7 +57,7 @@ public class WakeupCommand implements SubCommand {
         } else if (args[1].equalsIgnoreCase("remove")) {
 
             if (args.length > 2) {
-                int id = BUtil.parseIntOrZero(args[2]);
+                final var id = BUtil.parseIntOrZero(args[2]);
                 Wakeup.remove(sender, id);
             } else {
                 lang.sendEntry(sender, "Etc_Usage");
@@ -66,7 +66,7 @@ public class WakeupCommand implements SubCommand {
 
         } else if (args[1].equalsIgnoreCase("check")) {
 
-            int id = -1;
+            var id = -1;
             if (args.length > 2) {
                 id = BUtil.parseIntOrZero(args[2]);
                 if (id < 0) {
@@ -88,7 +88,7 @@ public class WakeupCommand implements SubCommand {
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return null;
     }
 

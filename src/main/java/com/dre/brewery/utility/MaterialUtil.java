@@ -38,80 +38,77 @@ import java.lang.reflect.Method;
 
 public final class MaterialUtil {
 
+    // Removed in 1.13
+    public static final Material STATIONARY_LAVA = getMaterialSafely("STATIONARY_LAVA");
+    // Cauldron stuff
+    public static final byte EMPTY = 0;
+    public static final byte SOME = 1;
+    public static final byte FULL = 2;
+    public static final Material WATER_CAULDRON = getMaterialSafely("WATER_CAULDRON");
+    public static final Material CAMPFIRE = getMaterialSafely("CAMPFIRE");
+    public static final Material SOUL_CAMPFIRE = getMaterialSafely("SOUL_CAMPFIRE");
+    public static final Material SOUL_FIRE = getMaterialSafely("SOUL_FIRE");
     private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
-
+    public static final Material MAGMA_BLOCK = getV1_13MaterialSafely("MAGMA_BLOCK", "MAGMA");
+    public static final Material CLOCK = getV1_13MaterialSafely("CLOCK", "WATCH");
     // <= 1.12.2 methods
     // These will be rarely used
     private static final Method GET_BLOCK_TYPE_ID_AT = getMethod(World.class, "getBlockTypeIdAt", Location.class);
     private static final Method SET_DATA = getMethod(Bukkit.getServer().getClass().getPackage().getName() + ".block.CraftBlock", "setData", byte.class);
 
-    // Removed in 1.13
-    public static final Material STATIONARY_LAVA = getMaterialSafely("STATIONARY_LAVA");
-
-
-    // Cauldron stuff
-    public static final byte EMPTY = 0, SOME = 1, FULL = 2;
-    public static final Material WATER_CAULDRON = getMaterialSafely("WATER_CAULDRON");
-    public static final Material MAGMA_BLOCK = getV1_13MaterialSafely("MAGMA_BLOCK", "MAGMA");
-    public static final Material CAMPFIRE = getMaterialSafely("CAMPFIRE");
-    public static final Material SOUL_CAMPFIRE = getMaterialSafely("SOUL_CAMPFIRE");
-    public static final Material SOUL_FIRE = getMaterialSafely("SOUL_FIRE");
-    public static final Material CLOCK = getV1_13MaterialSafely("CLOCK", "WATCH");
-
-
-    public static Method getMethod(String clazz, String name, Class<?>... parameterTypes) {
+    public static Method getMethod(final String clazz, final String name, final Class<?>... parameterTypes) {
         try {
             return Class.forName(clazz).getDeclaredMethod(name, parameterTypes);
-        } catch (NoSuchMethodException | SecurityException | ClassNotFoundException e) {
+        } catch (final NoSuchMethodException | SecurityException | ClassNotFoundException e) {
             return null;
         }
     }
 
-    public static Method getMethod(Class<?> clazz, String name, Class<?>... parameterTypes) {
+    public static Method getMethod(final Class<?> clazz, final String name, final Class<?>... parameterTypes) {
         try {
             return clazz.getDeclaredMethod(name, parameterTypes);
-        } catch (NoSuchMethodException | SecurityException e) {
+        } catch (final NoSuchMethodException | SecurityException e) {
             return null;
         }
     }
 
 
     @Nullable
-    public static Material getMaterialSafely(String name) {
+    public static Material getMaterialSafely(final String name) {
         try {
-            for (Material material : BukkitConstants.getMappedValues(Material.class)) {
+            for (final var material : BukkitConstants.getMappedValues(Material.class)) {
                 if (material.name().equalsIgnoreCase(name)) {
                     return material;
                 }
             }
             return Material.matchMaterial(name);
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             return null;
         }
     }
 
-    private static Material getV1_13MaterialSafely(String newName, String oldName) {
+    private static Material getV1_13MaterialSafely(final String newName, final String oldName) {
         try {
             return Material.valueOf(VERSION.isOrLater(MinecraftVersion.V1_13) ? newName : oldName);
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             return null;
         }
     }
 
 
-    public static boolean isCauldronHeatSource(Block block) {
-        Material type = block.getType();
+    public static boolean isCauldronHeatSource(final Block block) {
+        final var type = block.getType();
         return type == Material.FIRE || type == SOUL_FIRE || type == MAGMA_BLOCK || litCampfire(block) || isLava(type);
     }
 
     // LAVA and STATIONARY_LAVA are merged as of 1.13
-    public static boolean isLava(Material type) {
+    public static boolean isLava(final Material type) {
         return type == Material.LAVA || (VERSION.isOrEarlier(MinecraftVersion.V1_13) && type == STATIONARY_LAVA);
     }
 
-    public static boolean litCampfire(Block block) {
+    public static boolean litCampfire(final Block block) {
         if (block.getType() == CAMPFIRE || block.getType() == SOUL_CAMPFIRE) {
-            BlockData data = block.getBlockData();
+            final var data = block.getBlockData();
             if (data instanceof org.bukkit.block.data.Lightable) {
                 return ((org.bukkit.block.data.Lightable) data).isLit();
             }
@@ -119,7 +116,7 @@ public final class MaterialUtil {
         return false;
     }
 
-    public static boolean isBottle(Material type) {
+    public static boolean isBottle(final Material type) {
         if (type == Material.POTION) return true;
         if (BreweryPlugin.getMCVersion().isOrEarlier(MinecraftVersion.V1_9)) return false;
         if (type == Material.LINGERING_POTION || type == Material.SPLASH_POTION) return true;
@@ -129,12 +126,12 @@ public final class MaterialUtil {
         return type.name().equals("HONEY_BOTTLE");
     }
 
-    public static boolean areStairsInverted(Block block) {
+    public static boolean areStairsInverted(final Block block) {
         if (VERSION.isOrEarlier(MinecraftVersion.V1_13)) {
-            MaterialData data = block.getState().getData(); // PaperLib not needed here
+            final var data = block.getState().getData(); // PaperLib not needed here
             return data instanceof org.bukkit.material.Stairs && (((org.bukkit.material.Stairs) data).isInverted());
         } else {
-            BlockData data = block.getBlockData();
+            final var data = block.getBlockData();
             return data instanceof org.bukkit.block.data.type.Stairs && ((org.bukkit.block.data.type.Stairs) data).getHalf() == org.bukkit.block.data.type.Stairs.Half.TOP;
         }
     }
@@ -143,7 +140,7 @@ public final class MaterialUtil {
     /**
      * Test if this Material Type is a Cauldron filled with water, or any cauldron in 1.16 and lower
      */
-    public static boolean isWaterCauldron(Material type) {
+    public static boolean isWaterCauldron(final Material type) {
         return WATER_CAULDRON != null ? type == WATER_CAULDRON : type == Material.CAULDRON;
     }
 
@@ -152,13 +149,13 @@ public final class MaterialUtil {
      *
      * @return 0 = empty, 1 = something in, 2 = full
      */
-    public static byte getFillLevel(Block block) {
+    public static byte getFillLevel(final Block block) {
         if (!isWaterCauldron(block.getType())) {
             return EMPTY;
         }
 
         if (VERSION.isOrLater(MinecraftVersion.V1_13)) {
-            Levelled cauldron = ((Levelled) block.getBlockData());
+            final var cauldron = ((Levelled) block.getBlockData());
             if (cauldron.getLevel() == 0) {
                 return EMPTY;
             } else if (cauldron.getLevel() == cauldron.getMaximumLevel()) {
@@ -169,7 +166,7 @@ public final class MaterialUtil {
 
         } else {
             // TODO: This needs to be swapped with non-deprecated API
-            Cauldron cauldron = (Cauldron) PaperLib.getBlockState(block, true).getState().getData();
+            final var cauldron = (Cauldron) PaperLib.getBlockState(block, true).getState().getData();
             if (cauldron.isEmpty()) {
                 return EMPTY;
             } else if (cauldron.isFull()) {
@@ -181,19 +178,19 @@ public final class MaterialUtil {
     }
 
     // Only used for very old versions of LogBlock
-    public static int getBlockTypeIdAt(Location location) {
+    public static int getBlockTypeIdAt(final Location location) {
         try {
             return GET_BLOCK_TYPE_ID_AT != null ? (int) GET_BLOCK_TYPE_ID_AT.invoke(location.getWorld(), location) : 0;
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+        } catch (final IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
             return 0;
         }
     }
 
     // Setting byte data to blocks for older versions
-    public static void setData(Block block, byte data) {
+    public static void setData(final Block block, final byte data) {
         try {
             SET_DATA.invoke(block, data);
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ignored) {
+        } catch (final IllegalAccessException | IllegalArgumentException | InvocationTargetException ignored) {
         }
     }
 

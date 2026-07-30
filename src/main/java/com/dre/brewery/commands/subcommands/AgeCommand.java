@@ -36,31 +36,31 @@ import org.bukkit.util.StringUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AgeCommand implements SubCommand {
+public final class AgeCommand implements SubCommand {
 
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
         if (args.length < 3) {
             lang.sendEntry(sender, "Etc_Usage");
             lang.sendEntry(sender, "Help_Age");
             return;
         }
 
-        BarrelWoodType woodType = BarrelWoodType.fromName(args[1]);
+        final var woodType = BarrelWoodType.fromName(args[1]);
         if (woodType == null || !woodType.isSpecific()) {
             lang.sendEntry(sender, "CMD_Invalid_Wood_Type", args[1]);
             return;
         }
 
-        float ageTime = BUtil.parseFloat(args[2]).orElse(0);
+        final var ageTime = BUtil.parseFloat(args[2]).orElse(0);
         if (ageTime <= 0) {
             lang.sendEntry(sender, "CMD_Invalid_Age_Time", args[2]);
             return;
         }
 
-        Player player = (Player) sender;
-        ItemStack item = player.getInventory().getItemInMainHand();
-        Brew brew = Brew.get(item);
+        final var player = (Player) sender;
+        final var item = player.getInventory().getItemInMainHand();
+        final var brew = Brew.get(item);
         if (brew == null) {
             lang.sendEntry(player, "Error_ItemNotPotion");
             return;
@@ -68,12 +68,12 @@ public class AgeCommand implements SubCommand {
 
         brew.age(item, ageTime, woodType);
         Logging.debugLog(String.format("age: aged for %s years in %s barrel: %s",
-            args[2], woodType.getFormattedName(), ChatColor.stripColor(brew.toString())));
+                args[2], woodType.getFormattedName(), ChatColor.stripColor(brew.toString())));
         lang.sendEntry(sender, "CMD_Aged", args[2]);
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         if (args.length == 2) {
             return StringUtil.copyPartialMatches(args[1], BarrelWoodType.TAB_COMPLETIONS, new ArrayList<>());
         }

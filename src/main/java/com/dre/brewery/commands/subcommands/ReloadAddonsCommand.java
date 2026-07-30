@@ -29,11 +29,11 @@ import org.bukkit.command.CommandSender;
 
 import java.util.List;
 
-public class ReloadAddonsCommand implements SubCommand {
+public final class ReloadAddonsCommand implements SubCommand {
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
         if (args.length > 1 && args[1].equalsIgnoreCase("confirm")) {
-            AddonManager addonManager = BreweryPlugin.getAddonManager();
+            final var addonManager = BreweryPlugin.getAddonManager();
             addonManager.unloadAddons();
             addonManager.loadAddons();
             addonManager.enableAddons();
@@ -46,7 +46,7 @@ public class ReloadAddonsCommand implements SubCommand {
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return List.of("confirm");
     }
 

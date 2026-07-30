@@ -26,9 +26,9 @@ import com.dre.brewery.integration.papi.Placeholder;
 import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.Nullable;
 
-public class QualityStarsPlaceholder implements Placeholder {
+public final class QualityStarsPlaceholder implements Placeholder {
     @Override
-    public @Nullable String onReceivedRequest(BreweryPlugin plugin, OfflinePlayer player, BPlayer bPlayer, String[] args) {
+    public @Nullable String onReceivedRequest(final BreweryPlugin plugin, final OfflinePlayer player, final BPlayer bPlayer, final String[] args) {
         return bPlayer.generateStars();
     }
 }

@@ -41,31 +41,31 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.plugin.Plugin;
 
-public class IntegrationListener implements Listener {
+public final class IntegrationListener implements Listener {
 
     private final Config config = ConfigManager.getConfig(Config.class);
     private final Lang lang = ConfigManager.getConfig(Lang.class);
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    public void onBarrelAccess(BarrelAccessEvent event) {
-        Hook hook = Hook.GAMEMODEINVENTORIES;
+    public void onBarrelAccess(final BarrelAccessEvent event) {
+        final var hook = Hook.GAMEMODEINVENTORIES;
         if (hook.isEnabled()) {
-            Plugin pl = hook.getPlugin();
+            final var pl = hook.getPlugin();
             if (pl != null && pl.isEnabled()) {
                 try {
                     if (pl.getConfig().getBoolean("restrict_creative")) {
-                        Player player = event.getPlayer();
+                        final var player = event.getPlayer();
                         if (player.getGameMode() == GameMode.CREATIVE) {
                             if (!pl.getConfig().getBoolean("bypass.inventories") || (!player.hasPermission("gamemodeinventories.bypass") && !player.isOp())) {
                                 event.setCancelled(true);
                                 if (!pl.getConfig().getBoolean("dont_spam_chat")) {
-                                    lang.sendEntry(event.getPlayer(), "Error_NoBarrelAccess");
+                                    this.lang.sendEntry(event.getPlayer(), "Error_NoBarrelAccess");
                                 }
                                 return;
                             }
                         }
                     }
-                } catch (Throwable e) {
+                } catch (final Throwable e) {
                     Logging.errorLog("Failed to Check GameModeInventories for Barrel Open Permissions!", e);
                     Logging.errorLog("Players will be able to open Barrel with GameMode Creative");
                     hook.setEnabled(false);
@@ -75,22 +75,22 @@ public class IntegrationListener implements Listener {
             }
         }
 
-        if (config.isUseVirtualChestPerms()) {
-            Player player = event.getPlayer();
-            BlockState originalBlockState = PaperLib.getBlockState(event.getClickedBlock(), true).getState();
+        if (this.config.isUseVirtualChestPerms()) {
+            final var player = event.getPlayer();
+            final var originalBlockState = PaperLib.getBlockState(event.getClickedBlock(), true).getState();
 
             event.getClickedBlock().setType(Material.CHEST, false);
-            PlayerInteractEvent simulatedEvent = new PlayerInteractEvent(
-                player,
-                Action.RIGHT_CLICK_BLOCK,
-                player.getInventory().getItemInMainHand(),
-                event.getClickedBlock(),
-                event.getClickedBlockFace(),
-                EquipmentSlot.HAND);
+            final var simulatedEvent = new PlayerInteractEvent(
+                    player,
+                    Action.RIGHT_CLICK_BLOCK,
+                    player.getInventory().getItemInMainHand(),
+                    event.getClickedBlock(),
+                    event.getClickedBlockFace(),
+                    EquipmentSlot.HAND);
 
             try {
                 BreweryPlugin.getInstance().getServer().getPluginManager().callEvent(simulatedEvent);
-            } catch (Throwable e) {
+            } catch (final Throwable e) {
                 Logging.errorLog("Failed to simulate a Chest for Barrel Open Permissions!", e);
                 Logging.errorLog("Disable useVirtualChestPerms in the config and do /brew reload");
 
@@ -107,7 +107,7 @@ public class IntegrationListener implements Listener {
 
             if (simulatedEvent.useInteractedBlock() == Event.Result.DENY) {
                 event.setCancelled(true);
-                lang.sendEntry(event.getPlayer(), "Error_NoBarrelAccess");
+                this.lang.sendEntry(event.getPlayer(), "Error_NoBarrelAccess");
                 //return;
             }
         }

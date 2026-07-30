@@ -25,7 +25,7 @@ public interface DebuggableItem {
     String getDebugID();
 
     default String debug() {
-        return getDebugID();
+        return this.getDebugID();
     }
 
 }

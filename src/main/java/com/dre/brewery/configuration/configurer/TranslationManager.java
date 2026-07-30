@@ -38,20 +38,18 @@ import java.nio.file.Path;
 import java.util.Map;
 
 @Getter
-public class TranslationManager {
+public final class TranslationManager {
 
     @Getter
     private static final Translation fallbackTranslation = Translation.EN;
     private static TranslationManager singleton;
-
-
-    private Translation activeTranslation;
     private final File dataFolder;
     private final ConfigTranslations translations;
     private final ConfigTranslations fallbackTranslations;
+    private Translation activeTranslation;
 
-    private TranslationManager(File dataFolder) {
-        Yaml yaml = new Yaml();
+    private TranslationManager(final File dataFolder) {
+        final var yaml = new Yaml();
 
         // Ok so,
         // Our config depends on our TranslationManager in order to load properly.
@@ -62,43 +60,64 @@ public class TranslationManager {
         this.dataFolder = dataFolder;
         this.activeTranslation = Translation.EN;
 
-        try (InputStream inputStream = Files.newInputStream(ConfigManager.getFilePath(Config.class))) {
-            Map<String, String> data = yaml.loadAs(inputStream, Map.class);
+        try (final var inputStream = Files.newInputStream(ConfigManager.getFilePath(Config.class))) {
+            final Map<String, String> data = yaml.loadAs(inputStream, Map.class);
             if (data != null) {
                 this.activeTranslation = Translation.getTranslation(data.get("language"));
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logging.debugLog("Error reading YAML file: " + e.getMessage());
         }
-        File languageFile = new File(dataFolder, "languages/" + activeTranslation.fileName());
-        if (TranslationManager.class.getResource("/languages/" + activeTranslation.fileName()) == null && !languageFile.exists()) {
-            Logging.errorLog("Translation could not be found internally or as a file externally: " + activeTranslation.fileName());
+        final var languageFile = new File(dataFolder, "languages/" + this.activeTranslation.fileName());
+        if (TranslationManager.class.getResource("/languages/" + this.activeTranslation.fileName()) == null && !languageFile.exists()) {
+            Logging.errorLog("Translation could not be found internally or as a file externally: " + this.activeTranslation.fileName());
             Logging.errorLog("You need to either change translation or provide one at: " + languageFile);
-            throw new IllegalStateException("Language file not found: languages/" + activeTranslation.fileName());
+            throw new IllegalStateException("Language file not found: languages/" + this.activeTranslation.fileName());
         }
 
 
-        this.translations = new ConfigTranslations(activeTranslation, yaml);
+        this.translations = new ConfigTranslations(this.activeTranslation, yaml);
         this.fallbackTranslations = new ConfigTranslations(fallbackTranslation, yaml);
 
         // Create lang files from /resources/languages
-        for (Translation translation : Translation.getDefaultTranslations()) {
-            createLanguageFile(translation);
+        for (final var translation : Translation.getDefaultTranslations()) {
+            this.createLanguageFile(translation);
         }
+    }
+
+    public static void newInstance(final File dataFolder) {
+        newInstance(dataFolder, false);
+    }
+
+    public static void newInstance(final File dataFolder, final boolean respectAlreadyExisting) {
+        if (singleton != null && respectAlreadyExisting) {
+            return;
+        }
+        singleton = new TranslationManager(dataFolder);
+    }
+
+    // Okaeri would do this normally, but since default values in Lang changes based on language,
+    // we have to manually go through each file.
+
+    public static TranslationManager getInstance() {
+        if (singleton == null) {
+            singleton = new TranslationManager(BreweryPlugin.getInstance().getDataFolder());
+        }
+        return singleton;
     }
 
     /**
      * Attempts to retrieve a translation for the given key with fallback logic.
      */
     @Nullable
-    public String getTranslationWithFallback(String key) {
-        String activeTranslationString = translations.getTranslation(key);
+    public final String getTranslationWithFallback(final String key) {
+        final var activeTranslationString = this.translations.getTranslation(key);
         if (activeTranslationString != null) {
             return activeTranslationString;
         }
 
         // Fallback to the english translation
-        String fallbackTranslationString = fallbackTranslations.getTranslation(key);
+        final var fallbackTranslationString = this.fallbackTranslations.getTranslation(key);
         if (fallbackTranslationString == null) {
             Logging.warningLog("No translation found for key: " + key);
         }
@@ -106,31 +125,28 @@ public class TranslationManager {
         return fallbackTranslationString;
     }
 
-    public void createLanguageFile(Translation translation) {
-        Path languageFile = dataFolder.toPath().resolve("languages").resolve(translation.fileName());
+    public final void createLanguageFile(final Translation translation) {
+        final var languageFile = this.dataFolder.toPath().resolve("languages").resolve(translation.fileName());
         if (!Files.exists(languageFile) && TranslationManager.class.getResource("/languages/" + translation.fileName()) == null) {
             throw new IllegalStateException("Translation could not be found internally or as a file externally: " + translation);
         }
         ConfigManager.createFileFromResources("languages/" + translation.fileName(), languageFile);
     }
 
-    // Okaeri would do this normally, but since default values in Lang changes based on language,
-    // we have to manually go through each file.
-
     /**
      * Updates all translation files by adding all missing keys.
      * If a key hasn't been translated yet, english is used as a fallback.
      */
-    public void updateTranslationFiles() {
-        ConfigHead tempHead = new ConfigHead(); // Prevent polluting ConfigManager global state
+    public final void updateTranslationFiles() {
+        final var tempHead = new ConfigHead(); // Prevent polluting ConfigManager global state
 
-        Lang fallback = loadFromResources(tempHead, Translation.EN);
-        for (Translation trans : Translation.getDefaultTranslations()) {
-            String langFilePathStr = "languages/" + trans.fileName();
-            Path langFilePath = dataFolder.toPath().resolve(langFilePathStr);
+        final var fallback = this.loadFromResources(tempHead, Translation.EN);
+        for (final var trans : Translation.getDefaultTranslations()) {
+            final var langFilePathStr = "languages/" + trans.fileName();
+            final var langFilePath = this.dataFolder.toPath().resolve(langFilePathStr);
 
-            Lang langFromFile = tempHead.createConfig(Lang.class, langFilePath);
-            Lang langFromResources = loadFromResources(tempHead, trans);
+            final var langFromFile = tempHead.createConfig(Lang.class, langFilePath);
+            final var langFromResources = this.loadFromResources(tempHead, trans);
 
             langFromFile.updateMissingValuesFrom(langFromResources);
             if (trans != Translation.EN) {
@@ -144,39 +160,20 @@ public class TranslationManager {
     // Loads a lang from resources... by loading from file then overwriting with resources InputStream
     // A bit of a hack, but avoids having to modify Okaeri
     @Nullable
-    private Lang loadFromResources(ConfigHead tempHead, Translation translation) {
-        String langFilePathStr = "languages/" + translation.fileName();
-        Path langFilePath = dataFolder.toPath().resolve(langFilePathStr);
+    private Lang loadFromResources(final ConfigHead tempHead, final Translation translation) {
+        final var langFilePathStr = "languages/" + translation.fileName();
+        final var langFilePath = this.dataFolder.toPath().resolve(langFilePathStr);
 
-        try (InputStream inputStream = BreweryPlugin.class.getResourceAsStream("/" + langFilePathStr)) {
+        try (final var inputStream = BreweryPlugin.class.getResourceAsStream("/" + langFilePathStr)) {
             if (inputStream == null || !Files.exists(langFilePath)) {
                 throw new IOException("Lang file not found: " + langFilePathStr);
             }
-            Lang langFromResources = tempHead.createConfig(Lang.class, langFilePath);
+            final var langFromResources = tempHead.createConfig(Lang.class, langFilePath);
             langFromResources.load(inputStream);
             return langFromResources;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logging.errorLog("Failed to load " + langFilePathStr + " from resources", e);
             return null;
         }
-    }
-
-
-    public static void newInstance(File dataFolder) {
-        newInstance(dataFolder, false);
-    }
-
-    public static void newInstance(File dataFolder, boolean respectAlreadyExisting) {
-        if (singleton != null && respectAlreadyExisting) {
-            return;
-        }
-        singleton = new TranslationManager(dataFolder);
-    }
-
-    public static TranslationManager getInstance() {
-        if (singleton == null) {
-            singleton = new TranslationManager(BreweryPlugin.getInstance().getDataFolder());
-        }
-        return singleton;
     }
 }

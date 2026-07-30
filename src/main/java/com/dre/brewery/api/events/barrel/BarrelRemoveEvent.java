@@ -29,34 +29,34 @@ import org.jetbrains.annotations.NotNull;
  * <p>There may have been a BarrelDestroyEvent before this.
  * If not, Worldedit, other Plugins etc may be the cause for unexpected removal
  */
-public class BarrelRemoveEvent extends BarrelEvent {
+public final class BarrelRemoveEvent extends BarrelEvent {
     private static final HandlerList handlers = new HandlerList();
     private boolean dropItems;
 
-    public BarrelRemoveEvent(Barrel barrel, boolean dropItems) {
+    public BarrelRemoveEvent(final Barrel barrel, final boolean dropItems) {
         super(barrel);
         this.dropItems = dropItems;
     }
 
-    public boolean willDropItems() {
-        return dropItems;
+    // Required by Bukkit
+    public static HandlerList getHandlerList() {
+        return handlers;
+    }
+
+    public final boolean willDropItems() {
+        return this.dropItems;
     }
 
     /**
      * @param dropItems Should the Items contained in this Barrel drop to the ground?
      */
-    public void setShouldDropItems(boolean dropItems) {
+    public void setShouldDropItems(final boolean dropItems) {
         this.dropItems = dropItems;
     }
 
     @NotNull
     @Override
-    public HandlerList getHandlers() {
-        return handlers;
-    }
-
-    // Required by Bukkit
-    public static HandlerList getHandlerList() {
+    public final HandlerList getHandlers() {
         return handlers;
     }
 }

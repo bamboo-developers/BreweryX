@@ -25,7 +25,7 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class Base91EncoderStream extends FilterOutputStream {
+public final class Base91EncoderStream extends FilterOutputStream {
 
     private final basE91 encoder = new basE91();
     private byte[] buf = new byte[32];
@@ -33,56 +33,56 @@ public class Base91EncoderStream extends FilterOutputStream {
     private int writer = 0;
     private int encoded = 0;
 
-    public Base91EncoderStream(OutputStream out) {
+    public Base91EncoderStream(final OutputStream out) {
         super(out);
     }
 
     private void encFlush() throws IOException {
-        encoded = encoder.encode(buf, writer, encBuf);
-        out.write(encBuf, 0, encoded);
-        writer = 0;
+        this.encoded = this.encoder.encode(this.buf, this.writer, this.encBuf);
+        this.out.write(this.encBuf, 0, this.encoded);
+        this.writer = 0;
     }
 
     @Override
-    public void write(int b) throws IOException {
-        buf[writer++] = (byte) b;
-        if (writer >= buf.length) {
-            encFlush();
+    public final void write(final int b) throws IOException {
+        this.buf[this.writer++] = (byte) b;
+        if (this.writer >= this.buf.length) {
+            this.encFlush();
         }
     }
 
     @Override
-    public void write(byte[] b, int off, int len) throws IOException {
+    public final void write(final byte[] b, final int off, final int len) throws IOException {
         if (len == 0) return;
         if (b == null) throw new NullPointerException();
         if (len < 0 || off < 0 || (off + len) > b.length || off > b.length || (off + len) < 0) {
             throw new IndexOutOfBoundsException();
         }
 
-        if (buf.length - writer >= len) {
+        if (this.buf.length - this.writer >= len) {
             // Enough space in the buffer, copy it in
-            System.arraycopy(b, off, buf, writer, len);
-            writer += len;
-            if (writer >= buf.length) {
-                encFlush();
+            System.arraycopy(b, off, this.buf, this.writer, len);
+            this.writer += len;
+            if (this.writer >= this.buf.length) {
+                this.encFlush();
             }
             return;
         }
 
-        if (off == 0 && buf.length >= len) {
+        if (off == 0 && this.buf.length >= len) {
             // Buffer is too full but it would fit, so flush and encode data directly
-            encFlush();
-            encoded = encoder.encode(b, len, encBuf);
-            out.write(encBuf, 0, encoded);
+            this.encFlush();
+            this.encoded = this.encoder.encode(b, len, this.encBuf);
+            this.out.write(this.encBuf, 0, this.encoded);
             return;
         }
 
         // More data than space in the Buffer
-        ByteArrayInputStream in = new ByteArrayInputStream(b, off, len);
+        final var in = new ByteArrayInputStream(b, off, len);
         while (true) {
-            writer += in.read(buf, writer, buf.length - writer);
-            if (writer >= buf.length) {
-                encFlush();
+            this.writer += in.read(this.buf, this.writer, this.buf.length - this.writer);
+            if (this.writer >= this.buf.length) {
+                this.encFlush();
             } else {
                 break;
             }
@@ -90,23 +90,23 @@ public class Base91EncoderStream extends FilterOutputStream {
     }
 
     @Override
-    public void flush() throws IOException {
-        if (writer > 0) {
-            encFlush();
+    public final void flush() throws IOException {
+        if (this.writer > 0) {
+            this.encFlush();
         }
 
-        encoded = encoder.encEnd(encBuf);
-        if (encoded > 0) {
-            out.write(encBuf, 0, encoded);
+        this.encoded = this.encoder.encEnd(this.encBuf);
+        if (this.encoded > 0) {
+            this.out.write(this.encBuf, 0, this.encoded);
         }
         super.flush();
     }
 
     @Override
-    public void close() throws IOException {
+    public final void close() throws IOException {
         super.close();
-        encoder.encReset();
-        buf = null;
-        encBuf = null;
+        this.encoder.encReset();
+        this.buf = null;
+        this.encBuf = null;
     }
 }

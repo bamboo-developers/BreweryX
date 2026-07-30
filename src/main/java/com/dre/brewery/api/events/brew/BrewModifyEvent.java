@@ -40,7 +40,7 @@ import org.jetbrains.annotations.Nullable;
  */
 @Getter
 @Setter
-public class BrewModifyEvent extends BrewEvent implements Cancellable {
+public final class BrewModifyEvent extends BrewEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final Type type;
     private boolean cancelled;
@@ -49,14 +49,19 @@ public class BrewModifyEvent extends BrewEvent implements Cancellable {
     private Player player;
 
 
-    public BrewModifyEvent(@NotNull Brew brew, @NotNull ItemMeta meta, @NotNull Type type) {
+    public BrewModifyEvent(@NotNull final Brew brew, @NotNull final ItemMeta meta, @NotNull final Type type) {
         super(brew, meta);
         this.type = type;
     }
 
-    public BrewModifyEvent(@NotNull Brew brew, @NotNull ItemMeta meta, @NotNull Type type, @Nullable Player player) {
+    public BrewModifyEvent(@NotNull final Brew brew, @NotNull final ItemMeta meta, @NotNull final Type type, @Nullable final Player player) {
         this(brew, meta, type);
         this.player = player;
+    }
+
+    // Required by Bukkit
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 
     /**
@@ -64,27 +69,22 @@ public class BrewModifyEvent extends BrewEvent implements Cancellable {
      */
     @NotNull
     public BrewLore getLore() {
-        return new BrewLore(getBrew(), (PotionMeta) getItemMeta());
+        return new BrewLore(this.getBrew(), (PotionMeta) this.getItemMeta());
     }
 
     @Override
-    public boolean isCancelled() {
-        return cancelled;
+    public final boolean isCancelled() {
+        return this.cancelled;
     }
 
     @Override
-    public void setCancelled(boolean cancelled) {
+    public final void setCancelled(final boolean cancelled) {
         this.cancelled = cancelled;
     }
 
     @NotNull
     @Override
-    public HandlerList getHandlers() {
-        return handlers;
-    }
-
-    // Required by Bukkit
-    public static HandlerList getHandlerList() {
+    public final HandlerList getHandlers() {
         return handlers;
     }
 

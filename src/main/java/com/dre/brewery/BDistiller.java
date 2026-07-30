@@ -46,44 +46,35 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author ProgrammerDan (1.9 distillation update only)
  */
-public class BDistiller {
+public final class BDistiller {
 
     private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
 
     private static final int DISTILLTIME = 400;
     private static final Map<Block, BDistiller> trackedDistillers = new ConcurrentHashMap<>();
-
+    private final Block standBlock;
+    private final int fuel;
     private WrappedTask task;
     private int runTime = -1;
     private int brewTime = -1;
-    private final Block standBlock;
-    private final int fuel;
 
-    public BDistiller(Block standBlock, int fuel) {
+    public BDistiller(final Block standBlock, final int fuel) {
         this.standBlock = standBlock;
         this.fuel = fuel;
     }
 
-    public void cancelDistill() {
-        task.cancel(); // cancel prior
-    }
-
-    public void start() {
-        task = BreweryPlugin.getScheduler().runTimer(new DistillRunnable(), 2L, 1L);
-    }
-
-    public static void distillerClick(InventoryClickEvent event) {
-        BrewingStand standInv = (BrewingStand) PaperLib.getHolder(event.getInventory(), true).getHolder();
-        final Block standBlock = standInv.getBlock();
+    public static void distillerClick(final InventoryClickEvent event) {
+        final var standInv = (BrewingStand) PaperLib.getHolder(event.getInventory(), true).getHolder();
+        final var standBlock = standInv.getBlock();
 
         // If we were already tracking the brewer, cancel any ongoing event due to the click.
-        BDistiller distiller = trackedDistillers.get(standBlock);
+        var distiller = trackedDistillers.get(standBlock);
         if (distiller != null) {
             distiller.cancelDistill();
             standInv.setBrewingTime(0); // Fixes brewing continuing without fuel for normal potions
             standInv.update();
         }
-        final int fuel = standInv.getFuelLevel();
+        final var fuel = standInv.getFuelLevel();
 
         // Now check if we should bother to track it.
         distiller = new BDistiller(standBlock, fuel);
@@ -91,15 +82,15 @@ public class BDistiller {
         distiller.start();
     }
 
-    public static boolean isTrackingDistiller(Block block) {
+    public static boolean isTrackingDistiller(final Block block) {
         return trackedDistillers.containsKey(block);
     }
 
     // Returns a Brew or null for every Slot in the BrewerInventory
-    public static Brew[] getDistillContents(BrewerInventory inv) {
+    public static Brew[] getDistillContents(final BrewerInventory inv) {
         ItemStack item;
-        Brew[] contents = new Brew[3];
-        for (int slot = 0; slot < 3; slot++) {
+        final var contents = new Brew[3];
+        for (var slot = 0; slot < 3; slot++) {
             item = inv.getItem(slot);
             if (item != null) {
                 contents[slot] = Brew.get(item);
@@ -108,9 +99,9 @@ public class BDistiller {
         return contents;
     }
 
-    public static void checkContents(BrewerInventory inv, Brew[] contents) {
+    public static void checkContents(final BrewerInventory inv, final Brew[] contents) {
         ItemStack item;
-        for (int slot = 0; slot < 3; slot++) {
+        for (var slot = 0; slot < 3; slot++) {
             if (contents[slot] != null) {
                 item = inv.getItem(slot);
                 if (!Brew.isBrew(item)) {
@@ -120,11 +111,11 @@ public class BDistiller {
         }
     }
 
-    public static byte hasBrew(BrewerInventory brewer, Brew[] contents) {
-        ItemStack item = brewer.getItem(3); // ingredient
-        boolean glowstone = (item != null && Material.GLOWSTONE_DUST == item.getType()); // need dust in the top slot.
+    public static byte hasBrew(final BrewerInventory brewer, final Brew[] contents) {
+        final var item = brewer.getItem(3); // ingredient
+        final var glowstone = (item != null && Material.GLOWSTONE_DUST == item.getType()); // need dust in the top slot.
         byte customFound = 0;
-        for (Brew brew : contents) {
+        for (final var brew : contents) {
             if (brew != null) {
                 if (!glowstone) {
                     return 1;
@@ -139,9 +130,9 @@ public class BDistiller {
         return customFound;
     }
 
-    public static boolean runDistill(BrewerInventory inv, Brew[] contents) {
-        boolean custom = false;
-        for (int slot = 0; slot < 3; slot++) {
+    public static boolean runDistill(final BrewerInventory inv, final Brew[] contents) {
+        var custom = false;
+        for (var slot = 0; slot < 3; slot++) {
             if (contents[slot] == null) continue;
             if (contents[slot].canDistill()) {
                 // is further distillable
@@ -157,10 +148,10 @@ public class BDistiller {
         return false;
     }
 
-    public static int getLongestDistillTime(Brew[] contents) {
-        int bestTime = 0;
+    public static int getLongestDistillTime(final Brew[] contents) {
+        var bestTime = 0;
         int time;
-        for (int slot = 0; slot < 3; slot++) {
+        for (var slot = 0; slot < 3; slot++) {
             if (contents[slot] == null) continue;
             time = contents[slot].getDistillTimeNextRun();
             if (time == 0) {
@@ -177,13 +168,13 @@ public class BDistiller {
         return 800;
     }
 
-    public static void showAlc(BrewerInventory inv, Brew[] contents) {
-        for (int slot = 0; slot < 3; slot++) {
+    public static void showAlc(final BrewerInventory inv, final Brew[] contents) {
+        for (var slot = 0; slot < 3; slot++) {
             if (contents[slot] != null) {
                 // Show Alc in lore
-                ItemStack item = inv.getItem(slot);
-                PotionMeta meta = (PotionMeta) item.getItemMeta();
-                BrewLore brewLore = new BrewLore(contents[slot], meta);
+                final var item = inv.getItem(slot);
+                final var meta = (PotionMeta) item.getItemMeta();
+                final var brewLore = new BrewLore(contents[slot], meta);
                 brewLore.updateAlc(true);
                 brewLore.write();
                 item.setItemMeta(meta);
@@ -191,56 +182,64 @@ public class BDistiller {
         }
     }
 
-    public class DistillRunnable implements Runnable {
+    public final void cancelDistill() {
+        this.task.cancel(); // cancel prior
+    }
+
+    public final void start() {
+        this.task = BreweryPlugin.getScheduler().runTimer(new DistillRunnable(), 2L, 1L);
+    }
+
+    public final class DistillRunnable implements Runnable {
         private Brew[] contents = null;
 
         @Override
-        public void run() {
-            Location standLocation = standBlock.getLocation();
+        public final void run() {
+            final var standLocation = BDistiller.this.standBlock.getLocation();
             BreweryPlugin.getScheduler().runAtLocationLater(standLocation, () -> {
                 if (!standLocation.getWorld().isChunkLoaded(standLocation.getChunk())) {
                     return;
                 }
-                if (standBlock.getType() != Material.BREWING_STAND) {
-                    task.cancel();
-                    trackedDistillers.remove(standBlock);
+                if (BDistiller.this.standBlock.getType() != Material.BREWING_STAND) {
+                    BDistiller.this.task.cancel();
+                    trackedDistillers.remove(BDistiller.this.standBlock);
                     Logging.debugLog("The block was replaced; not a brewing stand.");
                     return;
                 }
-                BrewingStand stand = (BrewingStand) PaperLib.getBlockState(standBlock, false).getState();
-                if (brewTime == -1 && !prepareForDistillables(stand)) { // check at the beginning for distillables
+                final var stand = (BrewingStand) PaperLib.getBlockState(BDistiller.this.standBlock, false).getState();
+                if (BDistiller.this.brewTime == -1 && !this.prepareForDistillables(stand)) { // check at the beginning for distillables
                     return;
                 }
 
-                brewTime--; // count down.
-                if (brewTime > 1) {
-                    stand.setBrewingTime((int) ((float) brewTime / ((float) runTime / (float) DISTILLTIME)) + 1);
+                BDistiller.this.brewTime--; // count down.
+                if (BDistiller.this.brewTime > 1) {
+                    stand.setBrewingTime((int) ((float) BDistiller.this.brewTime / ((float) BDistiller.this.runTime / (float) DISTILLTIME)) + 1);
                     stand.update();
                     return;
                 }
 
-                contents = getDistillContents(stand.getInventory()); // Get the contents again at the end just in case
+                this.contents = getDistillContents(stand.getInventory()); // Get the contents again at the end just in case
                 stand.setBrewingTime(0);
                 stand.update();
-                if (!runDistill(stand.getInventory(), contents)) {
-                    task.cancel();
-                    trackedDistillers.remove(standBlock);
+                if (!runDistill(stand.getInventory(), this.contents)) {
+                    BDistiller.this.task.cancel();
+                    trackedDistillers.remove(BDistiller.this.standBlock);
                     Logging.debugLog("All done distilling");
                 } else {
-                    brewTime = -1; // go again.
+                    BDistiller.this.brewTime = -1; // go again.
                     Logging.debugLog("Can distill more! Continuing.");
                 }
             }, 0);
         }
 
-        private boolean prepareForDistillables(BrewingStand stand) {
-            BrewerInventory inventory = stand.getInventory();
-            if (contents == null) {
-                contents = getDistillContents(inventory);
+        private boolean prepareForDistillables(final BrewingStand stand) {
+            final var inventory = stand.getInventory();
+            if (this.contents == null) {
+                this.contents = getDistillContents(inventory);
             } else {
-                checkContents(inventory, contents);
+                checkContents(inventory, this.contents);
             }
-            switch (hasBrew(inventory, contents)) {
+            switch (hasBrew(inventory, this.contents)) {
                 case 1:
                     // Custom potion but not for distilling. Stop any brewing and cancel this task
                     if (stand.getBrewingTime() > 0) {
@@ -255,19 +254,19 @@ public class BDistiller {
                             // In the client the Brewer will look like it is not doing anything
                             stand.setBrewingTime(Short.MAX_VALUE << 1);
                         }
-                        stand.setFuelLevel(fuel);
+                        stand.setFuelLevel(BDistiller.this.fuel);
                     }
                 case 0:
                     // No custom potion, cancel and ignore
-                    task.cancel();
-                    trackedDistillers.remove(standBlock);
-                    showAlc(inventory, contents);
+                    BDistiller.this.task.cancel();
+                    trackedDistillers.remove(BDistiller.this.standBlock);
+                    showAlc(inventory, this.contents);
                     Logging.debugLog("nothing to distill");
                     return false;
                 default:
-                    runTime = getLongestDistillTime(contents);
-                    brewTime = runTime;
-                    Logging.debugLog("using brewtime: " + runTime);
+                    BDistiller.this.runTime = getLongestDistillTime(this.contents);
+                    BDistiller.this.brewTime = BDistiller.this.runTime;
+                    Logging.debugLog("using brewtime: " + BDistiller.this.runTime);
 
             }
             return true;

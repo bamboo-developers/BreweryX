@@ -25,7 +25,7 @@ import org.bukkit.command.CommandSender;
 
 import java.util.concurrent.CompletableFuture;
 
-public class NoImplReleaseChecker extends ReleaseChecker {
+public final class NoImplReleaseChecker extends ReleaseChecker {
 
     @Override
     public CompletableFuture<String> resolveLatest() {
@@ -44,7 +44,7 @@ public class NoImplReleaseChecker extends ReleaseChecker {
     }
 
     @Override
-    public void notify(CommandSender receiver) {
+    public void notify(final CommandSender receiver) {
         // No implementation
     }
 

@@ -33,16 +33,16 @@ import com.dre.brewery.storage.interfaces.SerializableThing;
  */
 public record SerializableBPlayer(String id, int quality, int drunkenness,
                                   int offlineDrunkenness) implements SerializableThing {
-    public SerializableBPlayer(BPlayer player) {
+    public SerializableBPlayer(final BPlayer player) {
         this(player.getUuid(), player.getQuality(), player.getDrunkeness(), player.getOfflineDrunkeness());
     }
 
     public BPlayer toBPlayer() {
-        return new BPlayer(id, quality, drunkenness, offlineDrunkenness);
+        return new BPlayer(this.id, this.quality, this.drunkenness, this.offlineDrunkenness);
     }
 
     @Override
     public String getId() {
-        return id;
+        return this.id;
     }
 }

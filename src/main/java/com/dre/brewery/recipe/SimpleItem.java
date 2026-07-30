@@ -38,145 +38,142 @@ import java.util.Objects;
 /**
  * Simple Minecraft Item with just Material
  */
-public class SimpleItem extends RecipeItem implements Ingredient {
+public final class SimpleItem extends RecipeItem implements Ingredient {
 
     private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
 
-    private Material mat;
-    private short dur; // Old Mc
+    private final Material mat;
+    private final short dur; // Old Mc
 
 
-    public SimpleItem(Material mat) {
+    public SimpleItem(final Material mat) {
         this(mat, (short) 0);
     }
 
-    public SimpleItem(Material mat, short dur) {
+    public SimpleItem(final Material mat, final short dur) {
         this.mat = mat;
         this.dur = dur;
     }
 
-    @Override
-    public boolean hasMaterials() {
-        return mat != null;
-    }
-
-    public Material getMaterial() {
-        return mat;
-    }
-
-    @Override
-    public List<Material> getMaterials() {
-        List<Material> l = new ArrayList<>(1);
-        l.add(mat);
-        return l;
-    }
-
-    @NotNull
-    @Override
-    public Ingredient toIngredient(ItemStack forItem) {
-        return ((SimpleItem) getMutableCopy());
-    }
-
-    @NotNull
-    @Override
-    public Ingredient toIngredientGeneric() {
-        return ((SimpleItem) getMutableCopy());
-    }
-
-    @Override
-    public boolean matches(ItemStack item) {
-        if (!mat.equals(item.getType())) {
-            return false;
-        }
-        //noinspection deprecation
-        return VERSION.isOrLater(MinecraftVersion.V1_13) || dur == item.getDurability();
-    }
-
-    @Override
-    public boolean matches(Ingredient ingredient) {
-        if (isSimilar(ingredient)) {
-            return true;
-        }
-        if (ingredient instanceof RecipeItem) {
-            if (!((RecipeItem) ingredient).hasMaterials()) {
-                return false;
-            }
-            if (ingredient instanceof CustomItem) {
-                // Only match if the Custom Item also only defines material
-                // If the custom item has more info like name and lore, it is not supposed to match a simple item
-                CustomItem ci = (CustomItem) ingredient;
-                return !ci.hasLore() && !ci.hasName() && mat == ci.getMaterial();
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public boolean isSimilar(Ingredient item) {
-        if (this == item) {
-            return true;
-        }
-        if (item instanceof SimpleItem) {
-            SimpleItem si = ((SimpleItem) item);
-            return si.mat == mat && si.dur == dur;
-        }
-        return false;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-        SimpleItem item = (SimpleItem) o;
-        return dur == item.dur &&
-            mat == item.mat;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), mat, dur);
-    }
-
-    @Override
-    public String toString() {
-        return "SimpleItem{" +
-            "mat=" + getDebugID() +
-            " amount=" + getAmount() +
-            '}';
-    }
-
-    @Override
-    public String getDebugID() {
-        return mat.name().toLowerCase(Locale.ROOT);
-    }
-
-    @Override
-    public void saveTo(DataOutputStream out) throws IOException {
-        out.writeUTF("SI");
-        out.writeUTF(mat.name());
-        out.writeShort(dur);
-    }
-
-    public static SimpleItem loadFrom(ItemLoader loader) {
+    public static SimpleItem loadFrom(final ItemLoader loader) {
         try {
-            DataInputStream in = loader.getInputStream();
-            Material mat = Material.getMaterial(in.readUTF());
-            short dur = in.readShort();
+            final var in = loader.getInputStream();
+            final var mat = Material.getMaterial(in.readUTF());
+            final var dur = in.readShort();
             if (mat != null) {
-                SimpleItem item = new SimpleItem(mat, dur);
+                final var item = new SimpleItem(mat, dur);
                 return item;
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logging.errorLog("Failed to load SimpleItem", e);
         }
         return null;
     }
 
     // Needs to be called at Server start
-    public static void registerItemLoader(BreweryPlugin breweryPlugin) {
+    public static void registerItemLoader(final BreweryPlugin breweryPlugin) {
         breweryPlugin.registerForItemLoader("SI", SimpleItem::loadFrom);
     }
 
-}
+    @Override
+    public boolean hasMaterials() {
+        return this.mat != null;
+    }
 
+    public final Material getMaterial() {
+        return this.mat;
+    }
+
+    @Override
+    public List<Material> getMaterials() {
+        final List<Material> l = new ArrayList<>(1);
+        l.add(this.mat);
+        return l;
+    }
+
+    @NotNull
+    @Override
+    public Ingredient toIngredient(final ItemStack forItem) {
+        return ((SimpleItem) this.getMutableCopy());
+    }
+
+    @NotNull
+    @Override
+    public Ingredient toIngredientGeneric() {
+        return ((SimpleItem) this.getMutableCopy());
+    }
+
+    @Override
+    public boolean matches(final ItemStack item) {
+        if (!this.mat.equals(item.getType())) {
+            return false;
+        }
+        //noinspection deprecation
+        return VERSION.isOrLater(MinecraftVersion.V1_13) || this.dur == item.getDurability();
+    }
+
+    @Override
+    public boolean matches(final Ingredient ingredient) {
+        if (this.isSimilar(ingredient)) {
+            return true;
+        }
+        if (ingredient instanceof RecipeItem) {
+            if (!((RecipeItem) ingredient).hasMaterials()) {
+                return false;
+            }
+            if (ingredient instanceof final CustomItem ci) {
+                // Only match if the Custom Item also only defines material
+                // If the custom item has more info like name and lore, it is not supposed to match a simple item
+                return !ci.hasLore() && !ci.hasName() && this.mat == ci.getMaterial();
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public final boolean isSimilar(final Ingredient item) {
+        if (this == item) {
+            return true;
+        }
+        if (item instanceof final SimpleItem si) {
+            return si.mat == this.mat && si.dur == this.dur;
+        }
+        return false;
+    }
+
+    @Override
+    public final boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || this.getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        final var item = (SimpleItem) o;
+        return this.dur == item.dur &&
+                this.mat == item.mat;
+    }
+
+    @Override
+    public final int hashCode() {
+        return Objects.hash(super.hashCode(), this.mat, this.dur);
+    }
+
+    @Override
+    public final String toString() {
+        return "SimpleItem{" +
+                "mat=" + this.getDebugID() +
+                " amount=" + this.getAmount() +
+                '}';
+    }
+
+    @Override
+    public final String getDebugID() {
+        return this.mat.name().toLowerCase(Locale.ROOT);
+    }
+
+    @Override
+    public void saveTo(final DataOutputStream out) throws IOException {
+        out.writeUTF("SI");
+        out.writeUTF(this.mat.name());
+        out.writeShort(this.dur);
+    }
+
+}

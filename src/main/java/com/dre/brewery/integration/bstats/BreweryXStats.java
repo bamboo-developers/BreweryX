@@ -39,14 +39,14 @@ import java.util.Map;
 /**
  * Stats which are exclusive to BreweryX.
  */
-public class BreweryXStats {
+public final class BreweryXStats {
 
     private static final int BSTATS_ID = 24059;
 
     private final Config config = ConfigManager.getConfig(Config.class);
 
     private String getBranch() {
-        String versionString = BreweryPlugin.getInstance().getDescription().getVersion();
+        final var versionString = BreweryPlugin.getInstance().getDescription().getVersion();
         if (versionString.contains(";")) {
             return versionString.split(";")[1];
         }
@@ -54,21 +54,21 @@ public class BreweryXStats {
     }
 
 
-    public void setupBStats() {
+    public final void setupBStats() {
         try {
-            Metrics metrics = new Metrics(BreweryPlugin.getInstance(), BSTATS_ID);
+            final var metrics = new Metrics(BreweryPlugin.getInstance(), BSTATS_ID);
 
             metrics.addCustomChart(new DrilldownPie("storage_type", () -> {
-                Map<String, Map<String, Integer>> map = new HashMap<>();
-                String storageType = BreweryPlugin.getDataManager().getType().getFormattedName();
-                Map<String, Integer> entry = new HashMap<>();
+                final Map<String, Map<String, Integer>> map = new HashMap<>();
+                final var storageType = BreweryPlugin.getDataManager().getType().getFormattedName();
+                final Map<String, Integer> entry = new HashMap<>();
                 entry.put(storageType, 1);
                 map.put(storageType, entry);
                 return map;
             }));
             metrics.addCustomChart(new AdvancedPie("recipe_count", () -> {
-                Map<String, Integer> valueMap = new HashMap<>();
-                int recipeCount = BRecipe.getAllRecipes().size();
+                final Map<String, Integer> valueMap = new HashMap<>();
+                final var recipeCount = BRecipe.getAllRecipes().size();
                 if (recipeCount >= 150) {
                     valueMap.put("150+", recipeCount);
                 } else if (recipeCount >= 100) {
@@ -88,8 +88,8 @@ public class BreweryXStats {
             }));
 
             metrics.addCustomChart(new AdvancedPie("addons", () -> {
-                Map<String, Integer> valueMap = new HashMap<>();
-                int addonsAmount = BreweryPlugin.getAddonManager().getAddons().size();
+                final Map<String, Integer> valueMap = new HashMap<>();
+                final var addonsAmount = BreweryPlugin.getAddonManager().getAddons().size();
                 if (addonsAmount >= 5) {
                     valueMap.put("5+", addonsAmount);
                 } else if (addonsAmount >= 3) {
@@ -104,14 +104,14 @@ public class BreweryXStats {
                 return valueMap;
             }));
 
-            metrics.addCustomChart(new SimplePie("language", config::getLanguage));
+            metrics.addCustomChart(new SimplePie("language", this.config::getLanguage));
             metrics.addCustomChart(new SimplePie("branch", this::getBranch));
 
             metrics.addCustomChart(new SingleLineChart("drunk_players", BPlayer::numDrunkPlayers));
             metrics.addCustomChart(new SingleLineChart("barrels_built", Barrel.getAllBarrels()::size));
             metrics.addCustomChart(new SingleLineChart("cauldrons_boiling", BCauldron.bcauldrons::size));
 
-        } catch (Exception | LinkageError e) {
+        } catch (final Exception | LinkageError e) {
             Logging.errorLog("Failed to submit stats data to bStats.org (BreweryXStats)", e);
         }
     }

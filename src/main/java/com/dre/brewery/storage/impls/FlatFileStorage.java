@@ -20,11 +20,7 @@
 
 package com.dre.brewery.storage.impls;
 
-import com.dre.brewery.BCauldron;
-import com.dre.brewery.BIngredients;
-import com.dre.brewery.BPlayer;
-import com.dre.brewery.Barrel;
-import com.dre.brewery.Wakeup;
+import com.dre.brewery.*;
 import com.dre.brewery.configuration.sector.capsule.ConfiguredDataManager;
 import com.dre.brewery.storage.DataManager;
 import com.dre.brewery.storage.StorageInitException;
@@ -48,175 +44,169 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 // TODO: Simplify methods
-public class FlatFileStorage extends DataManager {
+public final class FlatFileStorage extends DataManager {
 
     private final File rawFile;
     private final YamlConfiguration dataFile;
     private SQLDataSerializer serializer;
 
-    public FlatFileStorage(ConfiguredDataManager record) throws StorageInitException {
+    public FlatFileStorage(final ConfiguredDataManager record) throws StorageInitException {
         super(record.getType());
-        String fileName = record.getDatabase() + ".yml";
+        final var fileName = record.getDatabase() + ".yml";
         this.rawFile = new File(plugin.getDataFolder(), fileName);
 
-        if (!rawFile.exists()) {
+        if (!this.rawFile.exists()) {
             try {
-                rawFile.createNewFile();
-            } catch (IOException e) {
+                this.rawFile.createNewFile();
+            } catch (final IOException e) {
                 throw new StorageInitException("Failed to create file! " + fileName, e);
             }
         }
 
-        this.dataFile = YamlConfiguration.loadConfiguration(rawFile);
+        this.dataFile = YamlConfiguration.loadConfiguration(this.rawFile);
     }
 
 
     private void save() {
         try {
-            dataFile.save(rawFile);
-        } catch (IOException e) {
+            this.dataFile.save(this.rawFile);
+        } catch (final IOException e) {
             Logging.errorLog("Failed to save to FlatFile!", e);
         }
     }
 
     private SQLDataSerializer getLazySerializerInstance() {
-        if (serializer == null) {
-            serializer = new SQLDataSerializer();
+        if (this.serializer == null) {
+            this.serializer = new SQLDataSerializer();
         }
-        return serializer;
+        return this.serializer;
     }
 
     @Override
-    public boolean createTable(String name, int maxIdLength) {
-        if (dataFile.contains(name)) {
+    public boolean createTable(final String name, final int maxIdLength) {
+        if (this.dataFile.contains(name)) {
             return false;
         }
-        dataFile.createSection(name);
-        save();
+        this.dataFile.createSection(name);
+        this.save();
         return true;
     }
 
     @Override
-    public boolean dropTable(String name) {
-        dataFile.set(name, null);
-        save();
+    public boolean dropTable(final String name) {
+        this.dataFile.set(name, null);
+        this.save();
         return true;
     }
 
 
     @Override
-    public <T extends SerializableThing> T getGeneric(String id, String table, Class<T> type) {
-        String path = table + "." + id;
+    public final <T extends SerializableThing> T getGeneric(final String id, final String table, final Class<T> type) {
+        final var path = table + "." + id;
 
-        ConfigurationSection section = dataFile.getConfigurationSection(path);
+        final var section = this.dataFile.getConfigurationSection(path);
         if (section == null) {
             return null;
         }
 
         // Get all values at the path as a Map
-        Map<String, Object> map = section.getValues(false);
-        Gson gson = getLazySerializerInstance().getGson();
+        final var map = section.getValues(false);
+        final var gson = this.getLazySerializerInstance().getGson();
 
         // Gson writes ints as doubles sometimes, but they seem to serialize back to ints just fine.
-        String json = gson.toJson(map);
+        final var json = gson.toJson(map);
         return gson.fromJson(json, type);
     }
 
     @Override
-    public <T extends SerializableThing> List<T> getAllGeneric(String table, Class<T> type) {
-        ConfigurationSection section = dataFile.getConfigurationSection(table);
+    public <T extends SerializableThing> List<T> getAllGeneric(final String table, final Class<T> type) {
+        final var section = this.dataFile.getConfigurationSection(table);
         if (section == null) {
             return Collections.emptyList();
         }
-        List<T> things = new ArrayList<>();
-        for (String key : section.getKeys(false)) {
-            things.add(getGeneric(key, table, type));
+        final List<T> things = new ArrayList<>();
+        for (final var key : section.getKeys(false)) {
+            things.add(this.getGeneric(key, table, type));
         }
         return things;
     }
 
     @Override
-    public <T extends SerializableThing> void saveAllGeneric(List<T> serializableThings, String table, @Nullable Class<T> type) {
-        ConfigurationSection section = dataFile.getConfigurationSection(table);
+    public <T extends SerializableThing> void saveAllGeneric(final List<T> serializableThings, final String table, @Nullable final Class<T> type) {
+        final var section = this.dataFile.getConfigurationSection(table);
         if (section != null) {
-            section.getKeys(false).forEach(key -> dataFile.set(table + "." + key, null));
+            section.getKeys(false).forEach(key -> this.dataFile.set(table + "." + key, null));
         } else {
-            dataFile.createSection(table);
+            this.dataFile.createSection(table);
         }
 
-        for (T thing : serializableThings) {
-            saveGeneric(thing, table);
+        for (final var thing : serializableThings) {
+            this.saveGeneric(thing, table);
         }
-        save();
+        this.save();
     }
 
     @Override
-    public <T extends SerializableThing> void saveGeneric(T serializableThing, String table) {
-        String path = table + "." + serializableThing.getId();
+    public final <T extends SerializableThing> void saveGeneric(final T serializableThing, final String table) {
+        final var path = table + "." + serializableThing.getId();
 
-        Gson gson = getLazySerializerInstance().getGson();
-        JsonObject jsonObject = gson.toJsonTree(serializableThing).getAsJsonObject();
-        Type mapType = new TypeToken<Map<String, Object>>() {
+        final var gson = this.getLazySerializerInstance().getGson();
+        final var jsonObject = gson.toJsonTree(serializableThing).getAsJsonObject();
+        final var mapType = new TypeToken<Map<String, Object>>() {
         }.getType();
-        Map<String, Object> map = gson.fromJson(jsonObject, mapType);
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            dataFile.set(path + "." + entry.getKey(), entry.getValue());
+        final Map<String, Object> map = gson.fromJson(jsonObject, mapType);
+        for (final var entry : map.entrySet()) {
+            this.dataFile.set(path + "." + entry.getKey(), entry.getValue());
         }
-        save();
+        this.save();
     }
 
     @Override
-    public void deleteGeneric(String id, String table) {
-        dataFile.set(table + "." + id, null);
-        save();
+    public void deleteGeneric(final String id, final String table) {
+        this.dataFile.set(table + "." + id, null);
+        this.save();
     }
 
     @Override
-    public CompletableFuture<Barrel> getBarrel(UUID id) {
-        String path = "barrels." + id;
+    public final CompletableFuture<Barrel> getBarrel(final UUID id) {
+        final var path = "barrels." + id;
 
-        Location spigotLoc = deserializeLocation(dataFile.getString(path + ".spigot"));
+        final var spigotLoc = deserializeLocation(this.dataFile.getString(path + ".spigot"));
         if (spigotLoc == null) {
             return CompletableFuture.completedFuture(null);
         }
 
-        int[] bounds = Arrays.stream(
-                dataFile.getString(path + ".bounds").split(",")
-            )
-            .mapToInt(Integer::parseInt).toArray();
+        final var bounds = Arrays.stream(
+                        this.dataFile.getString(path + ".bounds").split(",")
+                )
+                .mapToInt(Integer::parseInt).toArray();
 
-        BoundingBox boundingBox = BoundingBox.fromPoints(bounds);
-        float time = (float) dataFile.getDouble(path + ".time", 0.0);
-        byte sign = (byte) dataFile.getInt(path + ".sign", 0);
-        ItemStack[] items = BukkitSerialization.itemStackArrayFromBase64(dataFile.getString(path + ".items", null));
+        final var boundingBox = BoundingBox.fromPoints(bounds);
+        final var time = (float) this.dataFile.getDouble(path + ".time", 0.0);
+        final var sign = (byte) this.dataFile.getInt(path + ".sign", 0);
+        final var items = BukkitSerialization.itemStackArrayFromBase64(this.dataFile.getString(path + ".items", null));
 
 
         return Barrel.computeSmall(spigotLoc).thenApplyAsync(small ->
-            new Barrel(spigotLoc.getBlock(), sign, boundingBox, items, time, id, small)
+                new Barrel(spigotLoc.getBlock(), sign, boundingBox, items, time, id, small)
         );
     }
 
     @Override
     public CompletableFuture<List<Barrel>> getAllBarrels() {
-        ConfigurationSection section = dataFile.getConfigurationSection("barrels");
+        final var section = this.dataFile.getConfigurationSection("barrels");
         if (section == null) {
             return CompletableFuture.completedFuture(Collections.emptyList());
         }
 
-        List<CompletableFuture<Barrel>> barrels = new ArrayList<>();
+        final List<CompletableFuture<Barrel>> barrels = new ArrayList<>();
 
-        for (String key : section.getKeys(false)) {
-            CompletableFuture<Barrel> barrel = getBarrel(BUtil.uuidFromString(key));
+        for (final var key : section.getKeys(false)) {
+            final var barrel = this.getBarrel(BUtil.uuidFromString(key));
             if (barrel != null) {
                 barrels.add(barrel);
             }
@@ -225,60 +215,60 @@ public class FlatFileStorage extends DataManager {
     }
 
     @Override
-    public void saveAllBarrels(Collection<Barrel> barrels) {
-        dataFile.set("barrels", null);
-        for (Barrel barrel : barrels) {
-            saveBarrel(barrel);
+    public void saveAllBarrels(final Collection<Barrel> barrels) {
+        this.dataFile.set("barrels", null);
+        for (final var barrel : barrels) {
+            this.saveBarrel(barrel);
         }
     }
 
     @Override
-    public void saveBarrel(Barrel barrel) {
+    public final void saveBarrel(final Barrel barrel) {
         if (barrel.getBounds() == null) {
             return;
         }
-        String path = "barrels." + barrel.getId();
+        final var path = "barrels." + barrel.getId();
 
-        dataFile.set(path + ".spigot", serializeLocation(barrel.getSpigot().getLocation()));
-        dataFile.set(path + ".bounds", barrel.getBounds().serialize());
-        dataFile.set(path + ".time", barrel.getTime());
-        dataFile.set(path + ".sign", barrel.getSignoffset());
-        dataFile.set(path + ".items", BukkitSerialization.itemStackArrayToBase64(barrel.getInventory().getContents()));
-        save();
+        this.dataFile.set(path + ".spigot", serializeLocation(barrel.getSpigot().getLocation()));
+        this.dataFile.set(path + ".bounds", barrel.getBounds().serialize());
+        this.dataFile.set(path + ".time", barrel.getTime());
+        this.dataFile.set(path + ".sign", barrel.getSignoffset());
+        this.dataFile.set(path + ".items", BukkitSerialization.itemStackArrayToBase64(barrel.getInventory().getContents()));
+        this.save();
     }
 
     @Override
-    public void deleteBarrel(UUID id) {
-        dataFile.set("barrels." + id, null);
-        save();
+    public void deleteBarrel(final UUID id) {
+        this.dataFile.set("barrels." + id, null);
+        this.save();
     }
 
     @Override
-    public BCauldron getCauldron(UUID id) {
-        String path = "cauldrons." + id;
+    public final BCauldron getCauldron(final UUID id) {
+        final var path = "cauldrons." + id;
 
-        Location loc = deserializeLocation(dataFile.getString(path + ".block"));
+        final var loc = deserializeLocation(this.dataFile.getString(path + ".block"));
         if (loc == null) {
             return null;
         }
-        BIngredients ingredients = BIngredients.deserializeIngredients(dataFile.getString(path + ".ingredients"));
-        int state = dataFile.getInt(path + ".state", 0);
+        final var ingredients = BIngredients.deserializeIngredients(this.dataFile.getString(path + ".ingredients"));
+        final var state = this.dataFile.getInt(path + ".state", 0);
 
         return new BCauldron(loc.getBlock(), ingredients, state, id);
     }
 
     @Override
     public Collection<BCauldron> getAllCauldrons() {
-        ConfigurationSection section = dataFile.getConfigurationSection("cauldrons");
+        final var section = this.dataFile.getConfigurationSection("cauldrons");
 
         if (section == null) {
             return Collections.emptyList();
         }
 
-        List<BCauldron> cauldrons = new ArrayList<>();
+        final List<BCauldron> cauldrons = new ArrayList<>();
 
-        for (String key : section.getKeys(false)) {
-            BCauldron cauldron = getCauldron(BUtil.uuidFromString(key));
+        for (final var key : section.getKeys(false)) {
+            final var cauldron = this.getCauldron(BUtil.uuidFromString(key));
             if (cauldron != null) {
                 cauldrons.add(cauldron);
             }
@@ -287,53 +277,53 @@ public class FlatFileStorage extends DataManager {
     }
 
     @Override
-    public void saveAllCauldrons(Collection<BCauldron> cauldrons) {
-        dataFile.set("cauldrons", null);
-        for (BCauldron cauldron : cauldrons) {
-            saveCauldron(cauldron);
+    public void saveAllCauldrons(final Collection<BCauldron> cauldrons) {
+        this.dataFile.set("cauldrons", null);
+        for (final var cauldron : cauldrons) {
+            this.saveCauldron(cauldron);
         }
     }
 
     @Override
-    public void saveCauldron(BCauldron cauldron) {
-        String path = "cauldrons." + cauldron.getId();
+    public final void saveCauldron(final BCauldron cauldron) {
+        final var path = "cauldrons." + cauldron.getId();
 
-        dataFile.set(path + ".block", serializeLocation(cauldron.getBlock().getLocation()));
-        dataFile.set(path + ".ingredients", cauldron.getIngredients().serializeIngredients());
-        dataFile.set(path + ".state", cauldron.getState());
-        save();
+        this.dataFile.set(path + ".block", serializeLocation(cauldron.getBlock().getLocation()));
+        this.dataFile.set(path + ".ingredients", cauldron.getIngredients().serializeIngredients());
+        this.dataFile.set(path + ".state", cauldron.getState());
+        this.save();
     }
 
 
     @Override
-    public void deleteCauldron(UUID id) {
-        dataFile.set("cauldrons." + id, null);
-        save();
+    public void deleteCauldron(final UUID id) {
+        this.dataFile.set("cauldrons." + id, null);
+        this.save();
     }
 
 
     @Override
-    public BPlayer getPlayer(UUID playerUUID) {
-        String path = "players." + playerUUID;
+    public final BPlayer getPlayer(final UUID playerUUID) {
+        final var path = "players." + playerUUID;
 
-        int quality = dataFile.getInt(path + ".quality", 0);
-        int drunkenness = dataFile.getInt(path + ".drunkenness", 0);
-        int offlineDrunkenness = dataFile.getInt(path + ".offlineDrunkenness", 0);
+        final var quality = this.dataFile.getInt(path + ".quality", 0);
+        final var drunkenness = this.dataFile.getInt(path + ".drunkenness", 0);
+        final var offlineDrunkenness = this.dataFile.getInt(path + ".offlineDrunkenness", 0);
         return new BPlayer(playerUUID, quality, drunkenness, offlineDrunkenness);
     }
 
     @Override
     public Collection<BPlayer> getAllPlayers() {
-        ConfigurationSection section = dataFile.getConfigurationSection("players");
+        final var section = this.dataFile.getConfigurationSection("players");
 
         if (section == null) {
             return Collections.emptyList();
         }
 
-        List<BPlayer> players = new ArrayList<>();
+        final List<BPlayer> players = new ArrayList<>();
 
-        for (String key : section.getKeys(false)) {
-            BPlayer player = getPlayer(BUtil.uuidFromString(key));
+        for (final var key : section.getKeys(false)) {
+            final var player = this.getPlayer(BUtil.uuidFromString(key));
             if (player != null) {
                 players.add(player);
             }
@@ -342,33 +332,33 @@ public class FlatFileStorage extends DataManager {
     }
 
     @Override
-    public void saveAllPlayers(Collection<BPlayer> players) {
-        dataFile.set("players", null);
-        for (BPlayer player : players) {
-            savePlayer(player);
+    public void saveAllPlayers(final Collection<BPlayer> players) {
+        this.dataFile.set("players", null);
+        for (final var player : players) {
+            this.savePlayer(player);
         }
     }
 
     @Override
-    public void savePlayer(BPlayer player) {
-        String path = "players." + player.getUuid();
+    public final void savePlayer(final BPlayer player) {
+        final var path = "players." + player.getUuid();
 
-        dataFile.set(path + ".quality", player.getQuality());
-        dataFile.set(path + ".drunkenness", player.getDrunkeness());
-        dataFile.set(path + ".offlineDrunkenness", player.getOfflineDrunkeness());
-        save();
+        this.dataFile.set(path + ".quality", player.getQuality());
+        this.dataFile.set(path + ".drunkenness", player.getDrunkeness());
+        this.dataFile.set(path + ".offlineDrunkenness", player.getOfflineDrunkeness());
+        this.save();
     }
 
     @Override
-    public void deletePlayer(UUID playerUUID) {
-        dataFile.set("players." + playerUUID, null);
-        save();
+    public void deletePlayer(final UUID playerUUID) {
+        this.dataFile.set("players." + playerUUID, null);
+        this.save();
     }
 
     @Override
-    public Wakeup getWakeup(UUID id) {
-        String path = "wakeups." + id;
-        Location wakeupLocation = deserializeLocation(dataFile.getString(path + ".location"), true);
+    public final Wakeup getWakeup(final UUID id) {
+        final var path = "wakeups." + id;
+        final var wakeupLocation = deserializeLocation(this.dataFile.getString(path + ".location"), true);
         if (wakeupLocation == null) {
             return null;
         }
@@ -377,16 +367,16 @@ public class FlatFileStorage extends DataManager {
 
     @Override
     public Collection<Wakeup> getAllWakeups() {
-        ConfigurationSection section = dataFile.getConfigurationSection("wakeups");
+        final var section = this.dataFile.getConfigurationSection("wakeups");
 
         if (section == null) {
             return Collections.emptyList();
         }
 
-        List<Wakeup> wakeups = new ArrayList<>();
+        final List<Wakeup> wakeups = new ArrayList<>();
 
-        for (String key : section.getKeys(false)) {
-            Wakeup wakeup = getWakeup(BUtil.uuidFromString(key));
+        for (final var key : section.getKeys(false)) {
+            final var wakeup = this.getWakeup(BUtil.uuidFromString(key));
             if (wakeup != null) {
                 wakeups.add(wakeup);
             }
@@ -395,44 +385,44 @@ public class FlatFileStorage extends DataManager {
     }
 
     @Override
-    public void saveAllWakeups(Collection<Wakeup> wakeups) {
-        dataFile.set("wakeups", null);
-        for (Wakeup wakeup : wakeups) {
-            saveWakeup(wakeup);
+    public void saveAllWakeups(final Collection<Wakeup> wakeups) {
+        this.dataFile.set("wakeups", null);
+        for (final var wakeup : wakeups) {
+            this.saveWakeup(wakeup);
         }
     }
 
     @Override
-    public void saveWakeup(Wakeup wakeup) {
-        String path = "wakeups." + wakeup.getId();
-        dataFile.set(path + ".location", serializeLocation(wakeup.getLoc(), true));
-        save();
+    public final void saveWakeup(final Wakeup wakeup) {
+        final var path = "wakeups." + wakeup.getId();
+        this.dataFile.set(path + ".location", serializeLocation(wakeup.getLoc(), true));
+        this.save();
     }
 
     @Override
-    public void deleteWakeup(UUID id) {
-        dataFile.set("wakeups." + id, null);
-        save();
+    public void deleteWakeup(final UUID id) {
+        this.dataFile.set("wakeups." + id, null);
+        this.save();
     }
 
     @Override
     public BreweryMiscData getBreweryMiscData() {
         return new BreweryMiscData(
-            dataFile.getLong("misc.installTime", System.currentTimeMillis()),
-            dataFile.getLong("misc.mcBarrelTime", 0),
-            dataFile.getLongList("misc.previousSaveSeeds"),
-            dataFile.getIntegerList("misc.brewsCreated"),
-            dataFile.getInt("misc.brewsCreatedHash", 0)
+                this.dataFile.getLong("misc.installTime", System.currentTimeMillis()),
+                this.dataFile.getLong("misc.mcBarrelTime", 0),
+                this.dataFile.getLongList("misc.previousSaveSeeds"),
+                this.dataFile.getIntegerList("misc.brewsCreated"),
+                this.dataFile.getInt("misc.brewsCreatedHash", 0)
         );
     }
 
     @Override
-    public void saveBreweryMiscData(BreweryMiscData data) {
-        dataFile.set("misc.installTime", data.installTime());
-        dataFile.set("misc.mcBarrelTime", data.mcBarrelTime());
-        dataFile.set("misc.previousSaveSeeds", data.prevSaveSeeds());
-        dataFile.set("misc.brewsCreated", data.brewsCreated());
-        dataFile.set("misc.brewsCreatedHash", data.brewsCreatedHash());
-        save();
+    public void saveBreweryMiscData(final BreweryMiscData data) {
+        this.dataFile.set("misc.installTime", data.installTime());
+        this.dataFile.set("misc.mcBarrelTime", data.mcBarrelTime());
+        this.dataFile.set("misc.previousSaveSeeds", data.prevSaveSeeds());
+        this.dataFile.set("misc.brewsCreated", data.brewsCreated());
+        this.dataFile.set("misc.brewsCreatedHash", data.brewsCreatedHash());
+        this.save();
     }
 }

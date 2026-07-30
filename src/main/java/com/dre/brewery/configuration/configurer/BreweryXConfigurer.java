@@ -43,36 +43,26 @@ import org.yaml.snakeyaml.resolver.Resolver;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-public class BreweryXConfigurer extends YamlSnakeYamlConfigurer {
-
-    {
-        register(new BreweryXSerdesPack());
-    }
+public final class BreweryXConfigurer extends YamlSnakeYamlConfigurer {
 
     private final Yaml yaml;
     private Map<String, Object> map = new LinkedHashMap<>();
-
     private String commentPrefix = "# ";
 
-    public BreweryXConfigurer(@NonNull Yaml yaml, @NonNull Map<String, Object> map) {
+    {
+        this.register(new BreweryXSerdesPack());
+    }
+
+    public BreweryXConfigurer(@NonNull final Yaml yaml, @NonNull final Map<String, Object> map) {
         this.yaml = yaml;
         this.map = map;
     }
 
-    public BreweryXConfigurer(@NonNull Yaml yaml) {
+    public BreweryXConfigurer(@NonNull final Yaml yaml) {
         this.yaml = yaml;
     }
 
@@ -82,66 +72,66 @@ public class BreweryXConfigurer extends YamlSnakeYamlConfigurer {
 
     private static Yaml createYaml() {
 
-        LoaderOptions loaderOptions = new LoaderOptions();
-        Constructor constructor = new Constructor(loaderOptions);
+        final var loaderOptions = new LoaderOptions();
+        final var constructor = new Constructor(loaderOptions);
 
-        DumperOptions dumperOptions = new DumperOptions();
+        final var dumperOptions = new DumperOptions();
         dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         dumperOptions.setIndent(2);
         dumperOptions.setWidth(80);
         dumperOptions.setDefaultScalarStyle(DumperOptions.ScalarStyle.PLAIN);
 
-        Representer representer = new Representer(dumperOptions);
+        final var representer = new Representer(dumperOptions);
         representer.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
 
-        Resolver resolver = new Resolver();
+        final var resolver = new Resolver();
 
         return new Yaml(constructor, representer, dumperOptions, loaderOptions, resolver);
     }
 
-    private static <T> T apply(T object, Consumer<T> consumer) {
+    private static <T> T apply(final T object, final Consumer<T> consumer) {
         consumer.accept(object);
         return object;
     }
 
     @Override
-    public List<String> getExtensions() {
+    public final List<String> getExtensions() {
         return Arrays.asList("yml", "yaml");
     }
 
     @Override
-    public void setValue(@NonNull String key, Object value, GenericsDeclaration type, FieldDeclaration field) {
-        Object simplified = this.simplify(value, type, SerdesContext.of(this, field), true);
+    public final void setValue(@NonNull final String key, final Object value, final GenericsDeclaration type, final FieldDeclaration field) {
+        final var simplified = this.simplify(value, type, SerdesContext.of(this, field), true);
         this.map.put(key, simplified);
     }
 
     @Override
-    public void setValueUnsafe(@NonNull String key, Object value) {
+    public final void setValueUnsafe(@NonNull final String key, final Object value) {
         this.map.put(key, value);
     }
 
     @Override
-    public Object getValue(@NonNull String key) {
+    public final Object getValue(@NonNull final String key) {
         return this.map.get(key);
     }
 
     @Override
-    public Object remove(@NonNull String key) {
+    public final Object remove(@NonNull final String key) {
         return this.map.remove(key);
     }
 
     @Override
-    public boolean keyExists(@NonNull String key) {
+    public final boolean keyExists(@NonNull final String key) {
         return this.map.containsKey(key);
     }
 
     @Override
-    public List<String> getAllKeys() {
-        return Collections.unmodifiableList(new ArrayList<>(this.map.keySet()));
+    public final List<String> getAllKeys() {
+        return List.copyOf(this.map.keySet());
     }
 
     @Override
-    public void load(@NonNull InputStream inputStream, @NonNull ConfigDeclaration declaration) throws Exception {
+    public final void load(@NonNull final InputStream inputStream, @NonNull final ConfigDeclaration declaration) throws Exception {
         // try loading from input stream
         this.map = this.yaml.load(inputStream);
         // when no map was loaded reset with empty
@@ -149,83 +139,83 @@ public class BreweryXConfigurer extends YamlSnakeYamlConfigurer {
     }
 
     @Override
-    public void write(@NonNull OutputStream outputStream, @NonNull ConfigDeclaration declaration) throws Exception {
+    public final void write(@NonNull final OutputStream outputStream, @NonNull final ConfigDeclaration declaration) throws Exception {
 
-        Map<String, Object> mapCopy = new LinkedHashMap<>(this.map); // Not sure if I should copy or do this on the main map
+        final Map<String, Object> mapCopy = new LinkedHashMap<>(this.map); // Not sure if I should copy or do this on the main map
         // Remove null values
-        removeNullValues(mapCopy);
+        this.removeNullValues(mapCopy);
         // render to string
-        String contents = this.yaml.dump(mapCopy);
+        final var contents = this.yaml.dump(mapCopy);
 
-        Footer footer = declaration.getType().getAnnotation(Footer.class);
-        String[] footerLines = footer != null ? footer.value() : new String[0];
+        final var footer = declaration.getType().getAnnotation(Footer.class);
+        final var footerLines = footer != null ? footer.value() : new String[0];
         // postprocess
         ConfigPostprocessor.of(contents)
-            // remove all current top-level comments
-            .removeLines((line) -> line.startsWith(this.commentPrefix.trim()))
-            // add new comments
-            .updateLinesKeys(new YamlSectionWalker() {
-                @Override
-                public String update(String line, ConfigLineInfo lineInfo, List<ConfigLineInfo> path) {
+                // remove all current top-level comments
+                .removeLines((line) -> line.startsWith(this.commentPrefix.trim()))
+                // add new comments
+                .updateLinesKeys(new YamlSectionWalker() {
+                    @Override
+                    public String update(final String line, final ConfigLineInfo lineInfo, final List<ConfigLineInfo> path) {
 
-                    ConfigDeclaration currentDeclaration = declaration;
-                    for (int i = 0; i < (path.size() - 1); i++) {
-                        ConfigLineInfo pathElement = path.get(i);
-                        Optional<FieldDeclaration> field = currentDeclaration.getField(pathElement.getName());
-                        if (field.isEmpty()) {
+                        var currentDeclaration = declaration;
+                        for (var i = 0; i < (path.size() - 1); i++) {
+                            final var pathElement = path.get(i);
+                            final var field = currentDeclaration.getField(pathElement.getName());
+                            if (field.isEmpty()) {
+                                return line;
+                            }
+                            final var fieldType = field.get().getType();
+                            if (!fieldType.isConfig()) {
+                                return line;
+                            }
+                            currentDeclaration = ConfigDeclaration.of(fieldType.getType());
+                        }
+
+                        final var lineDeclaration = currentDeclaration.getField(lineInfo.getName());
+                        if (lineDeclaration.isEmpty()) {
                             return line;
                         }
-                        GenericsDeclaration fieldType = field.get().getType();
-                        if (!fieldType.isConfig()) {
+
+                        // Localized comments
+                        final var fieldComment = lineDeclaration.get().getComment(); // regular okaeri comments
+                        final var localizedComment = BreweryXConfigurer.this.getFieldComments(lineDeclaration.get()); // localized ones
+
+                        // Joins 2 nullable arrays
+                        final var finalComment = Stream.of(fieldComment, localizedComment)
+                                .filter(Objects::nonNull) // omit if null
+                                .flatMap(Arrays::stream)
+                                .toArray(String[]::new);
+
+                        if (finalComment.length == 0)
                             return line;
+
+
+                        final var comment = new StringBuilder();
+
+                        var space = declaration.getType().isAnnotationPresent(DefaultCommentSpace.class) ? declaration.getType().getAnnotation(DefaultCommentSpace.class).value() : 0;
+                        if (lineDeclaration.get().getField().isAnnotationPresent(CommentSpace.class)) {
+                            space = lineDeclaration.get().getField().getAnnotation(CommentSpace.class).value();
                         }
-                        currentDeclaration = ConfigDeclaration.of(fieldType.getType());
+
+                        if (space > 0) {
+                            comment.repeat("\n", space);
+                        }
+
+                        comment.append(ConfigPostprocessor.createComment(BreweryXConfigurer.this.commentPrefix, finalComment));
+                        return ConfigPostprocessor.addIndent(comment.toString(), lineInfo.getIndent()) + line;
                     }
-
-                    Optional<FieldDeclaration> lineDeclaration = currentDeclaration.getField(lineInfo.getName());
-                    if (lineDeclaration.isEmpty()) {
-                        return line;
-                    }
-
-                    // Localized comments
-                    String[] fieldComment = lineDeclaration.get().getComment(); // regular okaeri comments
-                    String[] localizedComment = getFieldComments(lineDeclaration.get()); // localized ones
-
-                    // Joins 2 nullable arrays
-                    String[] finalComment = Stream.of(fieldComment, localizedComment)
-                        .filter(Objects::nonNull) // omit if null
-                        .flatMap(Arrays::stream)
-                        .toArray(String[]::new);
-
-                    if (finalComment.length == 0)
-                        return line;
-
-
-                    StringBuilder comment = new StringBuilder();
-
-                    int space = declaration.getType().isAnnotationPresent(DefaultCommentSpace.class) ? declaration.getType().getAnnotation(DefaultCommentSpace.class).value() : 0;
-                    if (lineDeclaration.get().getField().isAnnotationPresent(CommentSpace.class)) {
-                        space = lineDeclaration.get().getField().getAnnotation(CommentSpace.class).value();
-                    }
-
-                    if (space > 0) {
-                        comment.append("\n".repeat(space));
-                    }
-
-                    comment.append(ConfigPostprocessor.createComment(BreweryXConfigurer.this.commentPrefix, finalComment));
-                    return ConfigPostprocessor.addIndent(comment.toString(), lineInfo.getIndent()) + line;
-                }
-            })
-            // add header if available
-            .prependContextComment(this.commentPrefix, declaration.getHeader())
-            // add footer if available
-            .appendContextComment(this.commentPrefix, footerLines)
-            // save
-            .write(outputStream);
+                })
+                // add header if available
+                .prependContextComment(this.commentPrefix, declaration.getHeader())
+                // add footer if available
+                .appendContextComment(this.commentPrefix, footerLines)
+                // save
+                .write(outputStream);
     }
 
     @Override
-    public YamlSnakeYamlConfigurer setCommentPrefix(String commentPrefix) {
+    public final YamlSnakeYamlConfigurer setCommentPrefix(final String commentPrefix) {
         this.commentPrefix = commentPrefix;
         return this;
     }
@@ -234,58 +224,62 @@ public class BreweryXConfigurer extends YamlSnakeYamlConfigurer {
      * Processes the {{@link TranslationManager}} annotation
      * Doesn't throw when there is no translation!
      */
-    public String[] getFieldComments(FieldDeclaration fieldDeclaration) {
-        LocalizedComment localizedComment = fieldDeclaration.getField().getAnnotation(LocalizedComment.class);
+    public final String[] getFieldComments(final FieldDeclaration fieldDeclaration) {
+        final var localizedComment = fieldDeclaration.getField().getAnnotation(LocalizedComment.class);
         if (localizedComment == null || localizedComment.value().length == 0)
             return null;
 
-        TranslationManager translationManager = TranslationManager.getInstance();
+        final var translationManager = TranslationManager.getInstance();
 
         return Arrays.stream(localizedComment.value())
-            .map(translationManager::getTranslationWithFallback)
-            .filter(Objects::nonNull) // Remove null translations
-            .flatMap(translation -> Arrays.stream(translation.split("\n"))) // Split translations by lines
-            .toArray(String[]::new);
+                .map(translationManager::getTranslationWithFallback)
+                .filter(Objects::nonNull) // Remove null translations
+                .flatMap(translation -> Arrays.stream(translation.split("\n"))) // Split translations by lines
+                .toArray(String[]::new);
     }
 
 
     // Probably could rewrite this null removal to be more efficient...
 
-    public void removeNullValues(Map<String, Object> map) {
+    public final void removeNullValues(final Map<String, Object> map) {
         if (map == null) {
             return;
         }
 
         // Iterate over the map and remove null values
-        Iterator<Map.Entry<String, Object>> iterator = map.entrySet().iterator();
+        final var iterator = map.entrySet().iterator();
         while (iterator.hasNext()) {
-            Map.Entry<String, Object> entry = iterator.next();
-            Object value = entry.getValue();
+            final var entry = iterator.next();
+            final var value = entry.getValue();
 
-            if (value == null) {
-                iterator.remove(); // Remove entry if value is null
-            } else if (value instanceof Map) {
-                // If the value is a map, recursively remove null values inside it
-                removeNullValues((Map<String, Object>) value);
-                if (((Map<String, Object>) value).isEmpty()) {
-                    iterator.remove(); // Remove the map if it becomes empty after cleaning
+            switch (value) {
+                case null -> iterator.remove(); // Remove entry if value is null
+                case Map map1 -> {
+                    // If the value is a map, recursively remove null values inside it
+                    this.removeNullValues((Map<String, Object>) value);
+                    if (((Map<String, Object>) value).isEmpty()) {
+                        iterator.remove(); // Remove the map if it becomes empty after cleaning
+                    }
                 }
-            } else if (value instanceof Collection) {
-                // If the value is a collection, remove null values from it
-                removeNullValuesFromCollection((Collection<?>) value);
-                if (((Collection<?>) value).isEmpty()) {
-                    iterator.remove(); // Remove the collection if it becomes empty after cleaning
-                }
+                case Collection collection -> {
+                    // If the value is a collection, remove null values from it
+                    this.removeNullValuesFromCollection(collection);
+                    if (collection.isEmpty()) {
+                        iterator.remove(); // Remove the collection if it becomes empty after cleaning
+                    }
 
-                // If the collection is a List, check if it's a list of maps and clean the maps
-                if (value instanceof List) {
-                    removeNullValuesFromListOfMaps((List<?>) value);
+                    // If the collection is a List, check if it's a list of maps and clean the maps
+                    if (value instanceof List) {
+                        this.removeNullValuesFromListOfMaps((List<?>) value);
+                    }
+                }
+                default -> {
                 }
             }
         }
     }
 
-    private void removeNullValuesFromCollection(Collection<?> collection) {
+    private void removeNullValuesFromCollection(final Collection<?> collection) {
         if (collection == null) {
             return;
         }
@@ -294,18 +288,18 @@ public class BreweryXConfigurer extends YamlSnakeYamlConfigurer {
         collection.removeIf(Objects::isNull);
     }
 
-    private void removeNullValuesFromListOfMaps(List<?> list) {
+    private void removeNullValuesFromListOfMaps(final List<?> list) {
         if (list == null) {
             return;
         }
 
         // Iterate over the list and clean each map
-        Iterator<?> iterator = list.iterator();
+        final var iterator = list.iterator();
         while (iterator.hasNext()) {
-            Object element = iterator.next();
+            final var element = iterator.next();
             if (element instanceof Map) {
                 // Recursively clean the map inside the list
-                removeNullValues((Map<String, Object>) element);
+                this.removeNullValues((Map<String, Object>) element);
                 if (((Map<String, Object>) element).isEmpty()) {
                     iterator.remove(); // Remove the map if it becomes empty after cleaning
                 }

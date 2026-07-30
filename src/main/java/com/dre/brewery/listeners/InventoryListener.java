@@ -20,12 +20,7 @@
 
 package com.dre.brewery.listeners;
 
-import com.dre.brewery.BDistiller;
-import com.dre.brewery.BSealer;
-import com.dre.brewery.Barrel;
-import com.dre.brewery.Brew;
-import com.dre.brewery.BreweryPlugin;
-import com.dre.brewery.MCBarrel;
+import com.dre.brewery.*;
 import com.dre.brewery.configuration.ConfigManager;
 import com.dre.brewery.configuration.files.Config;
 import com.dre.brewery.lore.BrewLore;
@@ -39,52 +34,32 @@ import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.BrewEvent;
-import org.bukkit.event.inventory.ClickType;
-import org.bukkit.event.inventory.InventoryAction;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.inventory.InventoryMoveItemEvent;
-import org.bukkit.event.inventory.InventoryOpenEvent;
-import org.bukkit.event.inventory.InventoryPickupItemEvent;
-import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.inventory.BrewerInventory;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.InventoryView;
-import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.ItemStack;
+import org.bukkit.event.inventory.*;
+import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.PotionMeta;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Stream;
 
-public class InventoryListener implements Listener {
+public final class InventoryListener implements Listener {
 
     private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
-
-    private final Config config = ConfigManager.getConfig(Config.class);
     private static final Set<InventoryAction> CLICKED_INVENTORY_ITEM_MOVE = Set.of(InventoryAction.PLACE_SOME,
-        InventoryAction.PLACE_ONE, InventoryAction.PLACE_ALL, InventoryAction.PICKUP_ALL, InventoryAction.PICKUP_HALF,
-        InventoryAction.PICKUP_SOME, InventoryAction.PICKUP_ONE);
+            InventoryAction.PLACE_ONE, InventoryAction.PLACE_ALL, InventoryAction.PICKUP_ALL, InventoryAction.PICKUP_HALF,
+            InventoryAction.PICKUP_SOME, InventoryAction.PICKUP_ONE);
     private static final Set<String> BANNED_ACTIONS = Set.of("PICKUP_ALL_INTO_BUNDLE", "PICKUP_FROM_BUNDLE",
-        "PICKUP_SOME_INTO_BUNDLE", "PLACE_ALL_INTO_BUNDLE", "PLACE_SOME_INTO_BUNDLE");
-
+            "PICKUP_SOME_INTO_BUNDLE", "PLACE_ALL_INTO_BUNDLE", "PLACE_SOME_INTO_BUNDLE");
+    private final Config config = ConfigManager.getConfig(Config.class);
     /* === Recreating manually the prior BrewEvent behavior. === */
-    private HashSet<UUID> trackedBrewmen = new HashSet<>();
+    private final HashSet<UUID> trackedBrewmen = new HashSet<>();
 
 
     // Helper: checks if an item is a valid Brewery brew
-    private boolean isBrewItem(ItemStack item) {
+    private boolean isBrewItem(final ItemStack item) {
         if (item == null || item.getType().isAir()) {
             return false;
         }
-        if (item.getItemMeta() instanceof PotionMeta potionMeta) {
+        if (item.getItemMeta() instanceof final PotionMeta potionMeta) {
             return Brew.get(potionMeta) != null;
         }
         return false;
@@ -94,36 +69,36 @@ public class InventoryListener implements Listener {
      * Start tracking distillation for a person when they open the brewer window.
      */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onBrewerOpen(InventoryOpenEvent event) {
+    public void onBrewerOpen(final InventoryOpenEvent event) {
         if (VERSION.isOrEarlier(MinecraftVersion.V1_9)) return;
-        HumanEntity player = event.getPlayer();
-        Inventory inv = event.getInventory();
+        final var player = event.getPlayer();
+        final var inv = event.getInventory();
         if (player == null || !(inv instanceof BrewerInventory)) return;
 
         Logging.debugLog("Starting brew inventory tracking");
-        trackedBrewmen.add(player.getUniqueId());
+        this.trackedBrewmen.add(player.getUniqueId());
     }
 
     /**
      * Stop tracking distillation for a person when they close the brewer window.
      */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onBrewerClose(InventoryCloseEvent event) {
+    public void onBrewerClose(final InventoryCloseEvent event) {
         if (VERSION.isOrEarlier(MinecraftVersion.V1_9)) return;
-        HumanEntity player = event.getPlayer();
-        Inventory inv = event.getInventory();
+        final var player = event.getPlayer();
+        final var inv = event.getInventory();
         if (player == null || !(inv instanceof BrewerInventory)) return;
 
         Logging.debugLog("Stopping brew inventory tracking");
-        trackedBrewmen.remove(player.getUniqueId());
+        this.trackedBrewmen.remove(player.getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onBrewerDrag(InventoryDragEvent event) {
+    public void onBrewerDrag(final InventoryDragEvent event) {
         if (VERSION.isOrEarlier(MinecraftVersion.V1_9)) return;
         // Workaround the Drag event when only clicking a slot
         if (event.getInventory() instanceof BrewerInventory) {
-            onBrewerClick(new InventoryClickEvent(event.getView(), InventoryType.SlotType.CONTAINER, 0, ClickType.LEFT, InventoryAction.PLACE_ALL));
+            this.onBrewerClick(new InventoryClickEvent(event.getView(), InventoryType.SlotType.CONTAINER, 0, ClickType.LEFT, InventoryAction.PLACE_ALL));
         }
     }
 
@@ -133,15 +108,15 @@ public class InventoryListener implements Listener {
      * they will _not_ restart until a new click event.
      */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onBrewerClick(InventoryClickEvent event) {
+    public void onBrewerClick(final InventoryClickEvent event) {
         if (VERSION.isOrEarlier(MinecraftVersion.V1_9)) return;
 
-        HumanEntity player = event.getWhoClicked();
-        Inventory inv = event.getInventory();
+        final var player = event.getWhoClicked();
+        final var inv = event.getInventory();
         if (!(inv instanceof BrewerInventory)) return;
 
-        UUID puid = player.getUniqueId();
-        if (!trackedBrewmen.contains(puid)) return;
+        final var puid = player.getUniqueId();
+        if (!this.trackedBrewmen.contains(puid)) return;
 
         if (InventoryType.BREWING != inv.getType()) return;
         if (event.getAction() == InventoryAction.NOTHING) return; // Ignore clicks that do nothing
@@ -150,7 +125,7 @@ public class InventoryListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    public void onBrew(BrewEvent event) {
+    public void onBrew(final BrewEvent event) {
         if (VERSION.isOrLater(MinecraftVersion.V1_9)) {
             if (BDistiller.hasBrew(event.getContents(), BDistiller.getDistillContents(event.getContents())) != 0) {
                 event.setCancelled(true);
@@ -165,16 +140,16 @@ public class InventoryListener implements Listener {
     // Clicked a Brew somewhere, do some updating
     // TODO: Remove this? This was for legacy potion conversion - Jsinco
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = false)
-    public void onInventoryClickLow(InventoryClickEvent event) {
+    public void onInventoryClickLow(final InventoryClickEvent event) {
         if (event.getCurrentItem() != null && event.getCurrentItem().getType().equals(Material.POTION)) {
-            ItemStack item = event.getCurrentItem();
+            final var item = event.getCurrentItem();
             if (item.hasItemMeta()) {
-                PotionMeta potion = ((PotionMeta) item.getItemMeta());
+                final var potion = ((PotionMeta) item.getItemMeta());
                 assert potion != null;
                 if (VERSION.isOrLater(MinecraftVersion.V1_11)) {
                     // Convert potions from 1.10 to 1.11 for new color
                     if (potion.getColor() == null) {
-                        Brew brew = Brew.get(potion);
+                        final var brew = Brew.get(potion);
                         if (brew != null) {
                             brew.convertPre1_11(item);
                         }
@@ -182,49 +157,45 @@ public class InventoryListener implements Listener {
                 } else {
                     // convert potions from 1.8 to 1.9 for color and to remove effect descriptions
                     if (VERSION.isOrLater(MinecraftVersion.V1_9) && !potion.hasItemFlag(ItemFlag.HIDE_ATTRIBUTES)) {
-                        Brew brew = Brew.get(potion);
+                        final var brew = Brew.get(potion);
                         if (brew != null) {
                             brew.convertPre1_9(item);
                         }
                     }
                 }
-				/*Brew brew = Brew.get(item);
-				if (brew != null) {
-					brew.touch();
-				}*/
             }
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onInventoryClick(InventoryClickEvent event) {
-        InventoryHolder holder = PaperLib.getHolder(event.getInventory(), true).getHolder();
-        boolean isVanillaBarrel = VERSION.isOrLater(MinecraftVersion.V1_14) && holder instanceof org.bukkit.block.Barrel;
-        if (isVanillaBarrel && config.isExemptVanillaBarrels()) {
+    public void onInventoryClick(final InventoryClickEvent event) {
+        final var holder = PaperLib.getHolder(event.getInventory(), true).getHolder();
+        final var isVanillaBarrel = VERSION.isOrLater(MinecraftVersion.V1_14) && holder instanceof org.bukkit.block.Barrel;
+        if (isVanillaBarrel && this.config.isExemptVanillaBarrels()) {
             return;
         }
         if (!(holder instanceof Barrel) && !isVanillaBarrel) {
             return;
         }
-        InventoryAction action = event.getAction();
+        final var action = event.getAction();
         if (action == InventoryAction.NOTHING) {
             return;
         }
-        boolean upperInventoryIsClicked = event.getClickedInventory() == event.getInventory();
+        final var upperInventoryIsClicked = event.getClickedInventory() == event.getInventory();
         if (!upperInventoryIsClicked && CLICKED_INVENTORY_ITEM_MOVE.contains(action)) {
             return;
         }
-        ItemStack hoveredItem = event.getCurrentItem();
-        Stream<ItemStack> relatedItems;
+        final var hoveredItem = event.getCurrentItem();
+        final Stream<ItemStack> relatedItems;
         if (upperInventoryIsClicked && hoveredItem != null) {
-            if (hoveredItem.getItemMeta() instanceof PotionMeta potionMeta) {
-                Brew brew = Brew.get(potionMeta);
+            if (hoveredItem.getItemMeta() instanceof final PotionMeta potionMeta) {
+                final var brew = Brew.get(potionMeta);
                 if (brew != null) {
-                    BrewLore lore = new BrewLore(brew, potionMeta);
+                    final var lore = new BrewLore(brew, potionMeta);
                     if (BrewLore.hasColorLore(potionMeta)) {
                         lore.convertLore(false);
                         lore.write();
-                    } else if (!config.isAlwaysShowAlc() && event.getInventory().getType() == InventoryType.BREWING) {
+                    } else if (!this.config.isAlwaysShowAlc() && event.getInventory().getType() == InventoryType.BREWING) {
                         lore.updateAlc(false);
                         lore.write();
                     }
@@ -232,20 +203,20 @@ public class InventoryListener implements Listener {
                 }
             }
         }
-        if (!config.isOnlyAllowBrewsInBarrels()) {
+        if (!this.config.isOnlyAllowBrewsInBarrels()) {
             return;
         }
         if (BANNED_ACTIONS.contains(action.name())) {
             event.setResult(Event.Result.DENY);
             return;
         }
-        InventoryView view = event.getView();
+        final var view = event.getView();
         // getHotbarButton also returns -1 for offhand clicks
-        ItemStack hotbarItem = event.getHotbarButton() == -1 ?
-            (event.getClick() == ClickType.SWAP_OFFHAND
-                ? event.getWhoClicked().getInventory().getItemInOffHand()
-                : null)
-            : view.getBottomInventory().getItem(event.getHotbarButton());
+        final var hotbarItem = event.getHotbarButton() == -1 ?
+                (event.getClick() == ClickType.SWAP_OFFHAND
+                 ? event.getWhoClicked().getInventory().getItemInOffHand()
+                 : null)
+                : view.getBottomInventory().getItem(event.getHotbarButton());
         if (action == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
             // player takes something out
             if (upperInventoryIsClicked && hotbarItem == null) {
@@ -259,40 +230,40 @@ public class InventoryListener implements Listener {
             }
             relatedItems = Stream.of(hotbarItem, hoveredItem);
         } else {
-            ItemStack cursor = event.getCursor();
+            final var cursor = event.getCursor();
             relatedItems = Stream.of(cursor);
         }
-        Stream<ItemStack> itemsToCheck = relatedItems
-            .filter(Objects::nonNull)
-            .filter(item -> !item.getType().isAir());
-        if (itemsToCheck.anyMatch(item -> !isBrewItem(item))) {
+        final var itemsToCheck = relatedItems
+                .filter(Objects::nonNull)
+                .filter(item -> !item.getType().isAir());
+        if (itemsToCheck.anyMatch(item -> !this.isBrewItem(item))) {
             event.setResult(Event.Result.DENY);
             event.setCancelled(true);
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onInventoryDrag(InventoryDragEvent event) {
-        InventoryView view = event.getView();
-        Inventory topInventory = view.getTopInventory();
-        InventoryHolder holder = PaperLib.getHolder(topInventory, true).getHolder();
-        boolean isVanillaBarrel = VERSION.isOrLater(MinecraftVersion.V1_14) && holder instanceof org.bukkit.block.Barrel;
-        if (isVanillaBarrel && config.isExemptVanillaBarrels()) {
+    public void onInventoryDrag(final InventoryDragEvent event) {
+        final var view = event.getView();
+        final var topInventory = view.getTopInventory();
+        final var holder = PaperLib.getHolder(topInventory, true).getHolder();
+        final var isVanillaBarrel = VERSION.isOrLater(MinecraftVersion.V1_14) && holder instanceof org.bukkit.block.Barrel;
+        if (isVanillaBarrel && this.config.isExemptVanillaBarrels()) {
             return;
         }
         if (!(holder instanceof Barrel) && !isVanillaBarrel) {
             return;
         }
 
-        int topSize = topInventory.getSize();
-        for (Map.Entry<Integer, ItemStack> entry : event.getNewItems().entrySet()) {
-            int rawSlot = entry.getKey();
+        final var topSize = topInventory.getSize();
+        for (final var entry : event.getNewItems().entrySet()) {
+            final int rawSlot = entry.getKey();
             if (rawSlot < topSize) {
-                ItemStack item = entry.getValue();
+                final var item = entry.getValue();
                 if (item == null || item.getType().isAir()) {
                     continue;
                 }
-                if (!isBrewItem(item)) {
+                if (!this.isBrewItem(item)) {
                     event.setCancelled(true);
                     return;
                 }
@@ -303,21 +274,21 @@ public class InventoryListener implements Listener {
 
     // Check if the player tries to add more than the allowed amount of brews into an mc-barrel
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onInventoryClickMCBarrel(InventoryClickEvent event) {
+    public void onInventoryClickMCBarrel(final InventoryClickEvent event) {
         if (VERSION.isOrEarlier(MinecraftVersion.V1_14)) return;
         if (event.getInventory().getType() != InventoryType.BARREL) return;
-        if (!config.isAgeInMCBarrels()) return;
+        if (!this.config.isAgeInMCBarrels()) return;
 
-        Inventory inv = event.getInventory();
-        MCBarrel barrel = MCBarrel.openBarrels.computeIfAbsent(inv, MCBarrel::new);
+        final var inv = event.getInventory();
+        final var barrel = MCBarrel.openBarrels.computeIfAbsent(inv, MCBarrel::new);
         barrel.clickInv(event);
     }
 
     // Handle the Brew Sealer Inventory
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onInventoryClickBSealer(InventoryClickEvent event) {
+    public void onInventoryClickBSealer(final InventoryClickEvent event) {
         if (VERSION.isOrEarlier(MinecraftVersion.V1_13)) return;
-        InventoryHolder holder = PaperLib.getHolder(event.getInventory(), true).getHolder();
+        final var holder = PaperLib.getHolder(event.getInventory(), true).getHolder();
         if (!(holder instanceof BSealer)) {
             return;
         }
@@ -328,16 +299,16 @@ public class InventoryListener implements Listener {
 
     @SuppressWarnings("deprecation")
     @EventHandler(ignoreCancelled = false)
-    public void onInventoryOpenLegacyConvert(InventoryOpenEvent event) {
+    public void onInventoryOpenLegacyConvert(final InventoryOpenEvent event) {
         if (Brew.noLegacy()) {
             return;
         }
         if (event.getInventory().getType() == InventoryType.PLAYER) {
             return;
         }
-        for (ItemStack item : event.getInventory().getContents()) {
+        for (final var item : event.getInventory().getContents()) {
             if (item != null && item.getType() == Material.POTION) {
-                int uid = Brew.getUID(item);
+                final var uid = Brew.getUID(item);
                 // Check if the uid exists first, otherwise it will log that it can't find the id
                 if (uid < 0 && Brew.legacyPotions.containsKey(uid)) {
                     // This will convert the Brew
@@ -348,22 +319,22 @@ public class InventoryListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onInventoryOpen(InventoryOpenEvent event) {
+    public void onInventoryOpen(final InventoryOpenEvent event) {
         if (VERSION.isOrEarlier(MinecraftVersion.V1_14)) return;
-        if (!config.isAgeInMCBarrels()) return;
+        if (!this.config.isAgeInMCBarrels()) return;
 
         // Check for MC Barrel
         if (event.getInventory().getType() == InventoryType.BARREL) {
-            Inventory inv = event.getInventory();
-            MCBarrel barrel = MCBarrel.openBarrels.computeIfAbsent(inv, MCBarrel::new);
+            final var inv = event.getInventory();
+            final var barrel = MCBarrel.openBarrels.computeIfAbsent(inv, MCBarrel::new);
             barrel.open();
         }
     }
 
     // block the pickup of items where getPickupDelay is > 1000 (puke)
     @EventHandler(ignoreCancelled = true)
-    public void onHopperPickupPuke(InventoryPickupItemEvent event) {
-        if (event.getItem().getPickupDelay() > 1000 && config.getPukeItem().contains(event.getItem().getItemStack().getType())) {
+    public void onHopperPickupPuke(final InventoryPickupItemEvent event) {
+        if (event.getItem().getPickupDelay() > 1000 && this.config.getPukeItem().contains(event.getItem().getItemStack().getType())) {
             event.setCancelled(true);
         }
     }
@@ -371,8 +342,8 @@ public class InventoryListener implements Listener {
     // Block taking out items from running distillers,
     // Convert Color Lore from MC Barrels back into normal color on taking out
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
-    public void onHopperMove(InventoryMoveItemEvent event) {
-        if (event.getSource() instanceof BrewerInventory inv && PaperLib.getHolder(inv, true).getHolder() instanceof BrewingStand holder) {
+    public void onHopperMove(final InventoryMoveItemEvent event) {
+        if (event.getSource() instanceof final BrewerInventory inv && PaperLib.getHolder(inv, true).getHolder() instanceof final BrewingStand holder) {
             if (BDistiller.isTrackingDistiller(holder.getBlock())) {
                 event.setCancelled(true);
             }
@@ -382,15 +353,15 @@ public class InventoryListener implements Listener {
         if (VERSION.isOrEarlier(MinecraftVersion.V1_14)) return;
 
         if (event.getSource().getType() == InventoryType.BARREL) {
-            ItemStack item = event.getItem();
+            final var item = event.getItem();
             if (item.getType() == Material.POTION && Brew.isBrew(item)) {
-                PotionMeta meta = (PotionMeta) item.getItemMeta();
+                final var meta = (PotionMeta) item.getItemMeta();
                 assert meta != null;
                 if (BrewLore.hasColorLore(meta)) {
                     // has color lore, convert lore back to normal
-                    Brew brew = Brew.get(meta);
+                    final var brew = Brew.get(meta);
                     if (brew != null) {
-                        BrewLore lore = new BrewLore(brew, meta);
+                        final var lore = new BrewLore(brew, meta);
                         lore.convertLore(false);
                         lore.write();
                         item.setItemMeta(meta);
@@ -402,23 +373,23 @@ public class InventoryListener implements Listener {
     }
 
     @EventHandler
-    public void onInventoryClose(InventoryCloseEvent event) {
+    public void onInventoryClose(final InventoryCloseEvent event) {
         if (VERSION.isOrEarlier(MinecraftVersion.V1_13)) return;
-        if (PaperLib.getHolder(event.getInventory(), true).getHolder() instanceof BSealer holder) {
+        if (PaperLib.getHolder(event.getInventory(), true).getHolder() instanceof final BSealer holder) {
             holder.closeInv();
         }
 
         if (VERSION.isOrEarlier(MinecraftVersion.V1_14)) return;
 
         // Barrel Closing Sound
-        if (PaperLib.getHolder(event.getInventory(), true).getHolder() instanceof Barrel barrel) {
+        if (PaperLib.getHolder(event.getInventory(), true).getHolder() instanceof final Barrel barrel) {
             barrel.playClosingSound();
         }
 
         // Check for MC Barrel
-        if (config.isAgeInMCBarrels() && event.getInventory().getType() == InventoryType.BARREL) {
-            Inventory inv = event.getInventory();
-            MCBarrel barrel = MCBarrel.openBarrels.get(inv);
+        if (this.config.isAgeInMCBarrels() && event.getInventory().getType() == InventoryType.BARREL) {
+            final var inv = event.getInventory();
+            final var barrel = MCBarrel.openBarrels.get(inv);
             if (barrel != null) {
                 barrel.close();
                 if (inv.getViewers().size() == 1) {

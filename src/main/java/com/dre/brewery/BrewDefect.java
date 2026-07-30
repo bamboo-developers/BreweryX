@@ -37,25 +37,25 @@ public interface BrewDefect {
 
     record WrongIngredient(DebuggableItem ingredient) implements BrewDefect {
         @Override
-        public List<String> getMessages(Lang lang) {
+        public List<String> getMessages(final Lang lang) {
             return lang.getEntries("Defect_WrongIngredient");
         }
 
         @Override
         public String toString() {
-            return String.format("WrongIngredient{%s}", ingredient.getDebugID());
+            return String.format("WrongIngredient{%s}", this.ingredient.getDebugID());
         }
     }
 
     record MissingIngredient(DebuggableItem ingredient, int amountNeeded) implements BrewDefect {
         @Override
-        public List<String> getMessages(Lang lang) {
+        public List<String> getMessages(final Lang lang) {
             return lang.getEntries("Defect_MissingIngredient");
         }
 
         @Override
         public String toString() {
-            return String.format("MissingIngredient{%dx %s}", amountNeeded, ingredient.getDebugID());
+            return String.format("MissingIngredient{%dx %s}", this.amountNeeded, this.ingredient.getDebugID());
         }
     }
 
@@ -67,8 +67,8 @@ public interface BrewDefect {
         }
 
         @Override
-        public List<String> getMessages(Lang lang) {
-            if (ingredient.getAmount() < amountNeeded) {
+        public List<String> getMessages(final Lang lang) {
+            if (this.ingredient.getAmount() < this.amountNeeded) {
                 return lang.getEntries("Defect_LowCount");
             } else {
                 return lang.getEntries("Defect_HighCount");
@@ -77,7 +77,7 @@ public interface BrewDefect {
 
         @Override
         public String toString() {
-            return String.format("WrongCount{%d/%d %s}", ingredient.getAmount(), amountNeeded, ingredient.getDebugID());
+            return String.format("WrongCount{%d/%d %s}", this.ingredient.getAmount(), this.amountNeeded, this.ingredient.getDebugID());
         }
     }
 
@@ -89,9 +89,9 @@ public interface BrewDefect {
         }
 
         @Override
-        public List<String> getMessages(Lang lang) {
-            if (needed) {
-                if (alcoholic) {
+        public List<String> getMessages(final Lang lang) {
+            if (this.needed) {
+                if (this.alcoholic) {
                     return lang.getEntries("Defect_NeedsDistillAlc");
                 } else {
                     return lang.getEntries("Defect_NeedsDistill");
@@ -103,13 +103,13 @@ public interface BrewDefect {
 
         @Override
         public String toString() {
-            return needed ? "DistillNeeded" : "DistillUnnecessary";
+            return this.needed ? "DistillNeeded" : "DistillUnnecessary";
         }
     }
 
     record CookingNotNeeded() implements BrewDefect {
         @Override
-        public List<String> getMessages(Lang lang) {
+        public List<String> getMessages(final Lang lang) {
             return lang.getEntries("Defect_Overcooked");
         }
 
@@ -127,8 +127,8 @@ public interface BrewDefect {
         }
 
         @Override
-        public List<String> getMessages(Lang lang) {
-            if (actual < needed) {
+        public List<String> getMessages(final Lang lang) {
+            if (this.actual < this.needed) {
                 return lang.getEntries("Defect_Uncooked");
             } else {
                 return lang.getEntries("Defect_Overcooked");
@@ -137,7 +137,7 @@ public interface BrewDefect {
 
         @Override
         public String toString() {
-            return String.format("CookTimeMismatch{%d/%d}", actual, needed);
+            return String.format("CookTimeMismatch{%d/%d}", this.actual, this.needed);
         }
     }
 
@@ -149,13 +149,13 @@ public interface BrewDefect {
         }
 
         @Override
-        public List<String> getMessages(Lang lang) {
-            if (needed == 0.0f) {
+        public List<String> getMessages(final Lang lang) {
+            if (this.needed == 0.0f) {
                 return lang.getEntries("Defect_BadAged");
-            } else if (actual < needed) {
+            } else if (this.actual < this.needed) {
                 return lang.getEntries("Defect_UnderAged");
             } else {
-                if (alcoholic) {
+                if (this.alcoholic) {
                     return lang.getEntries("Defect_OverAgedAlc");
                 } else {
                     return lang.getEntries("Defect_OverAged");
@@ -165,7 +165,7 @@ public interface BrewDefect {
 
         @Override
         public String toString() {
-            return String.format("AgeMismatch{%.3f/%.3f}", actual, needed);
+            return String.format("AgeMismatch{%.3f/%.3f}", this.actual, this.needed);
         }
     }
 
@@ -177,19 +177,19 @@ public interface BrewDefect {
         }
 
         @Override
-        public List<String> getMessages(Lang lang) {
-            return lang.getEntries("Defect_WrongWood", actual.getFormattedName().toLowerCase(Locale.ROOT));
+        public List<String> getMessages(final Lang lang) {
+            return lang.getEntries("Defect_WrongWood", this.actual.getFormattedName().toLowerCase(Locale.ROOT));
         }
 
         @Override
         public String toString() {
-            return String.format("WrongWood{was %s, needs %s}", actual.getFormattedName(), needed.getFormattedName());
+            return String.format("WrongWood{was %s, needs %s}", this.actual.getFormattedName(), this.needed.getFormattedName());
         }
     }
 
     record NoRecipesRegistered() implements BrewDefect {
         @Override
-        public List<String> getMessages(Lang lang) {
+        public List<String> getMessages(final Lang lang) {
             return lang.getEntries("Defect_NoRecipesRegistered");
         }
 

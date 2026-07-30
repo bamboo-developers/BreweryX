@@ -31,16 +31,16 @@ import org.bukkit.event.world.WorldUnloadEvent;
 public record WorldListener(DataManager dataManager) implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onWorldLoad(WorldLoadEvent event) {
-        dataManager.getAllBarrels()
-            .thenAcceptAsync(barrels -> barrels.stream()
-                .filter(barrel -> barrel.getSpigot().getWorld().equals(event.getWorld()))
-                .forEach(Barrel::registerBarrel)
-            );
+    public void onWorldLoad(final WorldLoadEvent event) {
+        this.dataManager.getAllBarrels()
+                .thenAcceptAsync(barrels -> barrels.stream()
+                        .filter(barrel -> barrel.getSpigot().getWorld().equals(event.getWorld()))
+                        .forEach(Barrel::registerBarrel)
+                );
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onWorldLoad(WorldUnloadEvent event) {
+    public void onWorldLoad(final WorldUnloadEvent event) {
         Barrel.onUnload(event.getWorld());
     }
 }

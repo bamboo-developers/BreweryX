@@ -32,7 +32,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 
-public class GitHubReleaseChecker extends ReleaseChecker {
+public final class GitHubReleaseChecker extends ReleaseChecker {
 
     private static final String CONST_URL = "https://api.github.com/repos/%s/%s/releases/latest";
     private static final String CONST_RELEASE_URL = "https://github.com/%s/%s/releases/tag/%s";
@@ -42,27 +42,27 @@ public class GitHubReleaseChecker extends ReleaseChecker {
     private final String owner;
     private final String repo;
 
-    public GitHubReleaseChecker(String owner, String repo) {
+    public GitHubReleaseChecker(final String owner, final String repo) {
         this.link = String.format(CONST_URL, owner, repo);
         this.owner = owner;
         this.repo = repo;
     }
 
     @Override
-    public CompletableFuture<String> resolveLatest() {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(link))
-            .GET()
-            .build();
+    public final CompletableFuture<String> resolveLatest() {
+        final var client = HttpClient.newHttpClient();
+        final var request = HttpRequest.newBuilder()
+                .uri(URI.create(this.link))
+                .GET()
+                .build();
 
         return CompletableFuture.supplyAsync(() -> {
             try {
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                JsonObject jsonResponse = JsonParser.parseString(response.body()).getAsJsonObject();
+                final var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                final var jsonResponse = JsonParser.parseString(response.body()).getAsJsonObject();
                 this.resolvedLatestVersion = jsonResponse.get(CONST_JSON_FIELD).getAsString();
                 return this.resolvedLatestVersion;
-            } catch (IOException | InterruptedException e) {
+            } catch (final IOException | InterruptedException e) {
                 Logging.warningLog("Failed to resolve latest BreweryX version from GitHub. (No connection?)");
                 this.resolvedLatestVersion = CONST_UNRESOLVED;
                 return CONST_UNRESOLVED;
@@ -72,16 +72,16 @@ public class GitHubReleaseChecker extends ReleaseChecker {
 
     @Override
     public CompletableFuture<Boolean> checkForUpdate() {
-        return resolveLatest().thenApply(v -> {
+        return this.resolveLatest().thenApply(v -> {
             if (v.equals(CONST_UNRESOLVED)) {
                 return false;
             }
-            return isUpdateAvailable();
+            return this.isUpdateAvailable();
         });
     }
 
     @Override
     public String getDownloadURL() {
-        return String.format(CONST_RELEASE_URL, owner, repo, resolvedLatestVersion);
+        return String.format(CONST_RELEASE_URL, this.owner, this.repo, this.resolvedLatestVersion);
     }
 }

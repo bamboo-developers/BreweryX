@@ -26,22 +26,13 @@ import com.dre.brewery.configuration.files.Lang;
 import com.dre.brewery.utility.MinecraftVersion;
 import com.tcoded.folialib.wrapper.task.WrappedTask;
 import io.papermc.lib.PaperLib;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Sound;
-import org.bukkit.Tag;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Container;
 import org.bukkit.block.data.Directional;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.Recipe;
-import org.bukkit.inventory.RecipeChoice;
-import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
@@ -50,94 +41,36 @@ import org.jetbrains.annotations.NotNull;
  * The Sealing Inventory that is being checked for Brews and seals them after a second.
  * <p>Class doesn't load in mc 1.12 and lower (Can't find RecipeChoice, BlockData and NamespacedKey)
  */
-public class BSealer implements InventoryHolder {
+public final class BSealer implements InventoryHolder {
     public static final NamespacedKey TAG_KEY = new NamespacedKey(BreweryPlugin.getInstance(), "SealingTable");
     public static final NamespacedKey LEGACY_TAG_KEY = new NamespacedKey("brewery", "sealingtable");
-    public static boolean inventoryHolderWorking = true;
-
     private static final Config config = ConfigManager.getConfig(Config.class);
     private static final Lang lang = ConfigManager.getConfig(Lang.class);
-
+    public static boolean inventoryHolderWorking = true;
     private final Inventory inventory;
     private final Player player;
     private final short[] slotTime = new short[9];
     private ItemStack[] contents = null;
     private WrappedTask task;
 
-    public BSealer(Player player) {
+    public BSealer(final Player player) {
         this.player = player;
         if (inventoryHolderWorking) {
-            Inventory inv = Bukkit.createInventory(this, InventoryType.DISPENSER, lang.getEntry("Etc_SealingTable"));
+            final var inv = Bukkit.createInventory(this, InventoryType.DISPENSER, lang.getEntry("Etc_SealingTable"));
             // Inventory Holder (for DISPENSER, ...) is only passed in Paper, not in Spigot. Doing inventory.getHolder() will return null in spigot :/
             if (PaperLib.getHolder(inv, true).getHolder() == this) {
-                inventory = inv;
+                this.inventory = inv;
                 return;
             } else {
                 inventoryHolderWorking = false;
             }
         }
-        inventory = Bukkit.createInventory(this, 9, lang.getEntry("Etc_SealingTable"));
+        this.inventory = Bukkit.createInventory(this, 9, lang.getEntry("Etc_SealingTable"));
     }
 
-    @Override
-    public @NotNull Inventory getInventory() {
-        return inventory;
-    }
-
-
-    public void clickInv() {
-        contents = null;
-        if (task == null) {
-            task = BreweryPlugin.getScheduler().runTimer(this::itemChecking, 1, 1);
-        }
-    }
-
-    public void closeInv() {
-        if (task != null) {
-            task.cancel();
-            task = null;
-        }
-        contents = inventory.getContents();
-        for (ItemStack item : contents) {
-            if (item != null && item.getType() != Material.AIR) {
-                player.getWorld().dropItemNaturally(player.getLocation(), item);
-            }
-        }
-        contents = null;
-        inventory.clear();
-    }
-
-    private void itemChecking() {
-        if (contents == null) {
-            contents = inventory.getContents();
-            for (int i = 0; i < slotTime.length; i++) {
-                if (contents[i] == null || contents[i].getType() != Material.POTION) {
-                    slotTime[i] = -1;
-                } else if (slotTime[i] < 0) {
-                    slotTime[i] = 0;
-                }
-            }
-        }
-        boolean playerValid = player.isValid() && !player.isDead();
-        for (int i = 0; i < slotTime.length; i++) {
-            if (slotTime[i] > 20) {
-                slotTime[i] = -1;
-                Brew brew = Brew.get(contents[i]);
-                if (brew != null && !brew.isStripped()) {
-                    brew.seal(contents[i], player);
-                    if (playerValid && BreweryPlugin.getMCVersion().isOrLater(MinecraftVersion.V1_9)) {
-                        player.playSound(player.getLocation(), Sound.ITEM_BOTTLE_FILL_DRAGONBREATH, 1, 1.5f + (float) (Math.random() * 0.2));
-                    }
-                }
-            } else if (slotTime[i] >= 0) {
-                slotTime[i]++;
-            }
-        }
-    }
-
-    public static boolean isBSealer(Block block) {
+    public static boolean isBSealer(final Block block) {
         if (BreweryPlugin.getMCVersion().isOrLater(MinecraftVersion.V1_14) && block.getType() == config.getSealingTableBlock()) {
-            Container container = (Container) PaperLib.getBlockState(block, true).getState();
+            final var container = (Container) PaperLib.getBlockState(block, true).getState();
             if (container.getCustomName() != null) {
                 if (container.getCustomName().equals("§e" + lang.getEntry("Etc_SealingTable"))) {
                     return true;
@@ -149,15 +82,15 @@ public class BSealer implements InventoryHolder {
         return false;
     }
 
-    public static void blockPlace(ItemStack item, Block block) {
+    public static void blockPlace(final ItemStack item, final Block block) {
         if (item.getType() == config.getSealingTableBlock() && item.hasItemMeta()) {
-            ItemMeta itemMeta = item.getItemMeta();
+            final var itemMeta = item.getItemMeta();
             assert itemMeta != null;
             if ((itemMeta.hasDisplayName() && itemMeta.getDisplayName().equals("§e" + lang.getEntry("Etc_SealingTable"))) ||
-                itemMeta.getPersistentDataContainer().has(BSealer.TAG_KEY, PersistentDataType.BYTE)) {
-                Container container = (Container) PaperLib.getBlockState(block, true).getState();
+                    itemMeta.getPersistentDataContainer().has(BSealer.TAG_KEY, PersistentDataType.BYTE)) {
+                final var container = (Container) PaperLib.getBlockState(block, true).getState();
                 // Rotate the Block 180° so it looks different
-                if (container.getBlockData() instanceof Directional dir) {
+                if (container.getBlockData() instanceof final Directional dir) {
                     dir.setFacing(dir.getFacing().getOppositeFace());
                     container.setBlockData(dir);
                 }
@@ -176,17 +109,17 @@ public class BSealer implements InventoryHolder {
             return;
         }
 
-        ItemStack sealingTableItem = new ItemStack(config.getSealingTableBlock());
-        ItemMeta meta = BreweryPlugin.getInstance().getServer().getItemFactory().getItemMeta(config.getSealingTableBlock());
+        final var sealingTableItem = new ItemStack(config.getSealingTableBlock());
+        final var meta = BreweryPlugin.getInstance().getServer().getItemFactory().getItemMeta(config.getSealingTableBlock());
         if (meta == null) return;
         meta.setDisplayName("§e" + lang.getEntry("Etc_SealingTable"));
         meta.getPersistentDataContainer().set(TAG_KEY, PersistentDataType.BYTE, (byte) 1);
         sealingTableItem.setItemMeta(meta);
 
-        ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(BreweryPlugin.getInstance(), "SealingTable"), sealingTableItem);
+        final var recipe = new ShapedRecipe(new NamespacedKey(BreweryPlugin.getInstance(), "SealingTable"), sealingTableItem);
         recipe.shape("bb ",
-            "ww ",
-            "ww ");
+                "ww ",
+                "ww ");
         recipe.setIngredient('b', Material.GLASS_BOTTLE);
         recipe.setIngredient('w', new RecipeChoice.MaterialChoice(Tag.PLANKS));
 
@@ -194,14 +127,69 @@ public class BSealer implements InventoryHolder {
     }
 
     public static boolean recipeExists() {
-        Recipe recipe = Bukkit.getRecipe(TAG_KEY);
+        final var recipe = Bukkit.getRecipe(TAG_KEY);
         return recipe != null;
     }
 
     public static void unregisterRecipe() {
-        Recipe recipe = Bukkit.getRecipe(TAG_KEY);
+        final var recipe = Bukkit.getRecipe(TAG_KEY);
         if (recipe != null) {
             Bukkit.removeRecipe(TAG_KEY);
+        }
+    }
+
+    @Override
+    public final @NotNull Inventory getInventory() {
+        return this.inventory;
+    }
+
+    public final void clickInv() {
+        this.contents = null;
+        if (this.task == null) {
+            this.task = BreweryPlugin.getScheduler().runTimer(this::itemChecking, 1, 1);
+        }
+    }
+
+    public final void closeInv() {
+        if (this.task != null) {
+            this.task.cancel();
+            this.task = null;
+        }
+        this.contents = this.inventory.getContents();
+        for (final var item : this.contents) {
+            if (item != null && item.getType() != Material.AIR) {
+                this.player.getWorld().dropItemNaturally(this.player.getLocation(), item);
+            }
+        }
+        this.contents = null;
+        this.inventory.clear();
+    }
+
+    private void itemChecking() {
+        if (this.contents == null) {
+            this.contents = this.inventory.getContents();
+            for (var i = 0; i < this.slotTime.length; i++) {
+                if (this.contents[i] == null || this.contents[i].getType() != Material.POTION) {
+                    this.slotTime[i] = -1;
+                } else if (this.slotTime[i] < 0) {
+                    this.slotTime[i] = 0;
+                }
+            }
+        }
+        final var playerValid = this.player.isValid() && !this.player.isDead();
+        for (var i = 0; i < this.slotTime.length; i++) {
+            if (this.slotTime[i] > 20) {
+                this.slotTime[i] = -1;
+                final var brew = Brew.get(this.contents[i]);
+                if (brew != null && !brew.isStripped()) {
+                    brew.seal(this.contents[i], this.player);
+                    if (playerValid && BreweryPlugin.getMCVersion().isOrLater(MinecraftVersion.V1_9)) {
+                        this.player.playSound(this.player.getLocation(), Sound.ITEM_BOTTLE_FILL_DRAGONBREATH, 1, 1.5f + (float) (Math.random() * 0.2));
+                    }
+                }
+            } else if (this.slotTime[i] >= 0) {
+                this.slotTime[i]++;
+            }
         }
     }
 }

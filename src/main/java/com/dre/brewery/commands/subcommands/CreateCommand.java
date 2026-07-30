@@ -32,17 +32,17 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 
-public class CreateCommand implements SubCommand {
+public final class CreateCommand implements SubCommand {
 
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
         if (args.length < 2) {
             lang.sendEntry(sender, "Etc_Usage");
             lang.sendEntry(sender, "Help_Create");
             return;
         }
 
-        Tuple<Brew, Player> brewForPlayer = CommandUtil.getFromCommand(sender, args);
+        final var brewForPlayer = CommandUtil.getFromCommand(sender, args);
 
         if (brewForPlayer != null) {
             if (brewForPlayer.b().getInventory().firstEmpty() == -1) {
@@ -50,7 +50,7 @@ public class CreateCommand implements SubCommand {
                 return;
             }
 
-            ItemStack item = brewForPlayer.a().createItem(null, brewForPlayer.b());
+            final var item = brewForPlayer.a().createItem(null, brewForPlayer.b());
             if (item != null) {
                 brewForPlayer.b().getInventory().addItem(item);
                 lang.sendEntry(sender, "CMD_Created");
@@ -59,7 +59,7 @@ public class CreateCommand implements SubCommand {
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return CommandUtil.recipeNamesAndIds(args);
     }
 

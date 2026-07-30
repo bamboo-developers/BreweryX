@@ -33,21 +33,21 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.List;
 
-public class UnLabelCommand implements SubCommand {
+public final class UnLabelCommand implements SubCommand {
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
-        Player player = (Player) sender;
-        ItemStack hand = player.getInventory().getItemInMainHand();
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
+        final var player = (Player) sender;
+        final var hand = player.getInventory().getItemInMainHand();
         if (hand.getType() != Material.AIR) {
-            Brew brew = Brew.get(hand);
+            final var brew = Brew.get(hand);
             if (brew != null) {
                 if (!brew.isUnlabeled()) {
-                    ItemMeta origMeta = hand.getItemMeta();
+                    final var origMeta = hand.getItemMeta();
                     brew.unLabel(hand);
                     brew.touch();
-                    ItemMeta meta = hand.getItemMeta();
+                    final var meta = hand.getItemMeta();
                     assert meta != null;
-                    BrewModifyEvent modifyEvent = new BrewModifyEvent(brew, meta, BrewModifyEvent.Type.UNLABEL);
+                    final var modifyEvent = new BrewModifyEvent(brew, meta, BrewModifyEvent.Type.UNLABEL);
                     BreweryPlugin.getInstance().getServer().getPluginManager().callEvent(modifyEvent);
                     if (modifyEvent.isCancelled()) {
                         hand.setItemMeta(origMeta);
@@ -66,7 +66,7 @@ public class UnLabelCommand implements SubCommand {
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return null;
     }
 

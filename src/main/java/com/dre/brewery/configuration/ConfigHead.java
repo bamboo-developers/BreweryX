@@ -39,38 +39,33 @@ import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Supplier;
 
 /**
  * A class which manages the creation and retrieval of config files. This class
  * can be used as a singleton: {@link ConfigManager}, or as a standalone class: {@link com.dre.brewery.api.addons.AddonConfigManager}.
  */
-public class ConfigHead {
+public final class ConfigHead {
 
+    // These can stay public, the fields above should be private though.
+    public final Map<Class<? extends AbstractOkaeriConfigFile>, AbstractOkaeriConfigFile> LOADED_CONFIGS = new HashMap<>();
     @Getter
     private final Map<Class<? extends Configurer>, Supplier<Configurer>> configurerSupplierMap = new HashMap<>(Map.of(
-        BreweryXConfigurer.class, BreweryXConfigurer::new,
-        YamlSnakeYamlConfigurer.class, YamlSnakeYamlConfigurer::new
+            BreweryXConfigurer.class, BreweryXConfigurer::new,
+            YamlSnakeYamlConfigurer.class, YamlSnakeYamlConfigurer::new
     ));
     @Getter
     private final Set<OkaeriSerdesPack> preparedSerdesPacks = new HashSet<>();
     @Getter
     private final Set<BidirectionalTransformer<?, ?>> preparedBiDirectionalTransformers = new HashSet<>();
-
-    // These can stay public, the fields above should be private though.
-    public final Map<Class<? extends AbstractOkaeriConfigFile>, AbstractOkaeriConfigFile> LOADED_CONFIGS = new HashMap<>();
-    public Path DATA_FOLDER;
+    public final Path DATA_FOLDER;
 
     public ConfigHead() {
         this.DATA_FOLDER = BreweryPlugin.getInstance().getDataFolder().toPath();
     }
 
-    public ConfigHead(Path dataFolder) {
+    public ConfigHead(final Path dataFolder) {
         this.DATA_FOLDER = dataFolder;
     }
 
@@ -82,17 +77,17 @@ public class ConfigHead {
      * @return The configurer instance
      */
     @NotNull
-    public <T extends Configurer> T getConfigurer(Class<T> configurerClass) {
-        if (!configurerSupplierMap.containsKey(configurerClass)) {
+    public final <T extends Configurer> T getConfigurer(final Class<T> configurerClass) {
+        if (!this.configurerSupplierMap.containsKey(configurerClass)) {
             Logging.errorLog("Tried to get a Configurer that doesn't exist to this ConfigHead: " + configurerClass.getCanonicalName());
-            return (T) configurerSupplierMap.get(BreweryXConfigurer.class).get();
+            return (T) this.configurerSupplierMap.get(BreweryXConfigurer.class).get();
         }
 
-        T configurer = (T) configurerSupplierMap.get(configurerClass).get();
-        for (OkaeriSerdesPack pack : preparedSerdesPacks) {
+        final var configurer = (T) this.configurerSupplierMap.get(configurerClass).get();
+        for (final var pack : this.preparedSerdesPacks) {
             configurer.register(pack);
         }
-        for (BidirectionalTransformer<?, ?> transformer : preparedBiDirectionalTransformers) {
+        for (final var transformer : this.preparedBiDirectionalTransformers) {
             configurer.register(registry -> registry.register(transformer));
         }
         return configurer;
@@ -105,18 +100,18 @@ public class ConfigHead {
      * @param <T>         The type of the config
      * @return The config instance
      */
-    public <T extends AbstractOkaeriConfigFile> T getConfig(Class<T> configClass) {
+    public final <T extends AbstractOkaeriConfigFile> T getConfig(final Class<T> configClass) {
         try {
-            for (var mapEntry : LOADED_CONFIGS.entrySet()) {
+            for (final var mapEntry : this.LOADED_CONFIGS.entrySet()) {
                 if (mapEntry.getKey().equals(configClass)) {
                     return (T) mapEntry.getValue();
                 }
             }
-            return createConfig(configClass);
-        } catch (Throwable e) {
+            return this.createConfig(configClass);
+        } catch (final Throwable e) {
             Logging.errorLog("Something went wrong trying to load a config file! &e(Class: " + configClass.getSimpleName() + ")", e);
             Logging.warningLog("Resolve the issue in the file and run &6/brewery reload");
-            return createBlankConfigInstance(configClass);
+            return this.createBlankConfigInstance(configClass);
         }
     }
 
@@ -126,17 +121,17 @@ public class ConfigHead {
      * @param configClass The class of the config to replace
      * @param <T>         The type of the config
      */
-    public <T extends AbstractOkaeriConfigFile> void newInstance(Class<T> configClass, boolean overwrite) {
-        if (!overwrite && LOADED_CONFIGS.containsKey(configClass)) {
+    public final <T extends AbstractOkaeriConfigFile> void newInstance(final Class<T> configClass, final boolean overwrite) {
+        if (!overwrite && this.LOADED_CONFIGS.containsKey(configClass)) {
             return;
         }
 
         try {
-            createConfig(configClass);
-        } catch (Throwable e) {
+            this.createConfig(configClass);
+        } catch (final Throwable e) {
             Logging.errorLog("Something went wrong trying to load a config file! &e(Class: " + configClass.getSimpleName() + ")", e);
             Logging.warningLog("Resolve the issue in the file and run &6/brewery reload");
-            createBlankConfigInstance(configClass);
+            this.createBlankConfigInstance(configClass);
         }
     }
 
@@ -148,13 +143,13 @@ public class ConfigHead {
      * @param <T>         The type of the config
      * @return The file name
      */
-    public <T extends AbstractOkaeriConfigFile> Path getFilePath(Class<T> configClass) {
-        OkaeriConfigFileOptions options = getOkaeriConfigFileOptions(configClass);
+    public final <T extends AbstractOkaeriConfigFile> Path getFilePath(final Class<T> configClass) {
+        final var options = this.getOkaeriConfigFileOptions(configClass);
 
         if (!options.useLangFileName()) {
-            return DATA_FOLDER.resolve(options.value());
+            return this.DATA_FOLDER.resolve(options.value());
         } else {
-            return DATA_FOLDER.resolve("languages/" + TranslationManager.getInstance().getActiveTranslation().fileName());
+            return this.DATA_FOLDER.resolve("languages/" + TranslationManager.getInstance().getActiveTranslation().fileName());
         }
     }
 
@@ -169,10 +164,10 @@ public class ConfigHead {
      * @param <T>         The type of the config
      * @return The new config instance
      */
-    public <T extends AbstractOkaeriConfigFile> T createConfig(Class<T> configClass, Path file, Configurer configurer, OkaeriSerdesPack serdesPack, boolean update, boolean removeOrphans) {
-        boolean firstCreation = !Files.exists(file);
+    public final <T extends AbstractOkaeriConfigFile> T createConfig(final Class<T> configClass, final Path file, final Configurer configurer, final OkaeriSerdesPack serdesPack, final boolean update, final boolean removeOrphans) {
+        final var firstCreation = !Files.exists(file);
 
-        T instance = eu.okaeri.configs.ConfigManager.create(configClass, (it) -> {
+        final var instance = eu.okaeri.configs.ConfigManager.create(configClass, (it) -> {
             it.withConfigurer(configurer, serdesPack);
             it.withRemoveOrphans(removeOrphans);
             it.withBindFile(file);
@@ -182,7 +177,7 @@ public class ConfigHead {
 
         instance.setUpdate(update);
         instance.setFirstCreation(firstCreation);
-        LOADED_CONFIGS.put(configClass, instance);
+        this.LOADED_CONFIGS.put(configClass, instance);
         return instance;
     }
 
@@ -194,11 +189,11 @@ public class ConfigHead {
      * @param <T>         The type of the config
      * @return The new config instance
      */
-    public <T extends AbstractOkaeriConfigFile> T createConfig(Class<T> configClass, Path file) {
-        OkaeriConfigFileOptions options = getOkaeriConfigFileOptions(configClass);
-        Configurer configurer = this.getConfigurer(options.configurer());
+    public final <T extends AbstractOkaeriConfigFile> T createConfig(final Class<T> configClass, final Path file) {
+        final var options = this.getOkaeriConfigFileOptions(configClass);
+        final var configurer = this.getConfigurer(options.configurer());
 
-        return createConfig(configClass, file, configurer, new StandardSerdes(), options.update(), options.removeOrphans());
+        return this.createConfig(configClass, file, configurer, new StandardSerdes(), options.update(), options.removeOrphans());
     }
 
     /**
@@ -208,18 +203,18 @@ public class ConfigHead {
      * @param <T>         The type of the config
      * @return The new config instance
      */
-    public <T extends AbstractOkaeriConfigFile> T createConfig(Class<T> configClass) {
-        return createConfig(configClass, getFilePath(configClass));
+    public final <T extends AbstractOkaeriConfigFile> T createConfig(final Class<T> configClass) {
+        return this.createConfig(configClass, this.getFilePath(configClass));
     }
 
     @Nullable
-    public <T extends AbstractOkaeriConfigFile> T createBlankConfigInstance(Class<T> configClass) {
+    public final <T extends AbstractOkaeriConfigFile> T createBlankConfigInstance(final Class<T> configClass) {
         try {
-            T inst = configClass.getDeclaredConstructor().newInstance();
+            final var inst = configClass.getDeclaredConstructor().newInstance();
             inst.setBlankInstance(true);
-            LOADED_CONFIGS.put(configClass, inst);
+            this.LOADED_CONFIGS.put(configClass, inst);
             return inst;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             Logging.errorLog("Failed to create a blank config instance for " + configClass.getSimpleName(), e);
             return null;
         }
@@ -232,8 +227,8 @@ public class ConfigHead {
      *
      * @param packs The array of OkaeriSerdesPack instances to be added to the configurers.
      */
-    public void addSerdesPacks(OkaeriSerdesPack... packs) {
-        preparedSerdesPacks.addAll(Arrays.asList(packs));
+    public final void addSerdesPacks(final OkaeriSerdesPack... packs) {
+        this.preparedSerdesPacks.addAll(Arrays.asList(packs));
     }
 
     /**
@@ -242,8 +237,8 @@ public class ConfigHead {
      *
      * @param transformers The array of BidirectionalTransformer instances to be added to the configurers.
      */
-    public void addBidirectionalTransformers(BidirectionalTransformer<?, ?>... transformers) {
-        preparedBiDirectionalTransformers.addAll(Arrays.asList(transformers));
+    public final void addBidirectionalTransformers(final BidirectionalTransformer<?, ?>... transformers) {
+        this.preparedBiDirectionalTransformers.addAll(Arrays.asList(transformers));
     }
 
     /**
@@ -252,14 +247,14 @@ public class ConfigHead {
      *
      * @param configurer The Configurer instance to be added.
      */
-    public void addConfigurer(Configurer configurer) {
-        configurerSupplierMap.put(configurer.getClass(), () -> configurer);
+    public final void addConfigurer(final Configurer configurer) {
+        this.configurerSupplierMap.put(configurer.getClass(), () -> configurer);
     }
 
     // Util
 
-    public void createFileFromResources(String resourcesPath, Path destination) {
-        Path targetDir = destination.getParent();
+    public final void createFileFromResources(final String resourcesPath, final Path destination) {
+        final var targetDir = destination.getParent();
 
         try {
             // Ensure the directory exists, create it if necessary
@@ -271,7 +266,7 @@ public class ConfigHead {
                 return;
             }
 
-            try (InputStream inputStream = BreweryPlugin.class.getClassLoader().getResourceAsStream(resourcesPath)) {
+            try (final var inputStream = BreweryPlugin.class.getClassLoader().getResourceAsStream(resourcesPath)) {
 
                 if (inputStream != null) {
                     // Copy the input stream content to the target file
@@ -280,14 +275,14 @@ public class ConfigHead {
                     Logging.warningLog("Could not find resource file for " + resourcesPath);
                 }
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new RuntimeException("Error creating or copying file", e);
         }
     }
 
 
-    public OkaeriConfigFileOptions getOkaeriConfigFileOptions(Class<? extends AbstractOkaeriConfigFile> configClass) {
-        OkaeriConfigFileOptions options = configClass.getAnnotation(OkaeriConfigFileOptions.class);
+    public final OkaeriConfigFileOptions getOkaeriConfigFileOptions(final Class<? extends AbstractOkaeriConfigFile> configClass) {
+        var options = configClass.getAnnotation(OkaeriConfigFileOptions.class);
         if (options == null) {
             options = new OkaeriConfigFileOptions() {
                 @Override

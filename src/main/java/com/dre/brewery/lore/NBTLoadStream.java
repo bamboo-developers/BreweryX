@@ -27,17 +27,17 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.io.ByteArrayInputStream;
 
-public class NBTLoadStream extends ByteArrayInputStream {
+public final class NBTLoadStream extends ByteArrayInputStream {
     private static final String TAG = "brewdata";
     private static final NamespacedKey KEY = new NamespacedKey(BreweryPlugin.getInstance(), TAG);
     private static final NamespacedKey LEGACY_KEY = new NamespacedKey("brewery", TAG.toLowerCase());
 
-    public NBTLoadStream(ItemMeta meta) {
+    public NBTLoadStream(final ItemMeta meta) {
         super(getNBTBytes(meta));
     }
 
-    private static byte[] getNBTBytes(ItemMeta meta) {
-        byte[] bytes = NBTUtil.readBytesItem(meta, KEY);
+    private static byte[] getNBTBytes(final ItemMeta meta) {
+        var bytes = NBTUtil.readBytesItem(meta, KEY);
         if (bytes == null) {
             bytes = NBTUtil.readBytesItem(meta, LEGACY_KEY);
         }
@@ -47,11 +47,11 @@ public class NBTLoadStream extends ByteArrayInputStream {
         return bytes;
     }
 
-    public boolean hasData() {
-        return count > 0;
+    public static boolean hasDataInMeta(final ItemMeta meta) {
+        return NBTUtil.hasBytesItem(meta, KEY) || NBTUtil.hasBytesItem(meta, LEGACY_KEY);
     }
 
-    public static boolean hasDataInMeta(ItemMeta meta) {
-        return NBTUtil.hasBytesItem(meta, KEY) || NBTUtil.hasBytesItem(meta, LEGACY_KEY);
+    public final boolean hasData() {
+        return this.count > 0;
     }
 }

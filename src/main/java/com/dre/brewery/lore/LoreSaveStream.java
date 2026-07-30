@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class LoreSaveStream extends ByteArrayOutputStream {
+public final class LoreSaveStream extends ByteArrayOutputStream {
 
     public static final String IDENTIFIER = "§%";
 
@@ -36,11 +36,11 @@ public class LoreSaveStream extends ByteArrayOutputStream {
     private int line;
     private boolean flushed = false;
 
-    public LoreSaveStream(ItemMeta meta) {
+    public LoreSaveStream(final ItemMeta meta) {
         this(meta, -1);
     }
 
-    public LoreSaveStream(ItemMeta meta, int line) {
+    public LoreSaveStream(final ItemMeta meta, final int line) {
         super(128);
         this.meta = meta;
         this.line = line;
@@ -49,52 +49,52 @@ public class LoreSaveStream extends ByteArrayOutputStream {
     // Writes to the Lore
     // Without calling this, the ItemMeta remains unchanged
     @Override
-    public void flush() throws IOException {
+    public final void flush() throws IOException {
         super.flush();
-        if (size() <= 0) return;
-        if (flushed || meta == null) {
+        if (this.size() <= 0) return;
+        if (this.flushed || this.meta == null) {
             // Dont write twice
             return;
         }
-        flushed = true;
-        String s = toString();
+        this.flushed = true;
+        final var s = this.toString();
 
-        StringBuilder loreLineBuilder = new StringBuilder((s.length() * 2) + 6);
+        final var loreLineBuilder = new StringBuilder((s.length() * 2) + 6);
         loreLineBuilder.append(IDENTIFIER);
-        for (char c : s.toCharArray()) {
+        for (final var c : s.toCharArray()) {
             loreLineBuilder.append('§').append(c);
         }
-        List<String> lore;
-        if (meta.hasLore()) {
-            lore = meta.getLore();
+        final List<String> lore;
+        if (this.meta.hasLore()) {
+            lore = this.meta.getLore();
         } else {
             lore = new ArrayList<>();
         }
-        int prev = 0;
-        for (Iterator<String> iterator = lore.iterator(); iterator.hasNext(); ) {
+        var prev = 0;
+        for (final var iterator = lore.iterator(); iterator.hasNext(); ) {
             if (iterator.next().startsWith(IDENTIFIER)) {
                 iterator.remove();
                 break;
             }
             prev++;
         }
-        if (line < 0) {
+        if (this.line < 0) {
             if (prev >= 0) {
-                line = prev;
+                this.line = prev;
             } else {
-                line = lore.size();
+                this.line = lore.size();
             }
         }
-        while (lore.size() < line) {
+        while (lore.size() < this.line) {
             lore.add("");
         }
-        lore.add(line, loreLineBuilder.toString());
-        meta.setLore(lore);
+        lore.add(this.line, loreLineBuilder.toString());
+        this.meta.setLore(lore);
     }
 
     @Override
-    public void close() throws IOException {
+    public final void close() throws IOException {
         super.close();
-        meta = null;
+        this.meta = null;
     }
 }

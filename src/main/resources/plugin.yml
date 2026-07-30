@@ -5,7 +5,7 @@ api-version: 1.13
 load: POSTWORLD
 folia-supported: true
 website: 'https://brewery.lumamc.net/'
-authors: [Jsinco, Mitality, Nadwey, Szarkans, Vutka1, Thorinwasher, Tisawesomeness]
+authors: [ Jsinco, Mitality, Nadwey, Szarkans, Vutka1, Thorinwasher, Tisawesomeness ]
 softdepend:
   - PlaceholderAPI
   - Nexo
@@ -14,8 +14,8 @@ commands:
     description: Mostly admin commands to create/modify Brews and drunkenness
 #    aliases: [brewery, brew] Now handled by config
 permissions:
-# -- Groups --
-# User
+  # -- Groups --
+  # User
   brewery.user:
     description: Access to everything needed for brewing
     default: true
@@ -28,14 +28,14 @@ permissions:
       brewery.cauldron.fill: true
       brewery.cmd.version: true
       brewery.cmd.info: true
-# Mod
+  # Mod
   brewery.mod:
     description: Allow to maintain Wakeup Points and to login even if overdrunken
     children:
       brewery.user: true
       brewery.cmd.wakeup: true
       brewery.bypass.logindeny: true
-# Admin
+  # Admin
   brewery.admin:
     description: Gives access to Every Command and most bypasses
     default: op
@@ -70,7 +70,7 @@ permissions:
       brewery.bypass.overdrink: true
       brewery.bypass.teleport: true
 
-# -- Commands --
+  # -- Commands --
   brewery.cmd.unlabel:
     description: Remove Parts of the Potionlabel
   brewery.cmd.info:
@@ -112,7 +112,7 @@ permissions:
   brewery.cmd.datamanager:
     description: DataManager stuff
 
-# -- Barrel --
+  # -- Barrel --
   brewery.createbarrel:
     description: Allow to create all types of Barrels
     children:
@@ -136,7 +136,7 @@ permissions:
   brewery.openbarrel.mc:
     description: Allow to open Minecraft Barrels
 
-# -- Cauldron --
+  # -- Cauldron --
   brewery.cauldron.time:
     description: View the current Cooking time of a cauldron with a watch
   brewery.cauldron.insert:
@@ -144,7 +144,7 @@ permissions:
   brewery.cauldron.fill:
     description: Fill a Bottle from a Cauldron with a brewery brew
 
-# -- Bypasses --
+  # -- Bypasses --
   brewery.bypass.logindeny:
     description: Can always login, even with extreme drunkenness
   brewery.bypass.overdrink:
@@ -155,7 +155,7 @@ permissions:
     description: Prevents chat messages from being distorted by drunkenness
     default: false
 
-# -- Modifiers --
+  # -- Modifiers --
 
   brewery.sensitive.100:
     description: How sensitive to alcohol the player is in percent
@@ -163,6 +163,6 @@ permissions:
   brewery.recovery.2:
     description: How quickly the player will naturally reduce his drunkenness per minute
 
-# -- Misc --
+  # -- Misc --
   brewery.update:
     description: Get notified about new versions

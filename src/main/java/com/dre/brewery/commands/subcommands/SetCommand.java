@@ -28,14 +28,13 @@ import com.dre.brewery.utility.BukkitConstants;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
 
-public class SetCommand implements SubCommand {
+public final class SetCommand implements SubCommand {
 
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
 
         if (args.length < 3) {
             lang.sendEntry(sender, "Etc_Usage");
@@ -43,32 +42,32 @@ public class SetCommand implements SubCommand {
             return;
         }
 
-        Player target = Bukkit.getPlayer(args[1]);
+        final var target = Bukkit.getPlayer(args[1]);
         if (target == null) {
             lang.sendEntry(sender, "Error_NoPlayer", args[1]);
         } else {
 
-            int drunkenness = 0;
+            var drunkenness = 0;
             try {
                 drunkenness = Integer.parseInt(args[2]);
                 if (drunkenness > 100) drunkenness = 100;
                 if (drunkenness < 0) drunkenness = 0;
-            } catch (NumberFormatException e) {
+            } catch (final NumberFormatException e) {
                 //lang.sendEntry(sender, "Error_InvalidDrunkenness"));
             }
 
-            int quality = 10;
+            var quality = 10;
             if (args.length > 3) {
                 try {
                     quality = Integer.parseInt(args[3]);
                     if (quality > 10) quality = 10;
                     if (quality < 0) quality = 0;
-                } catch (NumberFormatException e) {
+                } catch (final NumberFormatException e) {
                     //lang.sendEntry(sender, "Error_InvalidQuality"));
                 }
             }
 
-            BPlayer bPlayer = BPlayer.get(Bukkit.getOfflinePlayer(target.getUniqueId()));
+            var bPlayer = BPlayer.get(Bukkit.getOfflinePlayer(target.getUniqueId()));
             if (bPlayer == null) bPlayer = BPlayer.addPlayer(Bukkit.getOfflinePlayer(target.getUniqueId()));
 
             bPlayer.setDrunkeness(drunkenness);
@@ -84,7 +83,7 @@ public class SetCommand implements SubCommand {
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return null;
     }
 

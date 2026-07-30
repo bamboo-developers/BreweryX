@@ -21,29 +21,18 @@ package com.dre.brewery.utility;
 
 import org.jetbrains.annotations.Contract;
 
-public class Tuple<A, B> {
-
-    /**
-     * The first value in the tuple
-     */
-    private final A a;
-
-    /**
-     * The second value in the tuple
-     */
-    private final B b;
-
-    public Tuple(A a, B b) {
-        this.a = a;
-        this.b = b;
-    }
+/**
+ * @param a The first value in the tuple
+ * @param b The second value in the tuple
+ */
+public record Tuple<A, B>(A a, B b) {
 
     /**
      * Gets the first value in the tuple
      */
     @Contract(pure = true)
     public A first() {
-        return a;
+        return this.a;
     }
 
     /**
@@ -51,44 +40,45 @@ public class Tuple<A, B> {
      */
     @Contract(pure = true)
     public B second() {
-        return b;
+        return this.b;
     }
 
     /**
      * Gets the first value in the tuple, Synonym for first()
      */
+    @Override
     @Contract(pure = true)
     public A a() {
-        return a;
+        return this.a;
     }
 
     /**
      * Gets the second value in the tuple, Synonym for second()
      */
+    @Override
     @Contract(pure = true)
     public B b() {
-        return b;
+        return this.b;
     }
 
     @Override
-    public boolean equals(Object object) {
-        if (!(object instanceof Tuple)) {
+    public boolean equals(final Object object) {
+        if (!(object instanceof Tuple<?, ?>(Object a1, Object b1))) {
             return false;
         }
 
-        Tuple<?, ?> tuple = (Tuple<?, ?>) object;
-        return tuple.a.equals(a) && tuple.b.equals(b);
+        return a1.equals(this.a) && b1.equals(this.b);
     }
 
     @Override
     public int hashCode() {
-        return a.hashCode() ^ b.hashCode();
+        return this.a.hashCode() ^ this.b.hashCode();
     }
 
     @Override
     public String toString() {
         return "Tuple{" +
-            '{' + a + '}' +
-            '{' + b + "}}";
+                '{' + this.a + '}' +
+                '{' + this.b + "}}";
     }
 }

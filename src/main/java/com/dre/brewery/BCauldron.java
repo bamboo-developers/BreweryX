@@ -26,21 +26,11 @@ import com.dre.brewery.configuration.files.Config;
 import com.dre.brewery.configuration.files.Lang;
 import com.dre.brewery.recipe.BCauldronRecipe;
 import com.dre.brewery.recipe.RecipeItem;
-import com.dre.brewery.utility.BUtil;
-import com.dre.brewery.utility.BukkitConstants;
-import com.dre.brewery.utility.MaterialUtil;
-import com.dre.brewery.utility.MinecraftVersion;
-import com.dre.brewery.utility.Tuple;
+import com.dre.brewery.utility.*;
 import com.tcoded.folialib.wrapper.task.WrappedTask;
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.Color;
-import org.bukkit.Effect;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
@@ -53,118 +43,55 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Getter
 @Setter
-public class BCauldron {
+public final class BCauldron {
 
+    public static final int PARTICLEPAUSE = 15;
     private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
     private static final Config config = ConfigManager.getConfig(Config.class);
     private static final Lang lang = ConfigManager.getConfig(Lang.class);
-    public static final int PARTICLEPAUSE = 15;
     private static final Set<UUID> plInteracted = new HashSet<>(); // Interact Event helper
     @Getter
-    public static Map<Block, BCauldron> bcauldrons = new ConcurrentHashMap<>(); // All active cauldrons. Mapped to their block for fast retrieve
-
-    private BIngredients ingredients = new BIngredients();
+    public static final Map<Block, BCauldron> bcauldrons = new ConcurrentHashMap<>(); // All active cauldrons. Mapped to their block for fast retrieve
     private final Block block;
+    private final Location particleLocation;
+    private final UUID id;
+    private BIngredients ingredients = new BIngredients();
     private int state = 0;
     private boolean changed = false; // Not really needed anymore
     private BCauldronRecipe particleRecipe; // null if we haven't checked, empty if there is none
     private Color particleColor;
-    private final Location particleLocation;
-    private final UUID id;
     private WrappedTask foliaParticleTask;
 
-    public BCauldron(Block block) {
+    public BCauldron(final Block block) {
         this.block = block;
         this.particleLocation = block.getLocation().add(0.5, 0.9, 0.5);
         this.id = UUID.randomUUID();
     }
 
     // loading from file
-    public BCauldron(Block block, BIngredients ingredients, int state, UUID id) {
+    public BCauldron(final Block block, final BIngredients ingredients, final int state, final UUID id) {
         this.block = block;
         this.state = state;
         this.ingredients = ingredients;
-        particleLocation = block.getLocation().add(0.5, 0.9, 0.5);
+        this.particleLocation = block.getLocation().add(0.5, 0.9, 0.5);
         this.id = id;
     }
 
-    /**
-     * Updates this Cauldron, increasing the cook time and checking for Heatsource
-     *
-     * @return false if Cauldron needs to be removed
-     */
-    public boolean onUpdate() {
-        // add a minute to cooking time
-        if (!BUtil.isChunkLoaded(block)) {
-            increaseState();
-        } else {
-            if (!MaterialUtil.isWaterCauldron(block.getType())) {
-                // Catch any WorldEdit etc. removal
-                return false;
-            }
-            // Check if fire still alive
-            if (MaterialUtil.isCauldronHeatSource(block.getRelative(BlockFace.DOWN))) {
-                increaseState();
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Will add a minute to the cooking time
-     */
-    public void increaseState() {
-        state++;
-        if (changed) {
-            ingredients = ingredients.copy();
-            changed = false;
-        }
-        particleColor = null;
-    }
-
-    // add an ingredient to the cauldron
-    public void add(ItemStack ingredient, RecipeItem rItem) {
-        if (ingredient == null || ingredient.getType() == Material.AIR) return;
-        if (changed) {
-            ingredients = ingredients.copy();
-            changed = false;
-        }
-
-        particleRecipe = null;
-        particleColor = null;
-        ingredients.add(ingredient, rItem);
-        block.getWorld().playEffect(block.getLocation(), Effect.EXTINGUISH, 0);
-        if (state > 0) {
-            state--;
-        }
-        if (config.isEnableCauldronParticles() && !config.isMinimalParticles()) {
-            // Few little sparks and lots of water splashes. Offset by 0.2 in x and z
-            block.getWorld().spawnParticle(BukkitConstants.INSTANT_EFFECT, particleLocation, 2, 0.2, 0, 0.2, new BukkitConstants.ParticleSpellWrapper().toInstance(Color.WHITE, 1f));
-            block.getWorld().spawnParticle(BukkitConstants.SPLASH, particleLocation, 10, 0.2, 0, 0.2);
-        }
-    }
-
-
     // get cauldron by Block
     @Nullable
-    public static BCauldron get(Block block) {
+    public static BCauldron get(final Block block) {
         return bcauldrons.get(block);
     }
 
     // get cauldron from block and add given ingredient
     // Calls the IngredientAddEvent and may be cancelled or changed
-    public static boolean ingredientAdd(Block block, ItemStack ingredient, Player player) {
+    public static boolean ingredientAdd(final Block block, final ItemStack ingredient, final Player player) {
         // if not empty
         if (MaterialUtil.getFillLevel(block) != MaterialUtil.EMPTY) {
 
@@ -173,19 +100,19 @@ public class BCauldron {
                 return false;
             }
             // If the Item is on the list, or customized, we have to do more checks
-            RecipeItem rItem = RecipeItem.getMatchingRecipeItem(ingredient, false);
+            final var rItem = RecipeItem.getMatchingRecipeItem(ingredient, false);
             if (rItem == null) {
                 return false;
             }
 
-            BCauldron bcauldron = get(block);
+            var bcauldron = get(block);
             if (bcauldron == null) {
                 bcauldron = new BCauldron(block);
                 BCauldron.bcauldrons.put(block, bcauldron);
                 bcauldron.startFoliaParticleTask();
             }
 
-            IngedientAddEvent event = new IngedientAddEvent(player, block, bcauldron, ingredient.clone(), rItem);
+            final var event = new IngedientAddEvent(player, block, bcauldron, ingredient.clone(), rItem);
             BreweryPlugin.getInstance().getServer().getPluginManager().callEvent(event);
             if (!event.isCancelled()) {
                 bcauldron.add(event.getIngredient(), event.getRecipeItem());
@@ -198,84 +125,13 @@ public class BCauldron {
         return false;
     }
 
-    // fills players bottle with cooked brew
-    public boolean fill(Player player, Block block) {
-        if (!player.hasPermission("brewery.cauldron.fill")) {
-            lang.sendEntry(player, "Perms_NoCauldronFill");
-            return true;
-        }
-        ItemStack potion = ingredients.cook(state, player);
-        if (potion == null) return false;
-
-        if (VERSION.isOrLater(MinecraftVersion.V1_13)) {
-            BlockData data = block.getBlockData();
-            if (!(data instanceof Levelled)) {
-                remove(block);
-                return false;
-            }
-            Levelled cauldron = ((Levelled) data);
-            if (cauldron.getLevel() <= 0) {
-                remove(block);
-                return false;
-            }
-
-            // If the Water_Cauldron type exists and the cauldron is on last level
-            if (MaterialUtil.WATER_CAULDRON != null && cauldron.getLevel() == 1) {
-                // Empty Cauldron
-                block.setType(Material.CAULDRON);
-                remove(block);
-            } else {
-                cauldron.setLevel(cauldron.getLevel() - 1);
-
-                // Update the new Level to the Block
-                // We have to use the BlockData variable "data" here instead of the casted "cauldron"
-                // otherwise < 1.13 crashes on plugin load for not finding the BlockData Class
-                block.setBlockData(data);
-
-                if (cauldron.getLevel() <= 0) {
-                    remove(block);
-                } else {
-                    changed = true;
-                }
-            }
-
-        } else {
-            @SuppressWarnings("deprecation")
-            byte data = block.getData();
-            if (data > 3) {
-                data = 3;
-            } else if (data <= 0) {
-                remove(block);
-                return false;
-            }
-            data -= 1;
-            MaterialUtil.setData(block, data);
-
-            if (data == 0) {
-                remove(block);
-            } else {
-                changed = true;
-            }
-        }
-        if (VERSION.isOrLater(MinecraftVersion.V1_9)) {
-            block.getWorld().playSound(block.getLocation(), Sound.ITEM_BOTTLE_FILL, 1f, 1f);
-        }
-        // Bukkit Bug, inventory not updating while in event so this
-        // will delay the give
-        // but could also just use deprecated updateInventory()
-        giveItem(player, potion);
-        // player.getInventory().addItem(potion);
-        // player.getInventory().updateInventory();
-        return true;
-    }
-
     // prints the current cooking time to the player
-    public static void printTime(Player player, Block block) {
+    public static void printTime(final Player player, final Block block) {
         if (!player.hasPermission("brewery.cauldron.time")) {
             lang.sendEntry(player, "Error_NoPermissions");
             return;
         }
-        BCauldron bcauldron = get(block);
+        final var bcauldron = get(block);
         if (bcauldron != null) {
             if (bcauldron.state > 1) {
                 lang.sendEntry(player, "Player_CauldronInfo1", "" + bcauldron.state);
@@ -285,200 +141,48 @@ public class BCauldron {
         }
     }
 
-    public void cookEffect() {
-        assert !VERSION.isFolia() || BreweryPlugin.getScheduler().isOwnedByCurrentRegion(block.getLocation())
-            : "cookEffect must run on owning region thread";
-        if (BUtil.isChunkLoaded(block) && MaterialUtil.isCauldronHeatSource(block.getRelative(BlockFace.DOWN))) {
-            Color color = getParticleColor();
-            // Colorable spirally spell, 0 count enables color instead of the offset variables
-            // Configurable RGB color. The last parameter seems to control the hue and motion, but I couldn't find
-            // how exactly in the client code. 1025 seems to be the best for color brightness and upwards motion
-
-            if (VERSION.isOrLater(MinecraftVersion.V1_21)) {
-                block.getWorld().spawnParticle(BukkitConstants.ENTITY_EFFECT, getRandParticleLoc(), 0, color);
-            } else {
-                block.getWorld().spawnParticle(BukkitConstants.ENTITY_EFFECT, getRandParticleLoc(), 0,
-                    ((double) color.getRed()) / 255.0,
-                    ((double) color.getGreen()) / 255.0,
-                    ((double) color.getBlue()) / 255.0,
-                    1025.0);
-            }
-
-            if (config.isMinimalParticles()) {
-                return;
-            }
-
-            if (ThreadLocalRandom.current().nextFloat() > 0.85f) {
-                // Dark pixely smoke cloud at 0.4 random in x and z
-                // 0 count enables direction, send to y = 1 with speed 0.09
-                block.getWorld().spawnParticle(BukkitConstants.LARGE_SMOKE, getRandParticleLoc(), 0, 0, 1, 0, 0.09);
-            }
-            if (ThreadLocalRandom.current().nextFloat() > 0.2f) {
-                // A Water Splash with 0.2 offset in x and z
-                block.getWorld().spawnParticle(BukkitConstants.SPLASH, particleLocation, 1, 0.2, 0, 0.2);
-            }
-
-            if (VERSION.isOrLater(MinecraftVersion.V1_13) && ThreadLocalRandom.current().nextFloat() > 0.4f) {
-                // Two hovering pixely dust clouds, a bit of offset and with DustOptions to give some color and size
-                block.getWorld().spawnParticle(BukkitConstants.DUST, particleLocation, 2, 0.15, 0.2, 0.15, new Particle.DustOptions(color, 1.5f));
-            }
-        }
-    }
-
-    private Location getRandParticleLoc() {
-        return new Location(particleLocation.getWorld(),
-            particleLocation.getX() + (ThreadLocalRandom.current().nextDouble() * 0.8) - 0.4,
-            particleLocation.getY(),
-            particleLocation.getZ() + (ThreadLocalRandom.current().nextDouble() * 0.8) - 0.4);
-    }
-
-    /**
-     * Get or calculate the particle color from the current best Cauldron Recipe
-     * Also calculates the best Cauldron Recipe if not yet done
-     *
-     * @return the Particle Color, after potentially calculating it
-     */
-    @NotNull
-    public Color getParticleColor() {
-        if (state < 1) {
-            return Color.fromRGB(153, 221, 255); // Bright Blue
-        }
-        if (particleColor != null) {
-            return particleColor;
-        }
-        if (particleRecipe == null) {
-            // Check for Cauldron Recipe
-            particleRecipe = ingredients.getCauldronRecipe();
-        }
-
-        List<Tuple<Integer, Color>> colorList = null;
-        if (particleRecipe != null) {
-            colorList = particleRecipe.getParticleColor();
-        }
-
-        if (colorList == null || colorList.isEmpty()) {
-            // No color List configured, or no recipe found
-            colorList = new ArrayList<>(1);
-            colorList.add(new Tuple<>(10, Color.fromRGB(77, 166, 255))); // Dark Aqua kind of Blue
-        }
-        int index = 0;
-        while (index < colorList.size() - 1 && colorList.get(index).a() < state) {
-            // Find the first index where the colorList Minute is higher than the state
-            index++;
-        }
-
-        int minute = colorList.get(index).a();
-        if (minute > state) {
-            // going towards the minute
-            int prevPos;
-            Color prevColor;
-            if (index > 0) {
-                // has previous colours
-                prevPos = colorList.get(index - 1).a();
-                prevColor = colorList.get(index - 1).b();
-            } else {
-                prevPos = 0;
-                prevColor = Color.fromRGB(153, 221, 255); // Bright Blue
-            }
-
-            particleColor = BUtil.weightedMixColor(prevColor, prevPos, state, colorList.get(index).b(), minute);
-        } else if (minute == state) {
-            // reached the minute
-            particleColor = colorList.get(index).b();
-        } else {
-            // passed the last minute configured
-            if (index > 0) {
-                // We have more than one color, just use the last one
-                particleColor = colorList.get(index).b();
-            } else {
-                // Only have one color, go towards a Gray
-                Color nextColor = Color.fromRGB(138, 153, 168); // Dark Teal, Gray
-                int nextPos = (int) (minute * 2.6f);
-
-                if (nextPos <= state) {
-                    // We are past the next color (Gray) as well, keep using it
-                    particleColor = nextColor;
-                } else {
-                    particleColor = BUtil.weightedMixColor(colorList.get(index).b(), minute, state, nextColor, nextPos);
-                }
-            }
-        }
-        //P.p.log("RGB: " + particleColor.getRed() + "|" + particleColor.getGreen() + "|" + particleColor.getBlue());
-        return particleColor;
-    }
-
     public static void processCookEffects() {
-        if (VERSION.isFolia()) return;
+        if (MinecraftVersion.isFolia()) return;
         if (!config.isEnableCauldronParticles()) return;
         if (bcauldrons.isEmpty()) {
             return;
         }
-        final float chance = 1f / PARTICLEPAUSE;
+        final var chance = 1f / PARTICLEPAUSE;
 
-        for (BCauldron cauldron : bcauldrons.values()) {
+        for (final var cauldron : bcauldrons.values()) {
             if (ThreadLocalRandom.current().nextFloat() < chance) {
                 BreweryPlugin.getScheduler().runAtLocationLater(cauldron.block.getLocation(), cauldron::cookEffect, 0);
             }
         }
     }
 
-    private synchronized void startFoliaParticleTask() {
-        if (!VERSION.isFolia()) {
-            return;
-        }
-        if (!config.isEnableCauldronParticles()) {
-            stopFoliaParticleTask();
-            return;
-        }
-        if (foliaParticleTask != null && !foliaParticleTask.isCancelled()) {
-            return;
-        }
-        long delay = ThreadLocalRandom.current().nextLong(1, PARTICLEPAUSE + 1L);
-        foliaParticleTask = BreweryPlugin.getScheduler().runAtLocationTimer(block.getLocation(), () -> {
-            if (config.isMinimalParticles() && ThreadLocalRandom.current().nextFloat() > 0.5f) {
-                return;
-            }
-            cookEffect();
-        }, delay, PARTICLEPAUSE);
-    }
-
-    private synchronized void stopFoliaParticleTask() {
-        if (!VERSION.isFolia()) {
-            return;
-        }
-        if (foliaParticleTask != null) {
-            foliaParticleTask.cancel();
-            foliaParticleTask = null;
-        }
-    }
-
     public static void startAllFoliaParticleTasks() {
-        if (!VERSION.isFolia()) {
+        if (!MinecraftVersion.isFolia()) {
             return;
         }
         if (!config.isEnableCauldronParticles()) {
             stopAllFoliaParticleTasks();
             return;
         }
-        for (BCauldron cauldron : bcauldrons.values()) {
+        for (final var cauldron : bcauldrons.values()) {
             cauldron.startFoliaParticleTask();
         }
     }
 
     public static void stopAllFoliaParticleTasks() {
-        if (!VERSION.isFolia()) {
+        if (!MinecraftVersion.isFolia()) {
             return;
         }
-        for (BCauldron cauldron : bcauldrons.values()) {
+        for (final var cauldron : bcauldrons.values()) {
             cauldron.stopFoliaParticleTask();
         }
     }
 
-    public static void clickCauldron(PlayerInteractEvent event) {
-        Material materialInHand = event.getMaterial();
-        ItemStack item = event.getItem();
-        Player player = event.getPlayer();
-        Block clickedBlock = event.getClickedBlock();
+    public static void clickCauldron(final PlayerInteractEvent event) {
+        var materialInHand = event.getMaterial();
+        var item = event.getItem();
+        final var player = event.getPlayer();
+        final var clickedBlock = event.getClickedBlock();
         assert clickedBlock != null;
 
         if (materialInHand == Material.AIR || materialInHand == Material.BUCKET) {
@@ -492,7 +196,7 @@ public class BCauldron {
         } else if (materialInHand == Material.GLASS_BOTTLE) {
             assert item != null;
             if (player.getInventory().firstEmpty() != -1 || item.getAmount() == 1) {
-                BCauldron bcauldron = get(clickedBlock);
+                final var bcauldron = get(clickedBlock);
                 if (bcauldron != null) {
                     if (bcauldron.fill(player, clickedBlock)) {
                         event.setCancelled(true);
@@ -524,11 +228,11 @@ public class BCauldron {
         }
 
         // Check if fire alive below cauldron when adding ingredients
-        Block down = clickedBlock.getRelative(BlockFace.DOWN);
+        final var down = clickedBlock.getRelative(BlockFace.DOWN);
         if (MaterialUtil.isCauldronHeatSource(down)) {
 
             event.setCancelled(true);
-            boolean handSwap = false;
+            var handSwap = false;
 
             // Interact event is called twice!!!?? in 1.9, once for each hand.
             // Certain Items in Hand cause one of them to be cancelled or not called at all sometimes.
@@ -536,7 +240,7 @@ public class BCauldron {
             // If not, we handle the main hand in the event for the offhand
             if (VERSION.isOrLater(MinecraftVersion.V1_9)) {
                 if (event.getHand() == EquipmentSlot.HAND) {
-                    final UUID id = player.getUniqueId();
+                    final var id = player.getUniqueId();
                     plInteracted.add(id);
                     BreweryPlugin.getScheduler().runLater(() -> plInteracted.remove(id), 0);
                 } else if (event.getHand() == EquipmentSlot.OFF_HAND) {
@@ -558,8 +262,8 @@ public class BCauldron {
                 return;
             }
             if (ingredientAdd(clickedBlock, item, player)) {
-                boolean isBucket = item.getType().name().endsWith("_BUCKET");
-                boolean isBottle = MaterialUtil.isBottle(item.getType());
+                final var isBucket = item.getType().name().endsWith("_BUCKET");
+                final var isBottle = MaterialUtil.isBottle(item.getType());
                 if (item.getAmount() > 1) {
                     item.setAmount(item.getAmount() - 1);
 
@@ -591,8 +295,8 @@ public class BCauldron {
         }
         startAllFoliaParticleTasks();
 
-        var scheduler = BreweryPlugin.getScheduler();
-        for (BCauldron cauldron : bcauldrons.values()) {
+        final var scheduler = BreweryPlugin.getScheduler();
+        for (final var cauldron : bcauldrons.values()) {
             cauldron.particleRecipe = null;
             cauldron.particleColor = null;
 
@@ -607,8 +311,8 @@ public class BCauldron {
     /**
      * reset to normal cauldron
      */
-    public static boolean remove(Block block) {
-        BCauldron removed = bcauldrons.remove(block);
+    public static boolean remove(final Block block) {
+        final var removed = bcauldrons.remove(block);
         if (removed != null) {
             removed.stopFoliaParticleTask();
             return true;
@@ -619,16 +323,16 @@ public class BCauldron {
     /**
      * Are any Cauldrons in that World
      */
-    public static boolean hasDataInWorld(World world) {
+    public static boolean hasDataInWorld(final World world) {
         return bcauldrons.keySet().stream().anyMatch(block -> block.getWorld().equals(world));
     }
 
     // unloads cauldrons that are in a unloading world
     // as they were written to file just before, this is safe to do
-    public static void onUnload(World world) {
-        List<Block> blocksToRemove = bcauldrons.keySet().stream()
-            .filter(block -> block.getWorld().equals(world))
-            .toList();
+    public static void onUnload(final World world) {
+        final var blocksToRemove = bcauldrons.keySet().stream()
+                .filter(block -> block.getWorld().equals(world))
+                .toList();
         blocksToRemove.forEach(BCauldron::remove);
     }
 
@@ -636,26 +340,26 @@ public class BCauldron {
      * Unload all Cauldrons that have are in a unloaded World
      */
     public static void unloadWorlds() {
-        List<World> worlds = BreweryPlugin.getInstance().getServer().getWorlds();
-        List<Block> blocksToRemove = bcauldrons.keySet().stream()
-            .filter(block -> !worlds.contains(block.getWorld()))
-            .toList();
+        final var worlds = BreweryPlugin.getInstance().getServer().getWorlds();
+        final var blocksToRemove = bcauldrons.keySet().stream()
+                .filter(block -> !worlds.contains(block.getWorld()))
+                .toList();
         blocksToRemove.forEach(BCauldron::remove);
     }
 
-    public static void save(ConfigurationSection config, ConfigurationSection oldData) {
+    public static void save(final ConfigurationSection config, final ConfigurationSection oldData) {
         BUtil.createWorldSections(config);
 
         if (!bcauldrons.isEmpty()) {
-            int id = 0;
-            for (BCauldron cauldron : bcauldrons.values()) {
-                String worldName = cauldron.block.getWorld().getName();
-                String prefix;
+            var id = 0;
+            for (final var cauldron : bcauldrons.values()) {
+                final var worldName = cauldron.block.getWorld().getName();
+                final String prefix;
 
                 if (worldName.startsWith("DXL_")) {
                     prefix = BUtil.getDxlName(worldName) + "." + id;
                 } else {
-                    prefix = cauldron.block.getWorld().getUID().toString() + "." + id;
+                    prefix = cauldron.block.getWorld().getUID() + "." + id;
                 }
 
                 config.set(prefix + ".block", cauldron.block.getX() + "/" + cauldron.block.getY() + "/" + cauldron.block.getZ());
@@ -668,7 +372,7 @@ public class BCauldron {
         }
         // copy cauldrons that are not loaded
         if (oldData != null) {
-            for (String uuid : oldData.getKeys(false)) {
+            for (final var uuid : oldData.getKeys(false)) {
                 if (!config.contains(uuid)) {
                     config.set(uuid, oldData.get(uuid));
                 }
@@ -680,6 +384,282 @@ public class BCauldron {
     // schedule the give
     public static void giveItem(final Player player, final ItemStack item) {
         BreweryPlugin.getScheduler().runLater(() -> player.getInventory().addItem(item), 1L);
+    }
+
+    /**
+     * Updates this Cauldron, increasing the cook time and checking for Heatsource
+     *
+     * @return false if Cauldron needs to be removed
+     */
+    public final boolean onUpdate() {
+        // add a minute to cooking time
+        if (!BUtil.isChunkLoaded(this.block)) {
+            this.increaseState();
+        } else {
+            if (!MaterialUtil.isWaterCauldron(this.block.getType())) {
+                // Catch any WorldEdit etc. removal
+                return false;
+            }
+            // Check if fire still alive
+            if (MaterialUtil.isCauldronHeatSource(this.block.getRelative(BlockFace.DOWN))) {
+                this.increaseState();
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Will add a minute to the cooking time
+     */
+    public final void increaseState() {
+        this.state++;
+        if (this.changed) {
+            this.ingredients = this.ingredients.copy();
+            this.changed = false;
+        }
+        this.particleColor = null;
+    }
+
+    // add an ingredient to the cauldron
+    public final void add(final ItemStack ingredient, final RecipeItem rItem) {
+        if (ingredient == null || ingredient.getType() == Material.AIR) return;
+        if (this.changed) {
+            this.ingredients = this.ingredients.copy();
+            this.changed = false;
+        }
+
+        this.particleRecipe = null;
+        this.particleColor = null;
+        this.ingredients.add(ingredient, rItem);
+        this.block.getWorld().playEffect(this.block.getLocation(), Effect.EXTINGUISH, 0);
+        if (this.state > 0) {
+            this.state--;
+        }
+        if (config.isEnableCauldronParticles() && !config.isMinimalParticles()) {
+            // Few little sparks and lots of water splashes. Offset by 0.2 in x and z
+            this.block.getWorld().spawnParticle(BukkitConstants.INSTANT_EFFECT, this.particleLocation, 2, 0.2, 0, 0.2, new BukkitConstants.ParticleSpellWrapper().toInstance(Color.WHITE, 1f));
+            this.block.getWorld().spawnParticle(BukkitConstants.SPLASH, this.particleLocation, 10, 0.2, 0, 0.2);
+        }
+    }
+
+    // fills players bottle with cooked brew
+    public final boolean fill(final Player player, final Block block) {
+        if (!player.hasPermission("brewery.cauldron.fill")) {
+            lang.sendEntry(player, "Perms_NoCauldronFill");
+            return true;
+        }
+        final var potion = this.ingredients.cook(this.state, player);
+        if (potion == null) return false;
+
+        if (VERSION.isOrLater(MinecraftVersion.V1_13)) {
+            final var data = block.getBlockData();
+            if (!(data instanceof final Levelled cauldron)) {
+                remove(block);
+                return false;
+            }
+            if (cauldron.getLevel() <= 0) {
+                remove(block);
+                return false;
+            }
+
+            // If the Water_Cauldron type exists and the cauldron is on last level
+            if (MaterialUtil.WATER_CAULDRON != null && cauldron.getLevel() == 1) {
+                // Empty Cauldron
+                block.setType(Material.CAULDRON);
+                remove(block);
+            } else {
+                cauldron.setLevel(cauldron.getLevel() - 1);
+
+                // Update the new Level to the Block
+                // We have to use the BlockData variable "data" here instead of the casted "cauldron"
+                // otherwise < 1.13 crashes on plugin load for not finding the BlockData Class
+                block.setBlockData(data);
+
+                if (cauldron.getLevel() <= 0) {
+                    remove(block);
+                } else {
+                    this.changed = true;
+                }
+            }
+
+        } else {
+            @SuppressWarnings("deprecation")
+            var data = block.getData();
+            if (data > 3) {
+                data = 3;
+            } else if (data <= 0) {
+                remove(block);
+                return false;
+            }
+            data -= 1;
+            MaterialUtil.setData(block, data);
+
+            if (data == 0) {
+                remove(block);
+            } else {
+                this.changed = true;
+            }
+        }
+        if (VERSION.isOrLater(MinecraftVersion.V1_9)) {
+            block.getWorld().playSound(block.getLocation(), Sound.ITEM_BOTTLE_FILL, 1f, 1f);
+        }
+        // Bukkit Bug, inventory not updating while in event so this
+        // will delay the give
+        // but could also just use deprecated updateInventory()
+        giveItem(player, potion);
+        return true;
+    }
+
+    public final void cookEffect() {
+        assert !MinecraftVersion.isFolia() || BreweryPlugin.getScheduler().isOwnedByCurrentRegion(this.block.getLocation())
+                : "cookEffect must run on owning region thread";
+        if (BUtil.isChunkLoaded(this.block) && MaterialUtil.isCauldronHeatSource(this.block.getRelative(BlockFace.DOWN))) {
+            final var color = this.getParticleColor();
+            // Colorable spirally spell, 0 count enables color instead of the offset variables
+            // Configurable RGB color. The last parameter seems to control the hue and motion, but I couldn't find
+            // how exactly in the client code. 1025 seems to be the best for color brightness and upwards motion
+
+            if (VERSION.isOrLater(MinecraftVersion.V1_21)) {
+                this.block.getWorld().spawnParticle(BukkitConstants.ENTITY_EFFECT, this.getRandParticleLoc(), 0, color);
+            } else {
+                this.block.getWorld().spawnParticle(BukkitConstants.ENTITY_EFFECT, this.getRandParticleLoc(), 0,
+                        ((double) color.getRed()) / 255.0,
+                        ((double) color.getGreen()) / 255.0,
+                        ((double) color.getBlue()) / 255.0,
+                        1025.0);
+            }
+
+            if (config.isMinimalParticles()) {
+                return;
+            }
+
+            if (ThreadLocalRandom.current().nextFloat() > 0.85f) {
+                // Dark pixely smoke cloud at 0.4 random in x and z
+                // 0 count enables direction, send to y = 1 with speed 0.09
+                this.block.getWorld().spawnParticle(BukkitConstants.LARGE_SMOKE, this.getRandParticleLoc(), 0, 0, 1, 0, 0.09);
+            }
+            if (ThreadLocalRandom.current().nextFloat() > 0.2f) {
+                // A Water Splash with 0.2 offset in x and z
+                this.block.getWorld().spawnParticle(BukkitConstants.SPLASH, this.particleLocation, 1, 0.2, 0, 0.2);
+            }
+
+            if (VERSION.isOrLater(MinecraftVersion.V1_13) && ThreadLocalRandom.current().nextFloat() > 0.4f) {
+                // Two hovering pixely dust clouds, a bit of offset and with DustOptions to give some color and size
+                this.block.getWorld().spawnParticle(BukkitConstants.DUST, this.particleLocation, 2, 0.15, 0.2, 0.15, new Particle.DustOptions(color, 1.5f));
+            }
+        }
+    }
+
+    private Location getRandParticleLoc() {
+        return new Location(this.particleLocation.getWorld(),
+                this.particleLocation.getX() + (ThreadLocalRandom.current().nextDouble() * 0.8) - 0.4,
+                this.particleLocation.getY(),
+                this.particleLocation.getZ() + (ThreadLocalRandom.current().nextDouble() * 0.8) - 0.4);
+    }
+
+    /**
+     * Get or calculate the particle color from the current best Cauldron Recipe
+     * Also calculates the best Cauldron Recipe if not yet done
+     *
+     * @return the Particle Color, after potentially calculating it
+     */
+    @NotNull
+    public final Color getParticleColor() {
+        if (this.state < 1) {
+            return Color.fromRGB(153, 221, 255); // Bright Blue
+        }
+        if (this.particleColor != null) {
+            return this.particleColor;
+        }
+        if (this.particleRecipe == null) {
+            // Check for Cauldron Recipe
+            this.particleRecipe = this.ingredients.getCauldronRecipe();
+        }
+
+        List<Tuple<Integer, Color>> colorList = null;
+        if (this.particleRecipe != null) {
+            colorList = this.particleRecipe.getParticleColor();
+        }
+
+        if (colorList == null || colorList.isEmpty()) {
+            // No color List configured, or no recipe found
+            colorList = new ArrayList<>(1);
+            colorList.add(new Tuple<>(10, Color.fromRGB(77, 166, 255))); // Dark Aqua kind of Blue
+        }
+        var index = 0;
+        while (index < colorList.size() - 1 && colorList.get(index).a() < this.state) {
+            // Find the first index where the colorList Minute is higher than the state
+            index++;
+        }
+
+        final int minute = colorList.get(index).a();
+        if (minute > this.state) {
+            // going towards the minute
+            final int prevPos;
+            final Color prevColor;
+            if (index > 0) {
+                // has previous colours
+                prevPos = colorList.get(index - 1).a();
+                prevColor = colorList.get(index - 1).b();
+            } else {
+                prevPos = 0;
+                prevColor = Color.fromRGB(153, 221, 255); // Bright Blue
+            }
+
+            this.particleColor = BUtil.weightedMixColor(prevColor, prevPos, this.state, colorList.get(index).b(), minute);
+        } else if (minute == this.state) {
+            // reached the minute
+            this.particleColor = colorList.get(index).b();
+        } else {
+            // passed the last minute configured
+            if (index > 0) {
+                // We have more than one color, just use the last one
+                this.particleColor = colorList.get(index).b();
+            } else {
+                // Only have one color, go towards a Gray
+                final var nextColor = Color.fromRGB(138, 153, 168); // Dark Teal, Gray
+                final var nextPos = (int) (minute * 2.6f);
+
+                if (nextPos <= this.state) {
+                    // We are past the next color (Gray) as well, keep using it
+                    this.particleColor = nextColor;
+                } else {
+                    this.particleColor = BUtil.weightedMixColor(colorList.get(index).b(), minute, this.state, nextColor, nextPos);
+                }
+            }
+        }
+        //P.p.log("RGB: " + particleColor.getRed() + "|" + particleColor.getGreen() + "|" + particleColor.getBlue());
+        return this.particleColor;
+    }
+
+    private synchronized void startFoliaParticleTask() {
+        if (!MinecraftVersion.isFolia()) {
+            return;
+        }
+        if (!config.isEnableCauldronParticles()) {
+            this.stopFoliaParticleTask();
+            return;
+        }
+        if (this.foliaParticleTask != null && !this.foliaParticleTask.isCancelled()) {
+            return;
+        }
+        final var delay = ThreadLocalRandom.current().nextLong(1, PARTICLEPAUSE + 1L);
+        this.foliaParticleTask = BreweryPlugin.getScheduler().runAtLocationTimer(this.block.getLocation(), () -> {
+            if (config.isMinimalParticles() && ThreadLocalRandom.current().nextFloat() > 0.5f) {
+                return;
+            }
+            this.cookEffect();
+        }, delay, PARTICLEPAUSE);
+    }
+
+    private synchronized void stopFoliaParticleTask() {
+        if (!MinecraftVersion.isFolia()) {
+            return;
+        }
+        if (this.foliaParticleTask != null) {
+            this.foliaParticleTask.cancel();
+            this.foliaParticleTask = null;
+        }
     }
 
 }

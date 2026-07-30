@@ -23,11 +23,7 @@ package com.dre.brewery.configuration.configurer;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -40,7 +36,7 @@ public record Translation(String fileName) {
     public static final Translation EN = new Translation("en.yml");
     private static final List<Translation> DEFAULT_TRANSLATIONS = compileTranslations();
 
-    public static Translation getTranslation(String language) {
+    public static Translation getTranslation(final String language) {
         return new Translation(language.toLowerCase(Locale.ROOT) + ".yml");
     }
 
@@ -50,10 +46,10 @@ public record Translation(String fileName) {
 
     private static List<Translation> compileTranslations() {
         try {
-            URI uri = Translation.class.getResource("/languages").toURI();
-            Path myPath;
+            final var uri = Translation.class.getResource("/languages").toURI();
+            final Path myPath;
             if (uri.getScheme().equals("jar")) {
-                try (FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
+                try (final var fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
                     myPath = fileSystem.getPath("/languages");
                     return fromPaths(Files.walk(myPath, 1));
                 }
@@ -62,18 +58,18 @@ public record Translation(String fileName) {
                 return fromPaths(Files.walk(myPath, 1));
 
             }
-        } catch (URISyntaxException | IOException e) {
+        } catch (final URISyntaxException | IOException e) {
             throw new RuntimeException(e);
         }
 
     }
 
-    public static List<Translation> fromPaths(Stream<Path> pathStream) {
+    public static List<Translation> fromPaths(final Stream<Path> pathStream) {
         return pathStream
-            .map(Path::getFileName)
-            .map(Path::toString)
-            .filter(filename -> filename.endsWith(".yml"))
-            .map(Translation::new)
-            .toList();
+                .map(Path::getFileName)
+                .map(Path::toString)
+                .filter(filename -> filename.endsWith(".yml"))
+                .map(Translation::new)
+                .toList();
     }
 }

@@ -39,12 +39,12 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Getter
-public class Wakeup {
+public final class Wakeup {
 
     private static final Lang lang = ConfigManager.getConfig(Lang.class);
 
     @Getter
-    public static List<Wakeup> wakeups = new ArrayList<>();
+    public static final List<Wakeup> wakeups = new ArrayList<>();
     public static BreweryPlugin breweryPlugin = BreweryPlugin.getInstance();
     public static int checkId = -1;
     public static Player checkPlayer = null;
@@ -53,34 +53,34 @@ public class Wakeup {
     private final UUID id;
     private boolean active = true;
 
-    public Wakeup(Location loc) {
+    public Wakeup(final Location loc) {
         this.loc = loc;
         this.id = UUID.randomUUID();
     }
 
     // load from save data
-    public Wakeup(Location loc, UUID id) {
+    public Wakeup(final Location loc, final UUID id) {
         this.loc = loc;
         this.id = id;
     }
 
 
     // get the nearest of two random Wakeup-Locations
-    public static Location getRandom(Location playerLoc) {
+    public static Location getRandom(final Location playerLoc) {
         if (wakeups.isEmpty()) {
             return null;
         }
 
-        List<Wakeup> worldWakes = wakeups.stream()
-            .filter(w -> w.active)
-            .filter(w -> w.loc.getWorld().equals(playerLoc.getWorld()))
-            .collect(Collectors.toList());
+        final var worldWakes = wakeups.stream()
+                .filter(w -> w.active)
+                .filter(w -> w.loc.getWorld().equals(playerLoc.getWorld()))
+                .collect(Collectors.toList());
 
         if (worldWakes.isEmpty()) {
             return null;
         }
 
-        Wakeup w1 = calcRandom(worldWakes);
+        var w1 = calcRandom(worldWakes);
         worldWakes.remove(w1);
         if (w1 == null) return null;
 
@@ -94,7 +94,7 @@ public class Wakeup {
             worldWakes.remove(w1);
         }
 
-        Wakeup w2 = calcRandom(worldWakes);
+        var w2 = calcRandom(worldWakes);
         if (w2 != null) {
             worldWakes.remove(w2);
 
@@ -116,17 +116,16 @@ public class Wakeup {
         return w1.loc;
     }
 
-    public static Wakeup calcRandom(List<Wakeup> worldWakes) {
+    public static Wakeup calcRandom(final List<Wakeup> worldWakes) {
         if (worldWakes.isEmpty()) {
             return null;
         }
         return worldWakes.get((int) Math.round(Math.random() * ((float) worldWakes.size() - 1.0)));
     }
 
-    public static void set(CommandSender sender) {
-        if (sender instanceof Player) {
+    public static void set(final CommandSender sender) {
+        if (sender instanceof final Player player) {
 
-            Player player = (Player) sender;
             wakeups.add(new Wakeup(player.getLocation()));
             lang.sendEntry(sender, "Player_WakeCreated", "" + (wakeups.size() - 1));
 
@@ -135,13 +134,13 @@ public class Wakeup {
         }
     }
 
-    public static void remove(CommandSender sender, int id) {
+    public static void remove(final CommandSender sender, final int id) {
         if (wakeups.isEmpty() || id < 0 || id >= wakeups.size()) {
             lang.sendEntry(sender, "Player_WakeNotExist", "" + id);//"&cDer Aufwachpunkt mit der id: &6" + id + " &cexistiert nicht!");
             return;
         }
 
-        Wakeup wakeup = wakeups.get(id);
+        final var wakeup = wakeups.get(id);
 
         if (wakeup.active) {
             wakeup.active = false;
@@ -152,28 +151,28 @@ public class Wakeup {
         }
     }
 
-    public static void list(CommandSender sender, int page, String worldOnly) {
+    public static void list(final CommandSender sender, final int page, final String worldOnly) {
         if (wakeups.isEmpty()) {
             lang.sendEntry(sender, "Player_WakeNoPoints");
             return;
         }
 
-        ArrayList<String> locs = new ArrayList<>();
-        for (int id = 0; id < wakeups.size(); id++) {
+        final var locs = new ArrayList<String>();
+        for (var id = 0; id < wakeups.size(); id++) {
 
-            Wakeup wakeup = wakeups.get(id);
+            final var wakeup = wakeups.get(id);
 
-            String s = "&m";
+            var s = "&m";
             if (wakeup.active) {
                 s = "";
             }
 
-            String world = wakeup.loc.getWorld().getName();
+            final var world = wakeup.loc.getWorld().getName();
 
             if (worldOnly == null || world.equalsIgnoreCase(worldOnly)) {
-                int x = (int) wakeup.loc.getX();
-                int y = (int) wakeup.loc.getY();
-                int z = (int) wakeup.loc.getZ();
+                final var x = (int) wakeup.loc.getX();
+                final var y = (int) wakeup.loc.getY();
+                final var z = (int) wakeup.loc.getZ();
 
                 locs.add("&6" + s + id + "&f" + s + ": " + world + " " + x + "," + y + "," + z);
             }
@@ -181,9 +180,8 @@ public class Wakeup {
         BUtil.list(sender, locs, page);
     }
 
-    public static void check(CommandSender sender, int id, boolean all) {
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
+    public static void check(final CommandSender sender, final int id, final boolean all) {
+        if (sender instanceof final Player player) {
 
             if (!all) {
                 if (wakeups.isEmpty() || id >= wakeups.size()) {
@@ -191,14 +189,14 @@ public class Wakeup {
                     return;
                 }
 
-                Wakeup wakeup = wakeups.get(id);
+                final var wakeup = wakeups.get(id);
                 if (wakeup.check()) {
                     PaperLib.teleportAsync(player, wakeup.loc);
                 } else {
-                    String world = wakeup.loc.getWorld().getName();
-                    int x = (int) wakeup.loc.getX();
-                    int y = (int) wakeup.loc.getY();
-                    int z = (int) wakeup.loc.getZ();
+                    final var world = wakeup.loc.getWorld().getName();
+                    final var x = (int) wakeup.loc.getX();
+                    final var y = (int) wakeup.loc.getY();
+                    final var z = (int) wakeup.loc.getZ();
                     lang.sendEntry(sender, "Player_WakeFilled", "" + id, world, "" + x, "" + y, "" + z);
                 }
 
@@ -220,10 +218,6 @@ public class Wakeup {
         }
     }
 
-    public boolean check() {
-        return (!loc.getBlock().getType().isSolid() && !loc.getBlock().getRelative(0, 1, 0).getType().isSolid());
-    }
-
     public static void tpNext() {
         checkId++;
         if (checkId >= wakeups.size()) {
@@ -233,16 +227,16 @@ public class Wakeup {
             return;
         }
 
-        Wakeup wakeup = wakeups.get(checkId);
+        final var wakeup = wakeups.get(checkId);
         if (!wakeup.active) {
             tpNext();
             return;
         }
 
-        String world = wakeup.loc.getWorld().getName();
-        int x = (int) wakeup.loc.getX();
-        int y = (int) wakeup.loc.getY();
-        int z = (int) wakeup.loc.getZ();
+        final var world = wakeup.loc.getWorld().getName();
+        final var x = (int) wakeup.loc.getX();
+        final var y = (int) wakeup.loc.getY();
+        final var z = (int) wakeup.loc.getZ();
 
         if (wakeup.check()) {
             lang.sendEntry(checkPlayer, "Player_WakeTeleport", checkId, world, "" + x, "" + y, "" + z);
@@ -254,7 +248,7 @@ public class Wakeup {
         lang.sendEntry(checkPlayer, "Player_WakeHint2");
     }
 
-    public static void cancel(CommandSender sender) {
+    public static void cancel(final CommandSender sender) {
         if (checkPlayer != null) {
             checkPlayer = null;
             checkId = -1;
@@ -264,28 +258,27 @@ public class Wakeup {
         lang.sendEntry(sender, "Player_WakeNoCheck");
     }
 
-
-    public static void save(ConfigurationSection section, ConfigurationSection oldData) {
+    public static void save(final ConfigurationSection section, final ConfigurationSection oldData) {
         BUtil.createWorldSections(section);
 
         // loc is saved as a String in world sections with format x/y/z/pitch/yaw
         if (!wakeups.isEmpty()) {
 
-            Iterator<Wakeup> iter = wakeups.iterator();
-            for (int id = 0; iter.hasNext(); id++) {
-                Wakeup wakeup = iter.next();
+            final var iter = wakeups.iterator();
+            for (var id = 0; iter.hasNext(); id++) {
+                final var wakeup = iter.next();
 
                 if (!wakeup.active) {
                     continue;
                 }
 
-                String worldName = wakeup.loc.getWorld().getName();
-                String prefix;
+                final var worldName = wakeup.loc.getWorld().getName();
+                final String prefix;
 
                 if (worldName.startsWith("DXL_")) {
                     prefix = BUtil.getDxlName(worldName) + "." + id;
                 } else {
-                    prefix = wakeup.loc.getWorld().getUID().toString() + "." + id;
+                    prefix = wakeup.loc.getWorld().getUID() + "." + id;
                 }
 
                 section.set(prefix, wakeup.loc.getX() + "/" + wakeup.loc.getY() + "/" + wakeup.loc.getZ() + "/" + wakeup.loc.getPitch() + "/" + wakeup.loc.getYaw());
@@ -294,7 +287,7 @@ public class Wakeup {
 
         // copy Wakeups that are not loaded
         if (oldData != null) {
-            for (String uuid : oldData.getKeys(false)) {
+            for (final var uuid : oldData.getKeys(false)) {
                 if (!section.contains(uuid)) {
                     section.set(uuid, oldData.get(uuid));
                 }
@@ -302,13 +295,17 @@ public class Wakeup {
         }
     }
 
-    public static void onUnload(World world) {
+    public static void onUnload(final World world) {
         wakeups.removeIf(wakeup -> wakeup.loc.getWorld().equals(world));
     }
 
     public static void unloadWorlds() {
-        List<World> worlds = BreweryPlugin.getInstance().getServer().getWorlds();
+        final var worlds = BreweryPlugin.getInstance().getServer().getWorlds();
         wakeups.removeIf(wakeup -> !worlds.contains(wakeup.loc.getWorld()));
+    }
+
+    public final boolean check() {
+        return (!this.loc.getBlock().getType().isSolid() && !this.loc.getBlock().getRelative(0, 1, 0).getType().isSolid());
     }
 
 }

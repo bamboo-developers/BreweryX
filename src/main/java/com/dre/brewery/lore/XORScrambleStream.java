@@ -30,7 +30,7 @@ import java.util.Random;
  * <p>a byte generator feeded with the seed is used as xor source
  * <p>The resulting data can be unscrambled by the XORUnscrambleStream
  */
-public class XORScrambleStream extends FilterOutputStream {
+public final class XORScrambleStream extends FilterOutputStream {
 
     private final long seed;
     private SeedInputStream xorStream;
@@ -42,7 +42,7 @@ public class XORScrambleStream extends FilterOutputStream {
      * @param out  The Outputstream to be scrambled
      * @param seed The seed used for scrambling
      */
-    public XORScrambleStream(OutputStream out, long seed) {
+    public XORScrambleStream(final OutputStream out, final long seed) {
         super(out);
         this.seed = seed;
     }
@@ -54,17 +54,17 @@ public class XORScrambleStream extends FilterOutputStream {
      *
      * @throws IOException IOException
      */
-    public void start() throws IOException {
-        running = true;
-        if (xorStream == null) {
+    public final void start() throws IOException {
+        this.running = true;
+        if (this.xorStream == null) {
             short id = 0;
             while (id == 0) {
                 id = (short) new Random().nextInt();
             }
-            xorStream = new SeedInputStream(seed ^ id);
-            out.write((byte) (id >> 8));
-            out.write((byte) id);
-            write((int) (seed >> 48) & 0xFF); // parity/sanity
+            this.xorStream = new SeedInputStream(this.seed ^ id);
+            this.out.write((byte) (id >> 8));
+            this.out.write((byte) id);
+            this.write((int) (this.seed >> 48) & 0xFF); // parity/sanity
         }
     }
 
@@ -73,7 +73,7 @@ public class XORScrambleStream extends FilterOutputStream {
      * <br>The scrambling can be started again at any point after calling this
      */
     public void stop() {
-        running = false;
+        this.running = false;
     }
 
     /**
@@ -83,41 +83,41 @@ public class XORScrambleStream extends FilterOutputStream {
      * @throws IOException           IOException
      * @throws IllegalStateException If the Scrambler was started in normal scrambling mode before
      */
-    public void startUnscrambled() throws IOException, IllegalStateException {
-        if (xorStream != null) throw new IllegalStateException("The Scrambler was started in scrambling mode before");
-        short id = 0;
-        out.write((byte) (id >> 8));
-        out.write((byte) id);
+    public final void startUnscrambled() throws IOException, IllegalStateException {
+        if (this.xorStream != null) throw new IllegalStateException("The Scrambler was started in scrambling mode before");
+        final short id = 0;
+        this.out.write((byte) (id >> 8));
+        this.out.write((byte) id);
     }
 
     @Override
-    public void write(int b) throws IOException {
-        if (!running) {
-            out.write(b);
+    public final void write(final int b) throws IOException {
+        if (!this.running) {
+            this.out.write(b);
             return;
         }
-        out.write(b ^ xorStream.read());
+        this.out.write(b ^ this.xorStream.read());
     }
 
     @Override
-    public void write(byte[] b, int off, int len) throws IOException {
-        if (!running) {
-            out.write(b, off, len);
+    public final void write(final byte[] b, final int off, final int len) throws IOException {
+        if (!this.running) {
+            this.out.write(b, off, len);
             return;
         }
-        byte[] xored = new byte[len];
-        xorStream.read(xored);
-        int j = off;
-        for (int i = 0; i < len; i++) {
+        final var xored = new byte[len];
+        this.xorStream.read(xored);
+        var j = off;
+        for (var i = 0; i < len; i++) {
             xored[i] ^= b[j++];
         }
-        out.write(xored);
+        this.out.write(xored);
     }
 
     @Override
-    public void close() throws IOException {
-        running = false;
-        xorStream = null;
+    public final void close() throws IOException {
+        this.running = false;
+        this.xorStream = null;
         super.close();
     }
 }

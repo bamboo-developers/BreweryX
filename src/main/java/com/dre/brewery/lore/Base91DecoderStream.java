@@ -24,7 +24,7 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class Base91DecoderStream extends FilterInputStream {
+public final class Base91DecoderStream extends FilterInputStream {
 
     private final basE91 decoder = new basE91();
     private byte[] decbuf = new byte[32];
@@ -33,64 +33,64 @@ public class Base91DecoderStream extends FilterInputStream {
     private int count = 0;
     private byte[] markBuf = null;
 
-    public Base91DecoderStream(InputStream in) {
+    public Base91DecoderStream(final InputStream in) {
         super(in);
     }
 
     private void decode() throws IOException {
-        reader = 0;
-        count = in.read(decbuf);
-        if (count < 1) {
-            count = decoder.decEnd(buf);
-            if (count < 1) {
-                count = -1;
+        this.reader = 0;
+        this.count = this.in.read(this.decbuf);
+        if (this.count < 1) {
+            this.count = this.decoder.decEnd(this.buf);
+            if (this.count < 1) {
+                this.count = -1;
             }
             return;
         }
-        count = decoder.decode(decbuf, count, buf);
+        this.count = this.decoder.decode(this.decbuf, this.count, this.buf);
     }
 
     @Override
-    public int read() throws IOException {
-        if (count == -1) return -1;
-        if (count == 0 || reader == count) {
-            decode();
-            return read();
+    public final int read() throws IOException {
+        if (this.count == -1) return -1;
+        if (this.count == 0 || this.reader == this.count) {
+            this.decode();
+            return this.read();
         }
-        return buf[reader++] & 0xFF;
+        return this.buf[this.reader++] & 0xFF;
     }
 
     @Override
-    public int read(byte[] b, int off, int len) throws IOException {
+    public final int read(final byte[] b, final int off, int len) throws IOException {
         if (b == null) throw new NullPointerException();
         if (off < 0 || len < 0 || len > b.length - off) throw new IndexOutOfBoundsException();
         if (len == 0) return 0;
 
-        if (count == -1) return -1;
-        if (count == 0 || reader == count) {
-            decode();
-            if (count == -1) return -1;
+        if (this.count == -1) return -1;
+        if (this.count == 0 || this.reader == this.count) {
+            this.decode();
+            if (this.count == -1) return -1;
         }
 
-        if (count > 0 && count - reader >= len) {
+        if (this.count > 0 && this.count - this.reader >= len) {
             // enough data in buffer, copy it out directly
-            System.arraycopy(buf, reader, b, off, len);
-            reader += len;
+            System.arraycopy(this.buf, this.reader, b, off, len);
+            this.reader += len;
             return len;
         }
 
-        int out = 0;
+        var out = 0;
         int writeSize;
-        while (count > 0) {
+        while (this.count > 0) {
             // Not enough data in buffer, write all out, decode and repeat
-            writeSize = Math.min(len, count - reader);
-            System.arraycopy(buf, reader, b, off + out, writeSize);
+            writeSize = Math.min(len, this.count - this.reader);
+            System.arraycopy(this.buf, this.reader, b, off + out, writeSize);
             out += writeSize;
             len -= writeSize;
             if (len > 0) {
-                decode();
+                this.decode();
             } else {
-                reader += writeSize;
+                this.reader += writeSize;
                 break;
             }
         }
@@ -98,70 +98,70 @@ public class Base91DecoderStream extends FilterInputStream {
     }
 
     @Override
-    public long skip(long n) throws IOException {
-        if (count == -1) return 0;
-        if (count > 0 && count - reader >= n) {
-            reader += n;
+    public final long skip(final long n) throws IOException {
+        if (this.count == -1) return 0;
+        if (this.count > 0 && this.count - this.reader >= n) {
+            this.reader += n;
             return n;
         }
-        long skipped = count - reader;
-        decode();
+        long skipped = this.count - this.reader;
+        this.decode();
 
-        while (count > 0) {
-            if (count > n - skipped) {
-                reader = (int) (n - skipped);
+        while (this.count > 0) {
+            if (this.count > n - skipped) {
+                this.reader = (int) (n - skipped);
                 return n;
             }
-            skipped += count;
-            decode();
+            skipped += this.count;
+            this.decode();
         }
         return skipped;
     }
 
     @Override
-    public int available() throws IOException {
-        if (count == -1) return 0;
-        return (int) (in.available() * 0.813F) + count - reader; // Ratio encoded to decoded with random data
+    public final int available() throws IOException {
+        if (this.count == -1) return 0;
+        return (int) (this.in.available() * 0.813F) + this.count - this.reader; // Ratio encoded to decoded with random data
     }
 
     @Override
-    public void close() throws IOException {
-        in.close();
-        count = -1;
-        decoder.decReset();
-        buf = null;
-        decbuf = null;
+    public final void close() throws IOException {
+        this.in.close();
+        this.count = -1;
+        this.decoder.decReset();
+        this.buf = null;
+        this.decbuf = null;
     }
 
     @Override
-    public synchronized void mark(int readlimit) {
-        if (!markSupported()) return;
-        if (count == -1) return;
-        in.mark(readlimit);
-        decoder.decMark();
-        if (count > 0 && reader < count) {
-            markBuf = new byte[count - reader];
-            System.arraycopy(buf, reader, markBuf, 0, markBuf.length);
+    public final synchronized void mark(final int readlimit) {
+        if (!this.markSupported()) return;
+        if (this.count == -1) return;
+        this.in.mark(readlimit);
+        this.decoder.decMark();
+        if (this.count > 0 && this.reader < this.count) {
+            this.markBuf = new byte[this.count - this.reader];
+            System.arraycopy(this.buf, this.reader, this.markBuf, 0, this.markBuf.length);
         } else {
-            markBuf = null;
+            this.markBuf = null;
         }
     }
 
     @Override
-    public synchronized void reset() throws IOException {
-        if (!markSupported()) throw new IOException("mark and reset not supported by underlying Stream");
-        in.reset();
-        decoder.decUnmark();
-        reader = 0;
-        count = 0;
-        if (markBuf != null) {
-            System.arraycopy(markBuf, 0, buf, 0, markBuf.length);
-            count = markBuf.length;
+    public final synchronized void reset() throws IOException {
+        if (!this.markSupported()) throw new IOException("mark and reset not supported by underlying Stream");
+        this.in.reset();
+        this.decoder.decUnmark();
+        this.reader = 0;
+        this.count = 0;
+        if (this.markBuf != null) {
+            System.arraycopy(this.markBuf, 0, this.buf, 0, this.markBuf.length);
+            this.count = this.markBuf.length;
         }
     }
 
     @Override
-    public boolean markSupported() {
-        return in.markSupported();
+    public final boolean markSupported() {
+        return this.in.markSupported();
     }
 }

@@ -31,21 +31,21 @@ import org.bukkit.command.CommandSender;
 
 import java.util.List;
 
-public class VersionCommand implements SubCommand {
+public final class VersionCommand implements SubCommand {
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
-        StringBuilder addonString = new StringBuilder();
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
+        final var addonString = new StringBuilder();
 
 
-        List<BreweryAddon> addons = List.copyOf(AddonManager.LOADED_ADDONS);
-        for (BreweryAddon addon : addons) {
+        final var addons = List.copyOf(AddonManager.LOADED_ADDONS);
+        for (final var addon : addons) {
             addonString.append(addon.getClass().getSimpleName());
             if (addons.indexOf(addon) < addons.size() - 1) {
                 addonString.append("&f, &a");
             }
         }
 
-        ReleaseChecker rc = ReleaseChecker.getInstance();
+        final var rc = ReleaseChecker.getInstance();
 
         Logging.msg(sender, "&2BreweryX version&7: &av" + rc.localVersion() + " &7(Latest: v" + rc.getResolvedLatestVersion() + ")");
         Logging.msg(sender, "&2Original authors&7: &aGrafe, TTTheKing, Sn0wStorm");
@@ -54,7 +54,7 @@ public class VersionCommand implements SubCommand {
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return null;
     }
 

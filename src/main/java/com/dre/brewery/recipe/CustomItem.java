@@ -21,8 +21,8 @@
 package com.dre.brewery.recipe;
 
 import com.dre.brewery.BreweryPlugin;
-import com.dre.brewery.utility.Logging;
 import com.dre.brewery.utility.ItemMetaCompat;
+import com.dre.brewery.utility.Logging;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -41,7 +41,7 @@ import java.util.Objects;
  * Minecraft Item with custon name and lore.
  * <p>Mostly used for Custom Items of the Config, but also for general custom items
  */
-public class CustomItem extends RecipeItem implements Ingredient {
+public final class CustomItem extends RecipeItem implements Ingredient {
 
     private Material mat;
     private String name;
@@ -51,134 +51,165 @@ public class CustomItem extends RecipeItem implements Ingredient {
     public CustomItem() {
     }
 
-    public CustomItem(Material mat) {
+    public CustomItem(final Material mat) {
         this.mat = mat;
     }
 
-    public CustomItem(Material mat, String name, List<String> lore) {
+    public CustomItem(final Material mat, final String name, final List<String> lore) {
         this.mat = mat;
         this.name = name;
         this.lore = lore;
     }
 
-    public CustomItem(Material mat, String name, List<String> lore, int customModelData) {
+    public CustomItem(final Material mat, final String name, final List<String> lore, final int customModelData) {
         this.mat = mat;
         this.name = name;
         this.lore = lore;
         this.customModelData = customModelData;
     }
 
-    public CustomItem(ItemStack item) {
-        mat = item.getType();
+    public CustomItem(final ItemStack item) {
+        this.mat = item.getType();
         if (!item.hasItemMeta()) {
             return;
         }
-        ItemMeta itemMeta = item.getItemMeta();
+        final var itemMeta = item.getItemMeta();
         assert itemMeta != null;
         if (itemMeta.hasDisplayName()) {
-            name = itemMeta.getDisplayName();
+            this.name = itemMeta.getDisplayName();
         } else if (itemMeta.hasItemName()) {
-            name = itemMeta.getItemName();
+            this.name = itemMeta.getItemName();
         }
         if (itemMeta.hasLore()) {
-            lore = itemMeta.getLore();
+            this.lore = itemMeta.getLore();
         }
-        Integer readCustomModelData = ItemMetaCompat.getCustomModelData(itemMeta);
+        final var readCustomModelData = ItemMetaCompat.getCustomModelData(itemMeta);
         if (readCustomModelData != null) {
-            customModelData = readCustomModelData;
+            this.customModelData = readCustomModelData;
         }
+    }
+
+    public static CustomItem loadFrom(final ItemLoader loader) {
+        try {
+            final var in = loader.getInputStream();
+            final var item = new CustomItem();
+            if (in.readBoolean()) {
+                item.mat = Material.getMaterial(in.readUTF());
+            }
+            if (in.readBoolean()) {
+                item.name = in.readUTF();
+            }
+            final var size = in.readShort();
+            if (size > 0) {
+                item.lore = new ArrayList<>(size);
+                for (short i = 0; i < size; i++) {
+                    item.lore.add(in.readUTF());
+                }
+            }
+            if (in.readBoolean()) {
+                item.customModelData = in.readInt();
+            }
+            return item;
+        } catch (final IOException e) {
+            Logging.errorLog("Failed to load CustomItem", e);
+            return null;
+        }
+    }
+
+    // Needs to be called at Server start
+    public static void registerItemLoader(final BreweryPlugin breweryPlugin) {
+        breweryPlugin.registerForItemLoader("CI", CustomItem::loadFrom);
     }
 
     @Override
-    public boolean hasMaterials() {
-        return mat != null;
+    public final boolean hasMaterials() {
+        return this.mat != null;
     }
 
-    public boolean hasName() {
-        return name != null;
+    public final boolean hasName() {
+        return this.name != null;
     }
 
-    public boolean hasLore() {
-        return lore != null && !lore.isEmpty();
+    public final boolean hasLore() {
+        return this.lore != null && !this.lore.isEmpty();
     }
 
-    public boolean hasCustomModelData() {
-        return customModelData != 0;
+    public final boolean hasCustomModelData() {
+        return this.customModelData != 0;
     }
 
     @Override
     public List<Material> getMaterials() {
-        List<Material> l = new ArrayList<>(1);
-        l.add(mat);
+        final List<Material> l = new ArrayList<>(1);
+        l.add(this.mat);
         return l;
     }
 
     @Nullable
-    public Material getMaterial() {
-        return mat;
+    public final Material getMaterial() {
+        return this.mat;
     }
 
-    protected void setMat(Material mat) {
+    protected final void setMat(final Material mat) {
         this.mat = mat;
     }
 
     @Nullable
-    public String getName() {
-        return name;
+    public final String getName() {
+        return this.name;
     }
 
-    protected void setName(String name) {
+    protected final void setName(final String name) {
         this.name = name;
     }
 
     @Nullable
-    public List<String> getLore() {
-        return lore;
+    public final List<String> getLore() {
+        return this.lore;
     }
 
-    protected void setLore(List<String> lore) {
+    protected final void setLore(final List<String> lore) {
         this.lore = lore;
     }
 
-    public int getCustomModelData() {
-        return customModelData;
+    public final int getCustomModelData() {
+        return this.customModelData;
     }
 
-    protected void setCustomModelData(int customModelData) {
+    protected final void setCustomModelData(final int customModelData) {
         this.customModelData = customModelData;
     }
 
     @NotNull
     @Override
-    public Ingredient toIngredient(ItemStack forItem) {
-        return ((CustomItem) getMutableCopy());
+    public Ingredient toIngredient(final ItemStack forItem) {
+        return ((CustomItem) this.getMutableCopy());
     }
 
     @NotNull
     @Override
     public Ingredient toIngredientGeneric() {
-        return ((CustomItem) getMutableCopy());
+        return ((CustomItem) this.getMutableCopy());
     }
 
     @Override
-    public boolean matches(Ingredient ingredient) {
-        if (isSimilar(ingredient)) {
+    public boolean matches(final Ingredient ingredient) {
+        if (this.isSimilar(ingredient)) {
             return true;
         }
-        if (ingredient instanceof RecipeItem) {
-            RecipeItem rItem = ((RecipeItem) ingredient);
+        if (ingredient instanceof final RecipeItem rItem) {
             if (rItem instanceof SimpleItem) {
                 // If the recipe item is just a simple item, only match if we also only define material
                 // If this is a custom item with more info, we don't want to match a simple item
-                return hasMaterials() && !hasLore() && !hasName() && getMaterial() == ((SimpleItem) rItem).getMaterial();
-            } else if (rItem instanceof CustomItem other) {
+                return this.hasMaterials() && !this.hasLore() && !this.hasName() && this.getMaterial() == ((SimpleItem) rItem).getMaterial();
+            } else if (rItem instanceof final CustomItem other) {
                 // If the other is a CustomItem as well and not Similar to ours, it might have more data and we still match
-                if (mat == null || mat == other.mat) {
-                    if (!hasName() || (other.name != null && name.equalsIgnoreCase(other.name))) {
-                        if (hasCustomModelData() && customModelData != other.customModelData) {
+                if (this.mat == null || this.mat == other.mat) {
+                    if (!this.hasName() || (other.name != null && this.name.equalsIgnoreCase(other.name))) {
+                        if (this.hasCustomModelData() && this.customModelData != other.customModelData) {
                             return false;
                         }
-                        return !hasLore() || lore == other.lore || (other.hasLore() && matchLore(other.lore));
+                        return !this.hasLore() || this.lore == other.lore || (other.hasLore() && this.matchLore(other.lore));
                     }
                 }
             }
@@ -187,33 +218,33 @@ public class CustomItem extends RecipeItem implements Ingredient {
     }
 
     @Override
-    public boolean matches(ItemStack item) {
-        if (mat != null) {
-            if (item.getType() != mat) {
+    public boolean matches(final ItemStack item) {
+        if (this.mat != null) {
+            if (item.getType() != this.mat) {
                 return false;
             }
         }
         if (!item.hasItemMeta()) {
             return false;
         }
-        ItemMeta meta = item.getItemMeta();
+        final var meta = item.getItemMeta();
         assert meta != null;
-        if (name != null) {
-            if (!meta.hasDisplayName() || !name.equalsIgnoreCase(meta.getDisplayName())) {
+        if (this.name != null) {
+            if (!meta.hasDisplayName() || !this.name.equalsIgnoreCase(meta.getDisplayName())) {
                 return false;
             }
         }
 
-        if (hasLore()) {
+        if (this.hasLore()) {
             if (!meta.hasLore()) {
                 return false;
             }
-            return matchLore(meta.getLore());
+            return this.matchLore(meta.getLore());
         }
 
-        if (customModelData != 0) {
-            Integer usedCustomModelData = ItemMetaCompat.getCustomModelData(meta);
-            return usedCustomModelData != null && usedCustomModelData == customModelData;
+        if (this.customModelData != 0) {
+            final var usedCustomModelData = ItemMetaCompat.getCustomModelData(meta);
+            return usedCustomModelData != null && usedCustomModelData == this.customModelData;
         }
         return true;
     }
@@ -225,17 +256,17 @@ public class CustomItem extends RecipeItem implements Ingredient {
      * @param usedLore The given lore to match
      * @return True if the given lore contains our lore consecutively
      */
-    public boolean matchLore(List<String> usedLore) {
-        if (lore == null) return true;
-        int lastIndex = 0;
-        boolean foundFirst = false;
-        for (String line : lore) {
+    public final boolean matchLore(final List<String> usedLore) {
+        if (this.lore == null) return true;
+        var lastIndex = 0;
+        var foundFirst = false;
+        for (final var line : this.lore) {
             do {
                 if (lastIndex == usedLore.size()) {
                     // There is more in lore than in usedLore, bad
                     return false;
                 }
-                String usedLine = usedLore.get(lastIndex);
+                final var usedLine = usedLore.get(lastIndex);
                 if (line.equalsIgnoreCase(usedLine) || line.equalsIgnoreCase(ChatColor.stripColor(usedLine))) {
                     // If the line is correct, we have found our first and we want all consecutive lines to also equal
                     foundFirst = true;
@@ -252,107 +283,75 @@ public class CustomItem extends RecipeItem implements Ingredient {
 
     // We don't compare id here
     @Override
-    public boolean isSimilar(Ingredient item) {
+    public final boolean isSimilar(final Ingredient item) {
         if (this == item) {
             return true;
         }
-        if (item instanceof CustomItem ci) {
-            return mat == ci.mat && Objects.equals(name, ci.name) && Objects.equals(lore, ci.lore) && customModelData == ci.customModelData;
+        if (item instanceof final CustomItem ci) {
+            return this.mat == ci.mat && Objects.equals(this.name, ci.name) && Objects.equals(this.lore, ci.lore) && this.customModelData == ci.customModelData;
         }
         return false;
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public final boolean equals(final Object obj) {
         if (!super.equals(obj)) return false;
         if (obj instanceof CustomItem) {
-            return isSimilar(((CustomItem) obj));
+            return this.isSimilar(((CustomItem) obj));
         }
         return false;
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), mat, name, lore, customModelData);
+    public final int hashCode() {
+        return Objects.hash(super.hashCode(), this.mat, this.name, this.lore, this.customModelData);
     }
 
     @Override
-    public String toString() {
+    public final String toString() {
         return "CustomItem{" +
-            "id=" + getConfigId() +
-            ", mat=" + (mat != null ? mat.name().toLowerCase() : "null") +
-            ", name='" + name + '\'' +
-            ", loresize: " + (lore != null ? lore.size() : 0) +
-            ", modelData=" + customModelData +
-            '}';
+                "id=" + this.getConfigId() +
+                ", mat=" + (this.mat != null ? this.mat.name().toLowerCase() : "null") +
+                ", name='" + this.name + '\'' +
+                ", loresize: " + (this.lore != null ? this.lore.size() : 0) +
+                ", modelData=" + this.customModelData +
+                '}';
     }
 
     @Override
     public String getDebugID() {
-        return getConfigId();
+        return this.getConfigId();
     }
 
     @Override
-    public void saveTo(DataOutputStream out) throws IOException {
+    public void saveTo(final DataOutputStream out) throws IOException {
         out.writeUTF("CI");
-        if (mat != null) {
+        if (this.mat != null) {
             out.writeBoolean(true);
-            out.writeUTF(mat.name());
+            out.writeUTF(this.mat.name());
         } else {
             out.writeBoolean(false);
         }
-        if (name != null) {
+        if (this.name != null) {
             out.writeBoolean(true);
-            out.writeUTF(name);
+            out.writeUTF(this.name);
         } else {
             out.writeBoolean(false);
         }
-        if (lore != null) {
-            short size = (short) Math.min(lore.size(), Short.MAX_VALUE);
+        if (this.lore != null) {
+            final var size = (short) Math.min(this.lore.size(), Short.MAX_VALUE);
             out.writeShort(size);
-            for (int i = 0; i < size; i++) {
-                out.writeUTF(lore.get(i));
+            for (var i = 0; i < size; i++) {
+                out.writeUTF(this.lore.get(i));
             }
         } else {
             out.writeShort(0);
         }
-        if (customModelData != 0) {
+        if (this.customModelData != 0) {
             out.writeBoolean(true);
-            out.writeInt(customModelData);
+            out.writeInt(this.customModelData);
         } else {
             out.writeBoolean(false);
         }
-    }
-
-    public static CustomItem loadFrom(ItemLoader loader) {
-        try {
-            DataInputStream in = loader.getInputStream();
-            CustomItem item = new CustomItem();
-            if (in.readBoolean()) {
-                item.mat = Material.getMaterial(in.readUTF());
-            }
-            if (in.readBoolean()) {
-                item.name = in.readUTF();
-            }
-            short size = in.readShort();
-            if (size > 0) {
-                item.lore = new ArrayList<>(size);
-                for (short i = 0; i < size; i++) {
-                    item.lore.add(in.readUTF());
-                }
-            }
-            if (in.readBoolean()) {
-                item.customModelData = in.readInt();
-            }
-            return item;
-        } catch (IOException e) {
-            Logging.errorLog("Failed to load CustomItem", e);
-            return null;
-        }
-    }
-
-    // Needs to be called at Server start
-    public static void registerItemLoader(BreweryPlugin breweryPlugin) {
-        breweryPlugin.registerForItemLoader("CI", CustomItem::loadFrom);
     }
 }

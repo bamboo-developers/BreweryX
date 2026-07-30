@@ -30,7 +30,7 @@ import java.util.List;
 @Builder
 @ToString
 @AllArgsConstructor
-public class ConfigCauldronIngredient extends OkaeriConfig {
+public final class ConfigCauldronIngredient extends OkaeriConfig {
 
     private String name;
     private Object ingredients; // List<String> or String

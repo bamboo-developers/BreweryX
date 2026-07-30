@@ -31,24 +31,19 @@ import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class DistortChat {
-
-    // represents Words and letters, that are replaced in drunk players messages
-    private static final Config config = ConfigManager.getConfig(Config.class);
-    private static final Lang lang = ConfigManager.getConfig(Lang.class);
+public final class DistortChat {
 
     public static final List<DistortChat> words = new ArrayList<>();
     @Getter
     public static final List<String> commands = new ArrayList<>();
-    private static final List<String> playerParameterCommands = Arrays.asList("/msg", "/tell", "/whisper", "/w"); // e.g. '/msg PLAYER ...' -> don't distort the player name here
     @Getter
     public static final List<String[]> ignoreText = new ArrayList<>();
+    // represents Words and letters, that are replaced in drunk players messages
+    private static final Config config = ConfigManager.getConfig(Config.class);
+    private static final Lang lang = ConfigManager.getConfig(Lang.class);
+    private static final List<String> playerParameterCommands = Arrays.asList("/msg", "/tell", "/whisper", "/w"); // e.g. '/msg PLAYER ...' -> don't distort the player name here
     private static final Map<String, Long> waitPlayers = new HashMap<>();
 
     private String from;
@@ -58,18 +53,17 @@ public class DistortChat {
     private int alcohol = 1;
     private int percentage = 100;
 
-    public DistortChat(Map<?, ?> part) {
-        for (Map.Entry<?, ?> wordPart : part.entrySet()) {
-            String key = (String) wordPart.getKey();
+    public DistortChat(final Map<?, ?> part) {
+        for (final var wordPart : part.entrySet()) {
+            final var key = (String) wordPart.getKey();
 
-            if (wordPart.getValue() instanceof String) {
+            if (wordPart.getValue() instanceof final String fullPre) {
 
                 if (key.equalsIgnoreCase("replace")) {
                     this.from = (String) wordPart.getValue();
                 } else if (key.equalsIgnoreCase("to")) {
                     this.to = (String) wordPart.getValue();
                 } else if (key.equalsIgnoreCase("pre")) {
-                    String fullPre = (String) wordPart.getValue();
                     this.pre = fullPre.split(",");
                 }
 
@@ -94,11 +88,11 @@ public class DistortChat {
         }
     }
 
-    public DistortChat(ConfigDistortWord configDistortWord) {
+    public DistortChat(final ConfigDistortWord configDistortWord) {
         this.from = configDistortWord.getReplace();
         this.to = configDistortWord.getTo();
 
-        String pre = configDistortWord.getPre();
+        final var pre = configDistortWord.getPre();
         if (pre != null && !pre.isEmpty()) {
             this.pre = pre.split(",");
         } else {
@@ -114,16 +108,16 @@ public class DistortChat {
     }
 
     // Distort players words when he uses a command
-    public static void playerCommand(PlayerCommandPreprocessEvent event) {
-        BPlayer bPlayer = BPlayer.get(event.getPlayer());
+    public static void playerCommand(final PlayerCommandPreprocessEvent event) {
+        final var bPlayer = BPlayer.get(event.getPlayer());
         if (bPlayer == null) {
             return;
         }
         if (!commands.isEmpty() && !words.isEmpty()) {
-            String name = event.getPlayer().getName();
+            final var name = event.getPlayer().getName();
             if (!waitPlayers.containsKey(name) || waitPlayers.get(name) + 500 < System.currentTimeMillis()) {
-                String chat = event.getMessage();
-                for (String command : commands) {
+                final var chat = event.getMessage();
+                for (final var command : commands) {
                     if (command.length() + 1 < chat.length()) {
                         if (Character.isSpaceChar(chat.charAt(command.length()))) {
                             if (chat.toLowerCase().startsWith(command.toLowerCase())) {
@@ -132,12 +126,12 @@ public class DistortChat {
                                 }
 
                                 // exclude player parameters
-                                String message = playerParameterCommands.contains(command.toLowerCase())
-                                    ? chat.substring(chat.indexOf(' ', chat.indexOf(' ', 0) + 1) + 1).trim()
-                                    : chat.substring(chat.indexOf(' ') + 1).trim();
+                                final var message = playerParameterCommands.contains(command.toLowerCase())
+                                        ? chat.substring(chat.indexOf(' ', chat.indexOf(' ') + 1) + 1).trim()
+                                        : chat.substring(chat.indexOf(' ') + 1).trim();
 
-                                String distorted = distortMessage(message, bPlayer.getDrunkeness());
-                                PlayerChatDistortEvent call = new PlayerChatDistortEvent(event.isAsynchronous(), event.getPlayer(), bPlayer, message, distorted);
+                                var distorted = distortMessage(message, bPlayer.getDrunkeness());
+                                final var call = new PlayerChatDistortEvent(event.isAsynchronous(), event.getPlayer(), bPlayer, message, distorted);
                                 BreweryPlugin.getInstance().getServer().getPluginManager().callEvent(call);
                                 if (call.isCancelled()) {
                                     return;
@@ -146,8 +140,8 @@ public class DistortChat {
 
                                 // reassemble command
                                 event.setMessage(playerParameterCommands.contains(command.toLowerCase())
-                                    ? chat.substring(0, chat.indexOf(' ', chat.indexOf(' ', 0) + 1) + 1) + distorted
-                                    : chat.substring(0, chat.indexOf(' ') + 1) + distorted);
+                                        ? chat.substring(0, chat.indexOf(' ', chat.indexOf(' ') + 1) + 1) + distorted
+                                        : chat.substring(0, chat.indexOf(' ') + 1) + distorted);
 
                                 waitPlayers.put(name, System.currentTimeMillis());
                                 return;
@@ -160,15 +154,15 @@ public class DistortChat {
     }
 
     // Distort players words when he uses a command
-    public static void signWrite(SignChangeEvent event) {
-        BPlayer bPlayer = BPlayer.get(event.getPlayer());
+    public static void signWrite(final SignChangeEvent event) {
+        final var bPlayer = BPlayer.get(event.getPlayer());
         if (bPlayer != null) {
             if (!words.isEmpty()) {
-                int index = 0;
-                for (String message : event.getLines()) {
+                var index = 0;
+                for (final var message : event.getLines()) {
                     if (message.length() > 1) {
-                        String distorted = distortMessage(message, bPlayer.getDrunkeness());
-                        PlayerChatDistortEvent call = new PlayerChatDistortEvent(event.isAsynchronous(), event.getPlayer(), bPlayer, message, distorted);
+                        var distorted = distortMessage(message, bPlayer.getDrunkeness());
+                        final var call = new PlayerChatDistortEvent(event.isAsynchronous(), event.getPlayer(), bPlayer, message, distorted);
                         BreweryPlugin.getInstance().getServer().getPluginManager().callEvent(call);
                         if (!call.isCancelled()) {
                             distorted = call.getDistortedMessage();
@@ -186,22 +180,22 @@ public class DistortChat {
     }
 
     // Distort players words when he talks
-    public static void playerChat(AsyncPlayerChatEvent event) {
+    public static void playerChat(final AsyncPlayerChatEvent event) {
         if (event.getPlayer().hasPermission("brewery.bypass.chatdistort")) {
             return;
         }
 
-        BPlayer bPlayer = BPlayer.get(event.getPlayer());
+        final var bPlayer = BPlayer.get(event.getPlayer());
         if (bPlayer == null || words.isEmpty())
             return;
 
-        String message = event.getMessage();
+        final var message = event.getMessage();
         if (config.isLogRealChat()) {
             Logging.log(lang.getEntry("Player_TriedToSay", event.getPlayer().getName(), message));
         }
 
-        String distorted = distortMessage(message, bPlayer.getDrunkeness());
-        PlayerChatDistortEvent call = new PlayerChatDistortEvent(event.isAsynchronous(), event.getPlayer(), bPlayer, message, distorted);
+        var distorted = distortMessage(message, bPlayer.getDrunkeness());
+        final var call = new PlayerChatDistortEvent(event.isAsynchronous(), event.getPlayer(), bPlayer, message, distorted);
         BreweryPlugin.getInstance().getServer().getPluginManager().callEvent(call);
         if (call.isCancelled()) {
             return;
@@ -212,22 +206,22 @@ public class DistortChat {
     }
 
     // distorts a message, ignoring text enclosed in ignoreText letters
-    public static String distortMessage(String message, int drunkenness) {
+    public static String distortMessage(final String message, final int drunkenness) {
         if (!ignoreText.isEmpty()) {
-            for (String[] bypass : ignoreText) {
-                int indexStart = 0;
+            for (final var bypass : ignoreText) {
+                var indexStart = 0;
                 if (!bypass[0].equals("")) {
                     indexStart = message.indexOf(bypass[0]);
                 }
-                int indexEnd = message.length() - 1;
+                var indexEnd = message.length() - 1;
                 if (!bypass[1].equals("")) {
                     indexEnd = message.indexOf(bypass[1], indexStart + 2);
                 }
                 if (indexStart != -1 && indexEnd != -1) {
                     if (indexEnd > indexStart + 1) {
-                        String ignoredMessage = message.substring(indexStart, indexEnd);
-                        String msg0 = message.substring(0, indexStart);
-                        String msg1 = message.substring(indexEnd);
+                        final var ignoredMessage = message.substring(indexStart, indexEnd);
+                        var msg0 = message.substring(0, indexStart);
+                        var msg1 = message.substring(indexEnd);
 
                         if (msg0.length() > 1) {
                             msg0 = distortMessage(msg0, drunkenness);
@@ -245,12 +239,12 @@ public class DistortChat {
     }
 
     // distorts a message without checking ignoreText letters
-    private static String distortString(String message, int drunkenness) {
+    private static String distortString(String message, final int drunkenness) {
 
         if (message.length() > 1) {
             // Create our own reference to the words list, in case of config reload
-            List<DistortChat> words = DistortChat.words;
-            for (DistortChat word : words) {
+            final var words = DistortChat.words;
+            for (final var word : words) {
 
                 if (word.alcohol <= drunkenness) {
                     message = word.distort(message);
@@ -263,9 +257,9 @@ public class DistortChat {
     // replace "percent"% of "from" -> "to" in "words", when the string before
     // each "from" "match"es "pre"
     // Not yet ignoring case :(
-    public String distort(String words) {
-        String from = this.from;
-        String to = this.to;
+    public final String distort(String words) {
+        var from = this.from;
+        var to = this.to;
 
         if (from.equalsIgnoreCase("-end")) {
             from = words;
@@ -279,7 +273,7 @@ public class DistortChat {
             from = " ";
         } else if (from.equalsIgnoreCase("-random")) {
             // inserts "to" on a random position in "words"
-            int charIndex = (int) (Math.random() * (words.length() - 1));
+            final var charIndex = (int) (Math.random() * (words.length() - 1));
             if (charIndex < words.length() / 2) {
                 from = words.substring(charIndex);
                 to = to + from;
@@ -293,18 +287,18 @@ public class DistortChat {
             // some characters (*,?) disturb split() which then throws
             // PatternSyntaxException
             try {
-                if (pre == null && percentage == 100) {
+                if (this.pre == null && this.percentage == 100) {
                     // All occurences of "from" need to be replaced
                     return words.replaceAll(from, to);
                 }
-                StringBuilder newWords = new StringBuilder();
+                final var newWords = new StringBuilder();
                 if (words.endsWith(from)) {
                     // add space to end to recognize last occurence of "from"
                     words = words + " ";
                 }
                 // remove all "from" and split "words" there
-                String[] splitted = words.split(java.util.regex.Pattern.quote(from));
-                int index = 0;
+                final var splitted = words.split(java.util.regex.Pattern.quote(from));
+                var index = 0;
                 String part;
 
                 // if there are occurences of "from"
@@ -316,7 +310,7 @@ public class DistortChat {
                         newWords.append(part);
                         // check if the part ends with correct string
 
-                        if (doesPreMatch(part) && Math.random() * 100.0 <= percentage) {
+                        if (this.doesPreMatch(part) && Math.random() * 100.0 <= this.percentage) {
                             // add replacement
                             newWords.append(to);
                         } else {
@@ -334,7 +328,7 @@ public class DistortChat {
                         return newWords.append(part).toString();
                     }
                 }
-            } catch (java.util.regex.PatternSyntaxException e) {
+            } catch (final java.util.regex.PatternSyntaxException e) {
                 // e.printStackTrace();
                 return words;
             }
@@ -342,13 +336,13 @@ public class DistortChat {
         return words;
     }
 
-    public boolean doesPreMatch(String part) {
-        boolean isBefore = !match;
-        if (pre != null) {
-            for (String pr : pre) {
+    public final boolean doesPreMatch(final String part) {
+        var isBefore = !this.match;
+        if (this.pre != null) {
+            for (final var pr : this.pre) {
                 if (part.endsWith(pr)) {
                     // If a match is wanted set isBefore to true, else to false
-                    isBefore = match;
+                    isBefore = this.match;
                     break;
                 }
             }

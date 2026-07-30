@@ -41,7 +41,7 @@ import org.jetbrains.annotations.Nullable;
  */
 @Getter
 @Setter
-public class BrewDrinkEvent extends BrewEvent implements Cancellable {
+public final class BrewDrinkEvent extends BrewEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final Player player;
     private final BPlayer bPlayer;
@@ -52,13 +52,18 @@ public class BrewDrinkEvent extends BrewEvent implements Cancellable {
     @Nullable // Null if drinking from command
     private PlayerItemConsumeEvent predecessorEvent;
 
-    public BrewDrinkEvent(Brew brew, ItemMeta meta, Player player, BPlayer bPlayer, @Nullable PlayerItemConsumeEvent predecessor) {
+    public BrewDrinkEvent(final Brew brew, final ItemMeta meta, final Player player, final BPlayer bPlayer, @Nullable final PlayerItemConsumeEvent predecessor) {
         super(brew, meta);
         this.player = player;
         this.bPlayer = bPlayer;
-        addedAlcohol = calcAlcWSensitivity(brew.getOrCalcAlc());
-        quality = brew.getQuality();
-        predecessorEvent = predecessor;
+        this.addedAlcohol = this.calcAlcWSensitivity(brew.getOrCalcAlc());
+        this.quality = brew.getQuality();
+        this.predecessorEvent = predecessor;
+    }
+
+    // Required by Bukkit
+    public static HandlerList getHandlerList() {
+        return handlers;
     }
 
     /**
@@ -71,8 +76,8 @@ public class BrewDrinkEvent extends BrewEvent implements Cancellable {
      * @return The amount of alcohol given the players alcohol-sensitivity
      */
     @Contract(pure = true)
-    public int calcAlcWSensitivity(int alc) {
-        int sensitive = PermissionUtil.getDrinkSensitive(player);
+    public final int calcAlcWSensitivity(int alc) {
+        final var sensitive = PermissionUtil.getDrinkSensitive(this.player);
         if (sensitive == 0) {
             alc = 0;
         } else if (sensitive > 0) {
@@ -81,7 +86,7 @@ public class BrewDrinkEvent extends BrewEvent implements Cancellable {
         return alc;
     }
 
-    public void setQuality(int quality) {
+    public void setQuality(final int quality) {
         if (quality > 10 || quality < 0) {
             throw new IllegalArgumentException("Quality must be in range from 0 to 10");
         }
@@ -89,23 +94,18 @@ public class BrewDrinkEvent extends BrewEvent implements Cancellable {
     }
 
     @Override
-    public boolean isCancelled() {
-        return cancelled;
+    public final boolean isCancelled() {
+        return this.cancelled;
     }
 
     @Override
-    public void setCancelled(boolean cancelled) {
+    public final void setCancelled(final boolean cancelled) {
         this.cancelled = cancelled;
     }
 
     @NotNull
     @Override
-    public HandlerList getHandlers() {
-        return handlers;
-    }
-
-    // Required by Bukkit
-    public static HandlerList getHandlerList() {
+    public final HandlerList getHandlers() {
         return handlers;
     }
 }

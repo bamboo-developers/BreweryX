@@ -25,24 +25,24 @@ import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
-public class PlaceholderAPIHook extends Hook {
+public final class PlaceholderAPIHook extends Hook {
 
     public static final PlaceholderAPIHook PLACEHOLDERAPI = new PlaceholderAPIHook("PlaceholderAPI");
 
     private PlaceholderAPIManager instance;
 
-    public PlaceholderAPIHook(String name) {
+    public PlaceholderAPIHook(final String name) {
         super(name);
     }
 
-    public PlaceholderAPIManager getInstance() {
-        if (instance == null && isEnabled()) {
-            instance = new PlaceholderAPIManager();
+    public final PlaceholderAPIManager getInstance() {
+        if (this.instance == null && this.isEnabled()) {
+            this.instance = new PlaceholderAPIManager();
         }
-        return instance;
+        return this.instance;
     }
 
-    public String setPlaceholders(@Nullable Player player, String text) {
+    public final String setPlaceholders(@Nullable final Player player, final String text) {
         if (!this.isEnabled()) {
             return text;
         }

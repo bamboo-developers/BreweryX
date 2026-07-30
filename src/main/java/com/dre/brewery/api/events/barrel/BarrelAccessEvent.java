@@ -33,30 +33,35 @@ import org.jetbrains.annotations.NotNull;
  * <p>The PlayerInteractEvent on the Barrel may be cancelled. In that case this never gets called
  * <p>Can be cancelled to silently deny opening the Barrel
  */
-public class BarrelAccessEvent extends BarrelEvent implements Cancellable {
+public final class BarrelAccessEvent extends BarrelEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final Player player;
     private final Block clickedBlock;
     private final BlockFace clickedBlockFace;
     private boolean isCancelled;
 
-    public BarrelAccessEvent(Barrel barrel, Player player, Block clickedBlock) {
+    public BarrelAccessEvent(final Barrel barrel, final Player player, final Block clickedBlock) {
         this(barrel, player, clickedBlock, BlockFace.UP);
     }
 
-    public BarrelAccessEvent(Barrel barrel, Player player, Block clickedBlock, BlockFace clickedBlockFace) {
+    public BarrelAccessEvent(final Barrel barrel, final Player player, final Block clickedBlock, final BlockFace clickedBlockFace) {
         super(barrel);
         this.player = player;
         this.clickedBlock = clickedBlock;
         this.clickedBlockFace = clickedBlockFace;
     }
 
+    // Required by Bukkit
+    public static HandlerList getHandlerList() {
+        return handlers;
+    }
+
     /**
      * Gets the Block that was actually clicked.
      * <p>For access Permissions getSpigot() should be used
      */
-    public Block getClickedBlock() {
-        return clickedBlock;
+    public final Block getClickedBlock() {
+        return this.clickedBlock;
     }
 
     /**
@@ -64,32 +69,27 @@ public class BarrelAccessEvent extends BarrelEvent implements Cancellable {
      *
      * @since v3.0 (Api 3)
      */
-    public BlockFace getClickedBlockFace() {
-        return clickedBlockFace;
+    public final BlockFace getClickedBlockFace() {
+        return this.clickedBlockFace;
     }
 
     @Override
-    public boolean isCancelled() {
-        return isCancelled;
+    public final boolean isCancelled() {
+        return this.isCancelled;
     }
 
     @Override
-    public void setCancelled(boolean cancelled) {
-        isCancelled = cancelled;
+    public final void setCancelled(final boolean cancelled) {
+        this.isCancelled = cancelled;
     }
 
-    public Player getPlayer() {
-        return player;
+    public final Player getPlayer() {
+        return this.player;
     }
 
     @NotNull
     @Override
-    public HandlerList getHandlers() {
-        return handlers;
-    }
-
-    // Required by Bukkit
-    public static HandlerList getHandlerList() {
+    public final HandlerList getHandlers() {
         return handlers;
     }
 }

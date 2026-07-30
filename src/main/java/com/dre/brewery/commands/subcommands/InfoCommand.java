@@ -29,20 +29,20 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 
-public class InfoCommand implements SubCommand {
+public final class InfoCommand implements SubCommand {
 
 
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
         if (args.length > 1) {
             if (sender.hasPermission("brewery.cmd.infoOther")) {
-                cmdInfo(sender, args[1], lang);
+                this.cmdInfo(sender, args[1], lang);
             } else {
                 lang.sendEntry(sender, "Error_NoPermissions");
             }
         } else {
             if (sender.hasPermission("brewery.cmd.info")) {
-                cmdInfo(sender, null, lang);
+                this.cmdInfo(sender, null, lang);
             } else {
                 lang.sendEntry(sender, "Error_NoPermissions");
             }
@@ -50,7 +50,7 @@ public class InfoCommand implements SubCommand {
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return null;
     }
 
@@ -64,11 +64,11 @@ public class InfoCommand implements SubCommand {
         return false;
     }
 
-    public void cmdInfo(CommandSender sender, String playerName, Lang lang) {
+    public final void cmdInfo(final CommandSender sender, String playerName, final Lang lang) {
 
-        boolean selfInfo = playerName == null;
+        final var selfInfo = playerName == null;
         if (selfInfo) {
-            if (sender instanceof Player player) {
+            if (sender instanceof final Player player) {
                 playerName = player.getName();
             } else {
                 lang.sendEntry(sender, "Error_PlayerCommand");
@@ -76,8 +76,8 @@ public class InfoCommand implements SubCommand {
             }
         }
 
-        Player player = BreweryPlugin.getInstance().getServer().getPlayerExact(playerName);
-        BPlayer bPlayer;
+        final var player = BreweryPlugin.getInstance().getServer().getPlayerExact(playerName);
+        final BPlayer bPlayer;
         if (player == null) {
             bPlayer = BPlayer.getByName(playerName);
         } else {

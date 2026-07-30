@@ -24,8 +24,8 @@ import com.dre.brewery.BreweryPlugin;
 import com.dre.brewery.commands.CommandManager;
 import com.dre.brewery.storage.DataManager;
 import com.dre.brewery.utility.MinecraftVersion;
-import com.tcoded.folialib.impl.PlatformScheduler;
 import com.google.common.reflect.ClassPath;
+import com.tcoded.folialib.impl.PlatformScheduler;
 import io.papermc.lib.PaperLib;
 import org.bukkit.Bukkit;
 import org.bukkit.event.HandlerList;
@@ -93,19 +93,19 @@ public abstract class BreweryAddon {
     private File addonFile;
 
 
-    public void onAddonPreEnable() {
+    public final void onAddonPreEnable() {
         // Code for this addon which runs before the addon is enabled.
     }
 
-    public void onAddonEnable() {
+    public final void onAddonEnable() {
         // Code for this addon which runs after the addon is enabled.
     }
 
-    public void onAddonDisable() {
+    public final void onAddonDisable() {
         // Code for this addon which runs before the addon is disabled.
     }
 
-    public void onBreweryReload() {
+    public final void onBreweryReload() {
         // Code for this addon which runs after `/breweryx reload` is executed.
     }
 
@@ -116,8 +116,8 @@ public abstract class BreweryAddon {
      * @return The addon info
      */
     @NotNull
-    public AddonInfo getAddonInfo() {
-        return addonInfo;
+    public final AddonInfo getAddonInfo() {
+        return this.addonInfo;
     }
 
     /**
@@ -127,7 +127,7 @@ public abstract class BreweryAddon {
      */
     @NotNull
     public AddonFileManager getAddonFileManager() {
-        return addonFileManager;
+        return this.addonFileManager;
     }
 
     /**
@@ -137,7 +137,7 @@ public abstract class BreweryAddon {
      */
     @NotNull
     public AddonConfigManager getAddonConfigManager() {
-        return addonConfigManager;
+        return this.addonConfigManager;
     }
 
     /**
@@ -146,14 +146,14 @@ public abstract class BreweryAddon {
      * @return The logger
      */
     @NotNull
-    public AddonLogger getAddonLogger() {
-        return logger;
+    public final AddonLogger getAddonLogger() {
+        return this.logger;
     }
 
 
     @NotNull
-    public File getAddonFile() {
-        return addonFile;
+    public final File getAddonFile() {
+        return this.addonFile;
     }
 
 
@@ -162,9 +162,9 @@ public abstract class BreweryAddon {
      *
      * @param listener The listener to register
      */
-    public void registerListener(Listener listener) {
+    public void registerListener(final Listener listener) {
         Bukkit.getPluginManager().registerEvents(listener, BreweryPlugin.getInstance());
-        listeners.add(listener);
+        this.listeners.add(listener);
     }
 
     /**
@@ -172,9 +172,9 @@ public abstract class BreweryAddon {
      *
      * @param listener The listener to unregister
      */
-    public void unregisterListener(Listener listener) {
+    public void unregisterListener(final Listener listener) {
         HandlerList.unregisterAll(listener);
-        listeners.remove(listener);
+        this.listeners.remove(listener);
     }
 
 
@@ -184,9 +184,9 @@ public abstract class BreweryAddon {
      * @param name    The name of the command
      * @param command The command to register
      */
-    public void registerCommand(String name, AddonCommand command) {
+    public void registerCommand(final String name, final AddonCommand command) {
         CommandManager.addSubCommand(name, command);
-        commands.add(name);
+        this.commands.add(name);
     }
 
     /**
@@ -194,29 +194,29 @@ public abstract class BreweryAddon {
      *
      * @param name The name of the command
      */
-    public void unregisterCommand(String name) {
+    public void unregisterCommand(final String name) {
         CommandManager.removeSubCommand(name);
-        commands.remove(name);
+        this.commands.remove(name);
     }
 
     /**
      * Unregister all listeners and commands registered by this addon.
      */
-    public void unregisterListeners() {
-        for (Listener listener : listeners) {
+    public final void unregisterListeners() {
+        for (final var listener : this.listeners) {
             HandlerList.unregisterAll(listener);
         }
-        listeners.clear();
+        this.listeners.clear();
     }
 
     /**
      * Unregister all commands registered by this addon.
      */
-    public void unregisterCommands() {
-        for (String command : commands) {
+    public final void unregisterCommands() {
+        for (final var command : this.commands) {
             CommandManager.removeSubCommand(command);
         }
-        commands.clear();
+        this.commands.clear();
     }
 
 
@@ -300,17 +300,17 @@ public abstract class BreweryAddon {
      * @param packageName Package to search
      * @return Set of classes in the package
      */
-    public Set<Class<?>> findClasses(String packageName) throws IOException {
-        URLClassLoader classLoader = new URLClassLoader(
-            new URL[]{ getAddonFile().toURI().toURL() },
-            this.getClass().getClassLoader()
+    public Set<Class<?>> findClasses(final String packageName) throws IOException {
+        final var classLoader = new URLClassLoader(
+                new URL[]{this.getAddonFile().toURI().toURL()},
+                this.getClass().getClassLoader()
         );
         return ClassPath.from(classLoader)
-            .getAllClasses()
-            .stream()
-            .filter(clazz -> clazz.getPackageName()
-                .equalsIgnoreCase(packageName)) // should just be equals instead of equalsIgnoreCase probs
-            .map(ClassPath.ClassInfo::load)
-            .collect(Collectors.toSet());
+                .getAllClasses()
+                .stream()
+                .filter(clazz -> clazz.getPackageName()
+                        .equalsIgnoreCase(packageName)) // should just be equals instead of equalsIgnoreCase probs
+                .map(ClassPath.ClassInfo::load)
+                .collect(Collectors.toSet());
     }
 }

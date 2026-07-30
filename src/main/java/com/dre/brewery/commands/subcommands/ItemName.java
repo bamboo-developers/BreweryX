@@ -31,12 +31,11 @@ import org.bukkit.inventory.ItemStack;
 import java.util.List;
 import java.util.Locale;
 
-public class ItemName implements SubCommand {
+public final class ItemName implements SubCommand {
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
-        Player player = (Player) sender;
-        @SuppressWarnings("deprecation")
-        ItemStack hand = BreweryPlugin.getMCVersion().isOrLater(MinecraftVersion.V1_9) ? player.getInventory().getItemInMainHand() : player.getItemInHand();
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
+        final var player = (Player) sender;
+        @SuppressWarnings("deprecation") final var hand = BreweryPlugin.getMCVersion().isOrLater(MinecraftVersion.V1_9) ? player.getInventory().getItemInMainHand() : player.getItemInHand();
         if (hand != null) {
             lang.sendEntry(sender, "CMD_Configname", hand.getType().name().toLowerCase(Locale.ENGLISH));
         } else {
@@ -45,7 +44,7 @@ public class ItemName implements SubCommand {
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return null;
     }
 

@@ -33,9 +33,9 @@ import org.bukkit.command.CommandSender;
 
 import java.util.List;
 
-public class DataManagerCommand implements SubCommand {
+public final class DataManagerCommand implements SubCommand {
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
         if (args.length < 2) {
             Logging.msg(sender, "Missing arguments.");
             return;
@@ -48,20 +48,19 @@ public class DataManagerCommand implements SubCommand {
                 try {
                     BreweryPlugin.setDataManager(DataManager.createDataManager(ConfigManager.getConfig(Config.class).getStorage()));
                     Logging.msg(sender, "Reloaded the DataManager!");
-                } catch (StorageInitException e) {
+                } catch (final StorageInitException e) {
                     Logging.errorLog("Failed to initialize the DataManager! WARNING: This will cause issues and Brewery will NOT be able to save. Check your config and reload.", e);
                 }
             });
 
-            case "save" ->
-                BreweryPlugin.getDataManager().saveAll(true, () -> Logging.msg(sender, "Saved all Brewery data!"));
+            case "save" -> BreweryPlugin.getDataManager().saveAll(true, () -> Logging.msg(sender, "Saved all Brewery data!"));
 
             default -> lang.sendEntry(sender, "Error_UnknownCommand");
         }
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return List.of("reload", "save");
     }
 

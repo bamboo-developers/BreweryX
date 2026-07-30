@@ -36,32 +36,32 @@ public enum BarrelPart {
     BLOCK(BarrelAsset.PLANKS);
 
     private final BarrelAsset barrelAsset;
-    private Bisected.Half half = null;
-    private BarrelFacing untransformedFacing = null;
+    private final Bisected.Half half = null;
+    private final BarrelFacing untransformedFacing = null;
 
-    BarrelPart(BarrelAsset barrelAsset) {
+    BarrelPart(final BarrelAsset barrelAsset) {
         this.barrelAsset = barrelAsset;
     }
 
-    public boolean matches(BarrelWoodType type, @NotNull BlockData actual, BarrelFacing facing) {
-        Material actualType = actual.getMaterial();
-        if (!BarrelAsset.isBarrelAsset(barrelAsset, actualType) || BarrelWoodType.fromMaterial(actualType) != type) {
+    public boolean matches(final BarrelWoodType type, @NotNull final BlockData actual, final BarrelFacing facing) {
+        final var actualType = actual.getMaterial();
+        if (!BarrelAsset.isBarrelAsset(this.barrelAsset, actualType) || BarrelWoodType.fromMaterial(actualType) != type) {
             return false;
         }
-        if (half != null && (!(actual instanceof Bisected bisected) || bisected.getHalf() != half)) {
+        if (this.half != null && (!(actual instanceof final Bisected bisected) || bisected.getHalf() != this.half)) {
             return false;
         }
-        if (untransformedFacing == null) {
+        if (this.untransformedFacing == null) {
             return true;
         }
-        if (!(actual instanceof Directional directional)) {
+        if (!(actual instanceof final Directional directional)) {
             return false;
         }
         return switch (facing) {
-            case SOUTH -> untransformedFacing.getFace().equals(directional.getFacing());
-            case EAST -> untransformedFacing.rotate90degrees().getFace().equals(directional.getFacing());
-            case NORTH -> untransformedFacing.rotate180degrees().getFace().equals(directional.getFacing());
-            case WEST -> untransformedFacing.rotate270degrees().getFace().equals(directional.getFacing());
+            case SOUTH -> this.untransformedFacing.getFace().equals(directional.getFacing());
+            case EAST -> this.untransformedFacing.rotate90degrees().getFace().equals(directional.getFacing());
+            case NORTH -> this.untransformedFacing.rotate180degrees().getFace().equals(directional.getFacing());
+            case WEST -> this.untransformedFacing.rotate270degrees().getFace().equals(directional.getFacing());
         };
     }
 }

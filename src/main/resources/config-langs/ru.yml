@@ -296,8 +296,8 @@ customItemsFile:
     lore: Какой лор должен быть у предмета. Поддерживает цвета так же, как и name (↑)
 
     customModelData: Какой номер Custom Model Data, который должен быть у предмета. Вписывать в формате списка (см. пример)
-
-# Unfortunately no support to have this in the new config yet - Jsinco
+    
+    # Unfortunately no support to have this in the new config yet - Jsinco
     # удалять то, что сверху.
     # после удаления раскомментировать строки ниже:
     # -  replace: с
@@ -625,5 +625,5 @@ customItemsFile:
     # -  replace: -all
     # to: '*рыг*'
     # percentage: 6
-    # alcohol: 80
+  # alcohol: 80
 # Ой, конец файла. Вот такие пироги!

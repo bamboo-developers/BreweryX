@@ -39,32 +39,35 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class MCBarrel {
+public final class MCBarrel {
 
     public static final String TAG = "Btime";
-
-    public static long mcBarrelTime; // Globally stored Barrel time. Difference between this and the time stored on each mc-barrel will give the barrel age time
     public static final ConcurrentMap<Inventory, MCBarrel> openBarrels = new ConcurrentHashMap<>();
     private static final Config config = ConfigManager.getConfig(Config.class);
     private static final Lang lang = ConfigManager.getConfig(Lang.class);
-
-    private byte brews = -1; // How many Brewery Brews are in this Barrel
+    public static long mcBarrelTime; // Globally stored Barrel time. Difference between this and the time stored on each mc-barrel will give the barrel age time
     private final Inventory inv;
     private final int invSize;
+    private byte brews = -1; // How many Brewery Brews are in this Barrel
 
 
-    public MCBarrel(Inventory inv) {
+    public MCBarrel(final Inventory inv) {
         this.inv = inv;
-        invSize = inv.getSize();
+        this.invSize = inv.getSize();
     }
 
+    public static void onUpdate() {
+        if (config.isAgeInMCBarrels()) {
+            mcBarrelTime++;
+        }
+    }
 
     // Now Opening this Barrel for a player
-    public void open() {
+    public final void open() {
         // if nobody had the inventory opened
-        if (inv.getViewers().size() == 1 && PaperLib.getHolder(inv, true).getHolder() instanceof Barrel barrel) {
-            PersistentDataContainer data = barrel.getPersistentDataContainer();
-            NamespacedKey key = new NamespacedKey(BreweryPlugin.getInstance(), TAG);
+        if (this.inv.getViewers().size() == 1 && PaperLib.getHolder(this.inv, true).getHolder() instanceof final Barrel barrel) {
+            final var data = barrel.getPersistentDataContainer();
+            var key = new NamespacedKey(BreweryPlugin.getInstance(), TAG);
             if (!data.has(key, PersistentDataType.LONG)) {
                 key = new NamespacedKey("brewery", TAG.toLowerCase()); // Legacy key
             }
@@ -75,31 +78,31 @@ public class MCBarrel {
             }
 
             // Get the difference between the time that is stored on the Barrel and the current stored global mcBarrelTime
-            long time = mcBarrelTime - data.getOrDefault(key, PersistentDataType.LONG, mcBarrelTime);
+            final var time = mcBarrelTime - data.getOrDefault(key, PersistentDataType.LONG, mcBarrelTime);
             data.remove(key);
             barrel.update();
             Logging.debugLog("Barrel Time since last open: " + time);
 
             if (time > 0) {
-                brews = 0;
+                this.brews = 0;
                 // if inventory contains potions
-                if (inv.contains(Material.POTION)) {
-                    long loadTime = System.nanoTime();
-                    for (ItemStack item : inv.getContents()) {
+                if (this.inv.contains(Material.POTION)) {
+                    var loadTime = System.nanoTime();
+                    for (final var item : this.inv.getContents()) {
                         if (item != null) {
-                            Brew brew = Brew.get(item);
+                            final var brew = Brew.get(item);
                             if (brew != null && !brew.isStatic()) {
-                                if (brews < config.getMaxBrewsInMCBarrels() || config.getMaxBrewsInMCBarrels() < 0) {
+                                if (this.brews < config.getMaxBrewsInMCBarrels() || config.getMaxBrewsInMCBarrels() < 0) {
                                     // The time is in minutes, but brew.age() expects time in mc-days
                                     brew.age(item, ((float) time) / 20f, BarrelWoodType.OAK);
                                 }
-                                brews++;
+                                this.brews++;
                             }
                         }
                     }
                     if (config.isDebug()) {
                         loadTime = System.nanoTime() - loadTime;
-                        float ftime = (float) (loadTime / 1000000.0);
+                        final var ftime = (float) (loadTime / 1000000.0);
                         Logging.debugLog("opening MC Barrel with potions (" + ftime + "ms)");
                     }
                 }
@@ -108,15 +111,15 @@ public class MCBarrel {
     }
 
     // Closing Inventory. Check if we need to set a time on the Barrel
-    public void close() {
-        if (inv.getViewers().size() == 1) {
+    public final void close() {
+        if (this.inv.getViewers().size() == 1) {
             // This is the last viewer
-            for (ItemStack item : inv.getContents()) {
+            for (final var item : this.inv.getContents()) {
                 if (item != null) {
                     if (Brew.isBrew(item)) {
                         // We found a brew, so set time on this Barrel
-                        if (PaperLib.getHolder(inv, true).getHolder() instanceof org.bukkit.block.Barrel barrel) {
-                            PersistentDataContainer data = barrel.getPersistentDataContainer();
+                        if (PaperLib.getHolder(this.inv, true).getHolder() instanceof final org.bukkit.block.Barrel barrel) {
+                            final var data = barrel.getPersistentDataContainer();
                             data.set(new NamespacedKey(BreweryPlugin.getInstance(), TAG), PersistentDataType.LONG, mcBarrelTime);
                             barrel.update();
                         }
@@ -128,37 +131,30 @@ public class MCBarrel {
         }
     }
 
-    public void countBrews() {
-        brews = 0;
-        for (ItemStack item : inv.getContents()) {
+    public final void countBrews() {
+        this.brews = 0;
+        for (final var item : this.inv.getContents()) {
             if (item != null) {
                 if (Brew.isBrew(item)) {
-                    brews++;
+                    this.brews++;
                 }
             }
         }
     }
 
     public Inventory getInventory() {
-        return inv;
-    }
-
-
-    public static void onUpdate() {
-        if (config.isAgeInMCBarrels()) {
-            mcBarrelTime++;
-        }
+        return this.inv;
     }
 
     // Used to visually stop Players from placing more than 6 (configurable) brews in the MC Barrels.
     // There are still methods to place more Brews in that would be too tedious to catch.
     // This is only for direct visual Notification, the age routine above will never age more than 6 brews in any case.
-    public void clickInv(InventoryClickEvent event) {
-        if (config.getMaxBrewsInMCBarrels() >= invSize || config.getMaxBrewsInMCBarrels() < 0) {
+    public final void clickInv(final InventoryClickEvent event) {
+        if (config.getMaxBrewsInMCBarrels() >= this.invSize || config.getMaxBrewsInMCBarrels() < 0) {
             // There are enough brews allowed to fill the inventory, we don't need to keep track
             return;
         }
-        boolean adding = false;
+        var adding = false;
         switch (event.getAction()) {
             case PLACE_ALL:
             case PLACE_ONE:
@@ -182,10 +178,10 @@ public class MCBarrel {
                     if (event.getClickedInventory().getType() == InventoryType.BARREL) {
                         // Moving Brew out of MC Barrel
                         if (Brew.isBrew(event.getCurrentItem())) {
-                            if (brews == -1) {
-                                countBrews();
+                            if (this.brews == -1) {
+                                this.countBrews();
                             }
-                            brews--;
+                            this.brews--;
                         }
                         break;
                     } else if (event.getClickedInventory().getType() == InventoryType.PLAYER) {
@@ -205,29 +201,29 @@ public class MCBarrel {
                 // Pickup Brew from MC Barrel
                 if (event.getCurrentItem() != null && event.getClickedInventory() != null && event.getClickedInventory().getType() == InventoryType.BARREL && event.getCurrentItem().getType() == Material.POTION) {
                     if (Brew.isBrew(event.getCurrentItem())) {
-                        if (brews == -1) {
-                            countBrews();
+                        if (this.brews == -1) {
+                            this.countBrews();
                         }
-                        brews--;
+                        this.brews--;
                     }
                 }
                 break;
             case HOTBAR_MOVE_AND_READD:
             case HOTBAR_SWAP:
-                brews = -1;
+                this.brews = -1;
                 break;
             default:
                 return;
         }
         if (adding) {
-            if (brews == -1) {
-                countBrews();
+            if (this.brews == -1) {
+                this.countBrews();
             }
-            if (brews >= config.getMaxBrewsInMCBarrels()) {
+            if (this.brews >= config.getMaxBrewsInMCBarrels()) {
                 event.setCancelled(true);
                 lang.sendEntry(event.getWhoClicked(), "Player_BarrelFull");
             } else {
-                brews++;
+                this.brews++;
             }
         }
     }

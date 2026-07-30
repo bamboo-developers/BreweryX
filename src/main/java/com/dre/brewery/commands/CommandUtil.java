@@ -25,58 +25,34 @@ import com.dre.brewery.BreweryPlugin;
 import com.dre.brewery.configuration.ConfigManager;
 import com.dre.brewery.configuration.files.Lang;
 import com.dre.brewery.recipe.BRecipe;
-import com.dre.brewery.utility.BUtil;
-import com.dre.brewery.utility.Logging;
-import com.dre.brewery.utility.MinecraftVersion;
-import com.dre.brewery.utility.PermissionUtil;
-import com.dre.brewery.utility.Tuple;
+import com.dre.brewery.utility.*;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.dre.brewery.utility.PermissionUtil.BPermission.COPY;
-import static com.dre.brewery.utility.PermissionUtil.BPermission.CREATE;
-import static com.dre.brewery.utility.PermissionUtil.BPermission.DELETE;
-import static com.dre.brewery.utility.PermissionUtil.BPermission.DRINK;
-import static com.dre.brewery.utility.PermissionUtil.BPermission.DRINK_OTHER;
-import static com.dre.brewery.utility.PermissionUtil.BPermission.INFO;
-import static com.dre.brewery.utility.PermissionUtil.BPermission.INFO_OTHER;
-import static com.dre.brewery.utility.PermissionUtil.BPermission.PUKE;
-import static com.dre.brewery.utility.PermissionUtil.BPermission.PUKE_OTHER;
-import static com.dre.brewery.utility.PermissionUtil.BPermission.RELOAD;
-import static com.dre.brewery.utility.PermissionUtil.BPermission.SEAL;
-import static com.dre.brewery.utility.PermissionUtil.BPermission.SET;
-import static com.dre.brewery.utility.PermissionUtil.BPermission.STATIC;
-import static com.dre.brewery.utility.PermissionUtil.BPermission.UNLABEL;
-import static com.dre.brewery.utility.PermissionUtil.BPermission.WAKEUP;
+import static com.dre.brewery.utility.PermissionUtil.BPermission.*;
 
-public class CommandUtil {
+public final class CommandUtil {
 
     private static final BreweryPlugin plugin = BreweryPlugin.getInstance();
     private static final MinecraftVersion VERSION = BreweryPlugin.getMCVersion();
     private static final Lang lang = ConfigManager.getConfig(Lang.class);
-
+    private static final String[] QUALITY = {"1", "10"};
     // Todo: Replace with a map
     private static Set<Tuple<String, String>> mainSet;
     private static Set<Tuple<String, String>> altSet;
-    private static final String[] QUALITY = { "1", "10" };
 
+    public static void cmdHelp(final CommandSender sender, final String[] args) {
 
-    public static void cmdHelp(CommandSender sender, String[] args) {
-
-        int page = 1;
+        var page = 1;
         if (args.length > 1) {
             page = BUtil.parseInt(args[1]).orElse(1);
         }
 
-        ArrayList<String> commands = getCommands(sender);
+        final var commands = getCommands(sender);
 
         if (page == 1) {
             Logging.msg(sender, "&6" + plugin.getDescription().getName() + " v" + plugin.getDescription().getVersion());
@@ -87,13 +63,13 @@ public class CommandUtil {
     }
 
     @Nullable
-    public static Tuple<Brew, Player> getFromCommand(CommandSender sender, String[] args) {
+    public static Tuple<Brew, Player> getFromCommand(final CommandSender sender, final String[] args) {
         if (args.length < 2) {
             return null;
         }
 
-        int quality = 10;
-        boolean hasQuality = false;
+        var quality = 10;
+        var hasQuality = false;
         String pName = null;
         if (args.length > 2) {
             quality = BUtil.getRandomIntInRange(args[args.length - 1]);
@@ -124,7 +100,7 @@ public class CommandUtil {
             player = ((Player) sender);
             pName = null;
         }
-        int stringLength = args.length - 1;
+        var stringLength = args.length - 1;
         if (pName != null) {
             stringLength--;
         }
@@ -134,9 +110,9 @@ public class CommandUtil {
 
         String name;
         if (stringLength > 1) {
-            StringBuilder builder = new StringBuilder(args[1]);
+            final var builder = new StringBuilder(args[1]);
 
-            for (int i = 2; i < stringLength + 1; i++) {
+            for (var i = 2; i < stringLength + 1; i++) {
                 builder.append(" ").append(args[i]);
             }
             name = builder.toString();
@@ -145,7 +121,7 @@ public class CommandUtil {
         }
         name = name.replaceAll("\"", "");
 
-        BRecipe recipe = BRecipe.getMatching(name);
+        final var recipe = BRecipe.getMatching(name);
         if (recipe != null) {
             return new Tuple<>(recipe.createBrew(quality), player);
         } else {
@@ -154,9 +130,9 @@ public class CommandUtil {
         return null;
     }
 
-    public static ArrayList<String> getCommands(CommandSender sender) {
+    public static ArrayList<String> getCommands(final CommandSender sender) {
 
-        ArrayList<String> cmds = new ArrayList<>();
+        final var cmds = new ArrayList<String>();
         cmds.add(lang.getEntry("Help_Help"));
         PermissionUtil.evaluateExtendedPermissions(sender);
 
@@ -230,7 +206,7 @@ public class CommandUtil {
     }
 
 
-    public static List<String> recipeNamesAndIds(String[] args) {
+    public static List<String> recipeNamesAndIds(final String[] args) {
         if (args.length == 2) {
             return recipeNamesAndIds(args[1]);
         } else {
@@ -242,52 +218,52 @@ public class CommandUtil {
         }
     }
 
-    public static List<String> recipeNamesAndIds(String arg) {
+    public static List<String> recipeNamesAndIds(final String arg) {
         if (mainSet == null) {
             mainSet = new HashSet<>();
             altSet = new HashSet<>();
-            for (BRecipe recipe : BRecipe.getAllRecipes()) {
+            for (final var recipe : BRecipe.getAllRecipes()) {
                 mainSet.addAll(createLookupFromName(recipe.getName(5)));
 
-                Set<String> altNames = new HashSet<>(3);
+                final Set<String> altNames = new HashSet<>(3);
                 altNames.add(recipe.getName(1));
                 altNames.add(recipe.getName(10));
                 if (recipe.getId() != null) { // Leaving a null check JUST in case. But ids are never null in the current implementation
                     altNames.add(recipe.getId());
                 }
 
-                for (String altName : altNames) {
+                for (final var altName : altNames) {
                     altSet.addAll(createLookupFromName(altName));
                 }
 
             }
         }
 
-        final String input = arg.toLowerCase();
+        final var input = arg.toLowerCase();
 
-        List<String> options = mainSet.stream()
-            .filter(s -> s.a().startsWith(input))
-            .map(Tuple::second)
-            .collect(Collectors.toList());
-        if (options.isEmpty()) {
-            options = altSet.stream()
+        var options = mainSet.stream()
                 .filter(s -> s.a().startsWith(input))
                 .map(Tuple::second)
                 .collect(Collectors.toList());
+        if (options.isEmpty()) {
+            options = altSet.stream()
+                    .filter(s -> s.a().startsWith(input))
+                    .map(Tuple::second)
+                    .collect(Collectors.toList());
         }
         return options;
     }
 
     private static List<Tuple<String, String>> createLookupFromName(final String name) {
         return Arrays.stream(name.split(" "))
-            .map(word -> new Tuple<>(word.toLowerCase(), name))
-            .collect(Collectors.toList());
+                .map(word -> new Tuple<>(word.toLowerCase(), name))
+                .collect(Collectors.toList());
     }
 
-    public static List<String> filterWithInput(String[] options, String input) {
+    public static List<String> filterWithInput(final String[] options, final String input) {
         return Arrays.stream(options)
-            .filter(s -> s.startsWith(input))
-            .collect(Collectors.toList());
+                .filter(s -> s.startsWith(input))
+                .collect(Collectors.toList());
     }
 
     public static void reloadTabCompleter() {

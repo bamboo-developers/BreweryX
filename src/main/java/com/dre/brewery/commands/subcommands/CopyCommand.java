@@ -31,19 +31,19 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 
-public class CopyCommand implements SubCommand {
+public final class CopyCommand implements SubCommand {
 
     @Override
-    public void execute(BreweryPlugin breweryPlugin, Lang lang, CommandSender sender, String label, String[] args) {
+    public void execute(final BreweryPlugin breweryPlugin, final Lang lang, final CommandSender sender, final String label, final String[] args) {
         if (args.length > 1) {
-            cmdCopy(sender, BUtil.getRandomIntInRange(args[1]), lang);
+            this.cmdCopy(sender, BUtil.getRandomIntInRange(args[1]), lang);
         } else {
-            cmdCopy(sender, 1, lang);
+            this.cmdCopy(sender, 1, lang);
         }
     }
 
     @Override
-    public List<String> tabComplete(BreweryPlugin breweryPlugin, CommandSender sender, String label, String[] args) {
+    public List<String> tabComplete(final BreweryPlugin breweryPlugin, final CommandSender sender, final String label, final String[] args) {
         return null;
     }
 
@@ -58,18 +58,18 @@ public class CopyCommand implements SubCommand {
     }
 
     //@Deprecated but still used?
-    public void cmdCopy(CommandSender sender, int count, Lang lang) {
+    public final void cmdCopy(final CommandSender sender, int count, final Lang lang) {
         if (count < 1 || count > 36) {
             lang.sendEntry(sender, "Etc_Usage");
             lang.sendEntry(sender, "Help_Copy");
             return;
         }
-        Player player = (Player) sender;
-        ItemStack hand = player.getItemInHand();
+        final var player = (Player) sender;
+        final var hand = player.getItemInHand();
         if (hand != null) {
             if (Brew.isBrew(hand)) {
                 while (count > 0) {
-                    ItemStack item = hand.clone();
+                    final var item = hand.clone();
                     if (!(player.getInventory().addItem(item)).isEmpty()) {
                         lang.sendEntry(sender, "CMD_Copy_Error", "" + count);
                         return;
