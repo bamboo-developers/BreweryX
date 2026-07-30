@@ -14,7 +14,6 @@ okaeri-configs = "5.0.5"
 annotations = "26.0.1"
 lombok = "1.18.30"
 
-worldedit = "7.3.0-SNAPSHOT"
 placeholderapi = "2.11.5"
 
 [plugins]
@@ -34,6 +33,4 @@ okaeri-configs-yaml = { module = "eu.okaeri:okaeri-configs-yaml-snakeyaml", vers
 annotations = { module = "org.jetbrains:annotations", version.ref = "annotations" }
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 
-worldedit-bukkit = { module = "com.sk89q.worldedit:worldedit-bukkit", version.ref = "worldedit" }
-worldedit-core = { module = "com.sk89q.worldedit:worldedit-core", version.ref = "worldedit" }
 placeholderapi = { module = "me.clip:placeholderapi", version.ref = "placeholderapi" }

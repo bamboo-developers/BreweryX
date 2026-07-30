@@ -27,8 +27,6 @@ CMD_Copy_Error: '&6&v1 &cЗілля не вмістилося в інвента�
 CMD_Info_Drunk: '&v1 на &6&v2% &fп’яний, якість сп’яніння: &6&v3'
 CMD_Info_NotDrunk: '&v1 не п’яний'
 CMD_NonStatic: '&eНапій більше не настоюється і тепер почне бродити в бочці.'
-CMD_Player: '&a&v1 тепер п’яний на &6&v2% &a, якість сп’яніння: &6&v3'
-CMD_Player_Error: '&cЯкість повинна бути від 1 до 10!'
 CMD_Reload: '&aКонфіг успішно перезавантажено!'
 CMD_Created: '&aНапій створено'
 CMD_Configname: '&aНазва предмета для конфіга: &f&v1'
@@ -40,7 +38,6 @@ CMD_DrinkOther: '&a&v1 випив одну &v2'
 CMD_Set: '&aРівень сп’яніння &v1 успішно встановлено на &v2 з якістю &v3.'
 
 # Error
-Error_ConfigUpdate: 'Невідома версія конфігура Brewery: v&v1, конфіг не оновлено!'
 Error_ItemNotPotion: '&cПредмет у твоїй руці не є зіллям!'
 Error_SealingTableDisabled: '&cСтіл закупорки вимкнено.'
 Error_SealedAlwaysStatic: Закупорені напої завжди статичні!
@@ -49,10 +46,8 @@ Error_NoBarrelAccess: '&cУ тебе немає прав на доступ до 
 Error_NoBrewName: '&cРецепт з назвою: ''&v1&c'' не знайдено!'
 Error_NoPermissions: '&cУ тебе немає прав на це!'
 Error_PlayerCommand: '&cЦю команду можна використовувати лише як гравець!'
-Error_Recipeload: '&cНе всі рецепти були завантажені: перевір консоль!'
 Error_ShowHelp: Використовуйте &6/brew help &fдля відображення довідки
 Error_UnknownCommand: Невідома команда
-Error_YmlRead: Не можу прочитати config.yml, будь ласка, перевір, що там усе правильно
 Error_NoPlayer: '&cГравець не знайдений: &v1'
 Error_MissingBarrelType: '&cInvalid BarrelType'
 
@@ -63,8 +58,6 @@ Etc_Usage: 'Використання:'
 Etc_SealingTable: Стол закупорки напитков.
 Etc_NewRelease: '&rДоступне нове оновлення BreweryX! &2&v1 &r-> &2&v2&r Посилання&7:
   &2&v3'
-Etc_LandsFlag_Title: 'Доступ до бочок'
-Etc_LandsFlag_Description: '&r&7Дозволяє відкривати\n&r&7бочки BreweryX.'
 
 # Help
 Help_Copy: '&6/brew copy [Quantity]&9 Копіює зілля у твоїй руці'
@@ -101,7 +94,6 @@ Perms_NoBarrelCreate: '&cУ тебе немає прав на створення
 Perms_NoBigBarrelCreate: '&cУ тебе немає прав на створення Великих бочок!'
 Perms_NoCauldronFill: '&cУ тебе немає прав на поповнення пляшок із цього котла!'
 Perms_NoCauldronInsert: '&cУ тебе немає прав на додавання інгредієнтів у котел!'
-Perms_NoSmallBarrelCreate: '&cУ тебе немає прав на створення маленьких бочок!'
 
 # Player
 Player_BarrelCreated: Бочка створена
@@ -128,6 +120,5 @@ Player_WakeNoPoints: '&cТут немає Точки Пробудження!'
 Player_WakeNotExist: '&cТочка Пробудження під номером: &6&v1 &cне існує!'
 Player_WakeTeleport: 'Телепорт на точку пробудження під номером: &6&v1&f за координатами:
   &6&v2 &v3, &v4, &v5'
-Player_ShopSealBrew: '&eНапій має бути запечатаний перед продажем'
 Player_Drunkeness: 'П’янство: '
 Player_Hangover: Твоє похмілля

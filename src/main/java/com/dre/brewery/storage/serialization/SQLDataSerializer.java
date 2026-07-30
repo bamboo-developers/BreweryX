@@ -25,6 +25,7 @@ import com.google.gson.GsonBuilder;
 import lombok.Getter;
 
 import java.lang.reflect.Modifier;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
@@ -32,14 +33,14 @@ import java.util.Base64;
  */
 @Getter
 public final class SQLDataSerializer {
-    private final Gson gson = new GsonBuilder().setPrettyPrinting().excludeFieldsWithModifiers(Modifier.STATIC).create();
+    private final Gson gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.STATIC).create();
 
     public final String serialize(final Object object) {
-        return Base64.getEncoder().encodeToString(this.gson.toJson(object).getBytes());
+        return Base64.getEncoder().encodeToString(this.gson.toJson(object).getBytes(StandardCharsets.UTF_8));
     }
 
     public final <T> T deserialize(final String data, final Class<T> type) {
-        return this.gson.fromJson(new String(Base64.getMimeDecoder().decode(data)), type);
+        return this.gson.fromJson(new String(Base64.getMimeDecoder().decode(data), StandardCharsets.UTF_8), type);
     }
 
     public <T> T deserialize(final String data, final Class<T> type, final T defaultValue) {

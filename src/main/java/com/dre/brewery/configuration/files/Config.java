@@ -135,8 +135,6 @@ public final class Config extends AbstractOkaeriConfigFile {
     private boolean useVirtualChestPerms = false;
     @LocalizedComment("config.useOffhandForCauldron")
     private boolean useOffhandForCauldron = false;
-    @LocalizedComment("config.loadDataAsync") // Unused, see config-langs/en.yml#config.loadDataAsync comment
-    private boolean loadDataAsync = true;
     @LocalizedComment("config.hangoverDays")
     private int hangoverDays = 7;
     @LocalizedComment("config.onlyAllowBrewsInBarrels")

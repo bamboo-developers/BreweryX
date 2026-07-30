@@ -22,12 +22,14 @@ package com.dre.brewery.commands.subcommands;
 
 import com.dre.brewery.BCauldron;
 import com.dre.brewery.BSealer;
+import com.dre.brewery.Barrel;
 import com.dre.brewery.BreweryPlugin;
 import com.dre.brewery.commands.CommandUtil;
 import com.dre.brewery.commands.SubCommand;
 import com.dre.brewery.configuration.ConfigManager;
 import com.dre.brewery.configuration.configurer.TranslationManager;
 import com.dre.brewery.configuration.files.Lang;
+import com.dre.brewery.utility.BUtil;
 import com.dre.brewery.utility.Logging;
 import com.dre.brewery.utility.releases.ReleaseChecker;
 import lombok.Getter;
@@ -72,6 +74,10 @@ public final class ReloadCommand implements SubCommand {
 
             // Reload Cauldron Particle Recipes
             BCauldron.reload();
+
+            // Drop caches derived from the config that have no reload hook of their own
+            Barrel.invalidateEtcBarrelTitleCache();
+            BUtil.invalidateDrainItemMapCache();
 
             // Clear Recipe completions
             CommandUtil.reloadTabCompleter();

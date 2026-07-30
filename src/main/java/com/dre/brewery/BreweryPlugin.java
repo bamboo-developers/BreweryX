@@ -206,6 +206,7 @@ public final class BreweryPlugin extends JavaPlugin {
         pluginManager.registerEvents(new InventoryListener(), this);
         pluginManager.registerEvents(new IntegrationListener(), this);
         pluginManager.registerEvents(new CauldronListener(), this);
+        pluginManager.registerEvents(new WorldListener(), this);
 
         // Heartbeat
         BreweryPlugin.getScheduler().runTimer(new BreweryRunnable(), 650, 1200);
@@ -342,18 +343,17 @@ public final class BreweryPlugin extends JavaPlugin {
             //DataSave.autoSave();
             dataManager.tryAutoSave();
 
-            Logging.debugLog("BreweryRunnable: " + (System.currentTimeMillis() - start) + "ms");
+            Logging.debugLog(() -> "BreweryRunnable: " + (System.currentTimeMillis() - start) + "ms");
         }
 
     }
 
     public static final class CauldronParticles implements Runnable {
 
+        private static final Config config = ConfigManager.getConfig(Config.class);
 
         @Override
         public final void run() {
-            final var config = ConfigManager.getConfig(Config.class);
-
             if (!config.isEnableCauldronParticles()) return;
             if (config.isMinimalParticles() && ThreadLocalRandom.current().nextFloat() > 0.5f) {
                 return;

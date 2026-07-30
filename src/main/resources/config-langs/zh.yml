@@ -73,17 +73,12 @@ config:
     -- 插件兼容性 --
 
     启用检查其他插件（如果已安装）的木桶权限 [默认配置: true]
-    插件 'Landlord' 和 'Protection Stones' 使用 WorldGuard 标志
     'ClaimChunk' 是原生支持的
   useVirtualChestPerms: |
     在打开木桶时，使用虚拟箱子来与所有其他保护插件进行交互检查
     这可能会使反作弊插件产生混淆，但在其他方面是一个很好的使用方法
     请将此方法用于 'Residence' 插件，以及任何其他未在 PlayerInteractEvent 中涵盖所有情况的插件
-  useLogBlock: "启用将木桶库存信息记录到 LogBlock [默认配置: true]"
   useOffhandForCauldron: "是否也应该将副手中的物品添加到炼药锅中 [默认配置: false]"
-  loadDataAsync: |
-    此选项不再执行任何操作, 并将在 BreweryX 的未来版本中删除
-    BreweryX 将始终异步加载数据, 服务器启动和关闭除外
   hangoverDays: "玩家下线后，醉酒数据在内存中保留的天数，以施加宿醉等后续效果 [默认配置: 7]"
   onlyAllowBrewsInBarrels: "只有 Brewery 的饮料可以装进桶里 [默认配置: false]"
   colorInBarrels-Brewer: |

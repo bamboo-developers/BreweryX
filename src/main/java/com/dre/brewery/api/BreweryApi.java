@@ -482,17 +482,6 @@ public final class BreweryApi {
     /**
      * Create a New Cauldron Recipe with a Recipe Builder.
      *
-     * @param name The name of the new Cauldron Recipe
-     * @return A Cauldron Recipe Builder
-     */
-    @Deprecated
-    public static BCauldronRecipe.Builder cauldronRecipeBuilder(final String name) {
-        return new BCauldronRecipe.Builder(name, name);
-    }
-
-    /**
-     * Create a New Cauldron Recipe with a Recipe Builder.
-     *
      * @param id   The id of the new Cauldron Recipe
      * @param name The name of the new Cauldron Recipe
      * @return A Cauldron Recipe Builder

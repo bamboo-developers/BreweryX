@@ -70,16 +70,11 @@ config:
     -- Compatibilità con altri plugin --
 
     Abilita il controllo della presenza di altri plugin per i permessi relativi ai barili[true]
-    Plugins 'Landlord' and 'Protection Stones' use the WorldGuard Flag. 'ClaimChunk' is natively supported.
   useVirtualChestPerms: |
     Use a virtual chest when opening a Barrel to check with all other protection plugins
     This could confuse Anti-Cheat plugins, but is otherwise good to use
     use this for 'Residence' Plugin and any others that don't check all cases in the PlayerInteractEvent
-  useLogBlock: "Enable the Logging of Barrel Inventories to LogBlock [true]"
   useOffhandForCauldron: "If items in Offhand should be added to the cauldron as well [false]"
-  loadDataAsync: |
-    This option no longer does anything anymore, and will be removed in future releases of BreweryX.
-    BreweryX will load data asynchronously always, with the exception of server startup and shutdown.
   hangoverDays: "Tempo in giorni che la sbronza resta in memoria dopo che il giocatore va offline, cioè il tempo per cui i postumi della sbornia durano. [7]"
   onlyAllowBrewsInBarrels: "If only Brewery drinks can be put into barrels [false]"
   colorInBarrels-Brewer: "Colora la descrizione dell'item in base alla qualità mentre è in un barile o in un alambicco [true, true]"

@@ -101,12 +101,11 @@ public final class ConfigHead {
      * @return The config instance
      */
     public final <T extends AbstractOkaeriConfigFile> T getConfig(final Class<T> configClass) {
+        final var loaded = this.LOADED_CONFIGS.get(configClass);
+        if (loaded != null) {
+            return (T) loaded;
+        }
         try {
-            for (final var mapEntry : this.LOADED_CONFIGS.entrySet()) {
-                if (mapEntry.getKey().equals(configClass)) {
-                    return (T) mapEntry.getValue();
-                }
-            }
             return this.createConfig(configClass);
         } catch (final Throwable e) {
             Logging.errorLog("Something went wrong trying to load a config file! &e(Class: " + configClass.getSimpleName() + ")", e);

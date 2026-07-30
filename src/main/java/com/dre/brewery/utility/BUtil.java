@@ -26,6 +26,7 @@ import com.dre.brewery.BarrelAsset;
 import com.dre.brewery.BreweryPlugin;
 import com.dre.brewery.api.events.barrel.BarrelDestroyEvent;
 import com.dre.brewery.configuration.ConfigManager;
+import com.dre.brewery.configuration.files.Config;
 import com.dre.brewery.configuration.files.Lang;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -57,6 +58,7 @@ public final class BUtil {
     /* **************************************** */
 
     private static final String WITH_DELIMITER = "((?<=%1$s)|(?=%1$s))";
+    private static final Pattern AMPERSAND_SPLIT_PATTERN = Pattern.compile(String.format(WITH_DELIMITER, "&"));
     private static final Pattern RANGE_PATTERN = Pattern.compile("([-+]?\\d+)\\.\\.([-+]?\\d+)");
 
     /**
@@ -77,8 +79,11 @@ public final class BUtil {
             return null;
         } else if (msg.isEmpty()) {
             return msg;
+        } else if (msg.indexOf('&') < 0) {
+            // No '&' color codes (legacy or hex) can possibly be present, nothing to do
+            return msg;
         }
-        final var texts = msg.split(String.format(WITH_DELIMITER, "&"));
+        final var texts = AMPERSAND_SPLIT_PATTERN.split(msg);
 
         final var finalText = new StringBuilder();
 
@@ -460,6 +465,23 @@ public final class BUtil {
             }
         }
         return map;
+    }
+
+    private static Map<Material, Integer> drainItemMapCache;
+
+    /**
+     * Cached version of {@code getMaterialMap(config.getDrainItems())}, since building this map is otherwise
+     * redone on every PlayerItemConsumeEvent. Invalidated on {@code /brewery reload}.
+     */
+    public static Map<Material, Integer> getDrainItemMap() {
+        if (drainItemMapCache == null) {
+            drainItemMapCache = getMaterialMap(ConfigManager.getConfig(Config.class).getDrainItems());
+        }
+        return drainItemMapCache;
+    }
+
+    public static void invalidateDrainItemMapCache() {
+        drainItemMapCache = null;
     }
 
     public static UUID uuidFromString(final String uuid) {

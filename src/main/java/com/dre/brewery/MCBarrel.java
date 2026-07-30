@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentMap;
 public final class MCBarrel {
 
     public static final String TAG = "Btime";
+    private static final NamespacedKey TAG_KEY = new NamespacedKey(BreweryPlugin.getInstance(), TAG);
     public static final ConcurrentMap<Inventory, MCBarrel> openBarrels = new ConcurrentHashMap<>();
     private static final Config config = ConfigManager.getConfig(Config.class);
     private static final Lang lang = ConfigManager.getConfig(Lang.class);
@@ -67,14 +68,13 @@ public final class MCBarrel {
         // if nobody had the inventory opened
         if (this.inv.getViewers().size() == 1 && PaperLib.getHolder(this.inv, true).getHolder() instanceof final Barrel barrel) {
             final var data = barrel.getPersistentDataContainer();
-            final var key = new NamespacedKey(BreweryPlugin.getInstance(), TAG);
-            if (!data.has(key, PersistentDataType.LONG)) {
+            if (!data.has(TAG_KEY, PersistentDataType.LONG)) {
                 return;
             }
 
             // Get the difference between the time that is stored on the Barrel and the current stored global mcBarrelTime
-            final var time = mcBarrelTime - data.getOrDefault(key, PersistentDataType.LONG, mcBarrelTime);
-            data.remove(key);
+            final var time = mcBarrelTime - data.getOrDefault(TAG_KEY, PersistentDataType.LONG, mcBarrelTime);
+            data.remove(TAG_KEY);
             barrel.update();
             Logging.debugLog("Barrel Time since last open: " + time);
 
@@ -115,7 +115,7 @@ public final class MCBarrel {
                         // We found a brew, so set time on this Barrel
                         if (PaperLib.getHolder(this.inv, true).getHolder() instanceof final org.bukkit.block.Barrel barrel) {
                             final var data = barrel.getPersistentDataContainer();
-                            data.set(new NamespacedKey(BreweryPlugin.getInstance(), TAG), PersistentDataType.LONG, mcBarrelTime);
+                            data.set(TAG_KEY, PersistentDataType.LONG, mcBarrelTime);
                             barrel.update();
                         }
                         return;

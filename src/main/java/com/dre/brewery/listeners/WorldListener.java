@@ -21,26 +21,30 @@
 package com.dre.brewery.listeners;
 
 import com.dre.brewery.Barrel;
-import com.dre.brewery.storage.DataManager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.World;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 
-public record WorldListener(DataManager dataManager) implements Listener {
+public final class WorldListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onWorldLoad(final WorldLoadEvent event) {
-        this.dataManager.getAllBarrels()
-                .thenAcceptAsync(barrels -> barrels.stream()
-                        .filter(barrel -> barrel.getSpigot().getWorld().equals(event.getWorld()))
-                        .forEach(Barrel::registerBarrel)
-                );
+        // Restore barrels that were set aside in memory when this world was previously unloaded.
+        // Does not re-read storage: Barrels for worlds loaded at plugin startup were already loaded then.
+        Barrel.onLoad(event.getWorld());
     }
 
+    /**
+     * Only Barrels are set aside here. {@link com.dre.brewery.BCauldron#onUnload(World)} and
+     * {@link com.dre.brewery.Wakeup#onUnload(World)} drop their entries outright, and since the
+     * DataManager saves with a full rewrite that would delete them from storage on the next
+     * autosave. They stay unwired until they keep the data around like Barrel does.
+     */
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onWorldLoad(final WorldUnloadEvent event) {
+    public void onWorldUnload(final WorldUnloadEvent event) {
         Barrel.onUnload(event.getWorld());
     }
 }

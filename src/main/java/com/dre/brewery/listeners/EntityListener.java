@@ -22,6 +22,7 @@ package com.dre.brewery.listeners;
 
 import com.dre.brewery.BCauldron;
 import com.dre.brewery.Barrel;
+import com.dre.brewery.BarrelWoodType;
 import com.dre.brewery.BreweryPlugin;
 import com.dre.brewery.api.events.barrel.BarrelDestroyEvent;
 import com.dre.brewery.utility.BUtil;
@@ -84,7 +85,7 @@ public final class EntityListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockChange(final EntityChangeBlockEvent event) {
-        if (event.getBlock().getType().name().toUpperCase().contains("CUT_COPPER")) return;
+        if (BarrelWoodType.CUT_COPPER_MATERIALS.contains(event.getBlock().getType())) return;
         if (Barrel.get(event.getBlock()) == null) return;
         event.setCancelled(true);
     }

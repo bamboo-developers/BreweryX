@@ -44,7 +44,6 @@ import org.yaml.snakeyaml.resolver.Resolver;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public final class BreweryXConfigurer extends YamlSnakeYamlConfigurer {
@@ -87,11 +86,6 @@ public final class BreweryXConfigurer extends YamlSnakeYamlConfigurer {
         final var resolver = new Resolver();
 
         return new Yaml(constructor, representer, dumperOptions, loaderOptions, resolver);
-    }
-
-    private static <T> T apply(final T object, final Consumer<T> consumer) {
-        consumer.accept(object);
-        return object;
     }
 
     @Override

@@ -451,13 +451,7 @@ public final class BPlayer {
     }
 
     public final void remove() {
-        for (final var iterator = players.entrySet().iterator(); iterator.hasNext(); ) {
-            final var entry = iterator.next();
-            if (entry.getValue() == this) {
-                iterator.remove();
-                return;
-            }
-        }
+        players.remove(this.uuid, this);
     }
 
 
@@ -607,7 +601,10 @@ public final class BPlayer {
 
     // Eat something to drain the drunkenness
     public final void drainByItem(final Player player, final Material mat) {
-        final int strength = BUtil.getMaterialMap(config.getDrainItems()).get(mat);
+        final var strength = BUtil.getDrainItemMap().get(mat);
+        if (strength == null) {
+            return;
+        }
         if (this.drain(player, strength)) {
             remove(player);
         }

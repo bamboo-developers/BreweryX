@@ -65,18 +65,9 @@ dependencies {
     implementation(libs.okaeri.configs.yaml) {
         exclude("org.yaml", "snakeyaml")
     }
-    constraints {
-        implementation(libs.snakeyaml) {
-            version {
-                require(libs.versions.snakeyaml.get())
-                reject("1.33")
-            }
-        }
-    }
+    compileOnly(libs.snakeyaml)
 
     // Plugin compatibility
-    compileOnly(libs.worldedit.bukkit)
-    compileOnly(libs.worldedit.core)
     compileOnly(libs.placeholderapi)
 }
 
@@ -111,7 +102,6 @@ tasks.shadowJar {
     relocate("com.google.gson")
     relocate("com.google.errorprone")
     relocate("eu.okaeri")
-    relocate("org.bson")
     relocate("io.papermc.lib")
     relocate("com.zaxxer.hikari")
     relocate("com.tcoded.folialib")

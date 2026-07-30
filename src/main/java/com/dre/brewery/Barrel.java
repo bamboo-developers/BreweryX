@@ -50,6 +50,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 /**
  * A Multi Block Barrel with Inventory
@@ -59,9 +60,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class Barrel extends BarrelBody implements InventoryHolder {
 
     private static final Map<UUID, List<Barrel>> barrels = new ConcurrentHashMap<>();
+    // Barrels set aside by onUnload(World), to be restored by onLoad(World) without re-reading storage
+    private static final Map<UUID, List<Barrel>> unloadedBarrels = new ConcurrentHashMap<>();
     private static final Config config = ConfigManager.getConfig(Config.class);
     private static final Lang lang = ConfigManager.getConfig(Lang.class);
     private static Map<UUID, Integer> checkCounters = new ConcurrentHashMap<>(); // Which Barrel was last checked
+    private static final Map<UUID, WrappedTask> barrelCheckTasks = new ConcurrentHashMap<>(); // One running BarrelCheck per world
+    private static String etcBarrelTitle; // Cached, colored "Etc_Barrel" lang entry, used as the inventory title
     /**
      * -- GETTER --
      * Is this a small barrel?
@@ -78,14 +83,14 @@ public final class Barrel extends BarrelBody implements InventoryHolder {
     public Barrel(final Block spigot, final byte signoffset) {
         super(spigot, signoffset);
         this.small = this.computeSmall();
-        this.inventory = Bukkit.createInventory(this, !this.small ? config.getBarrelInvSizeLarge() * 9 : config.getBarrelInvSizeSmall() * 9, lang.getEntry("Etc_Barrel"));
+        this.inventory = Bukkit.createInventory(this, !this.small ? config.getBarrelInvSizeLarge() * 9 : config.getBarrelInvSizeSmall() * 9, getEtcBarrelTitle());
         this.id = UUID.randomUUID();
     }
 
     public Barrel(final Block spigot, final byte signoffset, final boolean isSmall) {
         super(spigot, signoffset);
         this.small = isSmall;
-        this.inventory = Bukkit.createInventory(this, !isSmall ? config.getBarrelInvSizeLarge() * 9 : config.getBarrelInvSizeSmall() * 9, lang.getEntry("Etc_Barrel"));
+        this.inventory = Bukkit.createInventory(this, !isSmall ? config.getBarrelInvSizeLarge() * 9 : config.getBarrelInvSizeSmall() * 9, getEtcBarrelTitle());
         this.id = UUID.randomUUID();
     }
 
@@ -97,7 +102,7 @@ public final class Barrel extends BarrelBody implements InventoryHolder {
     public Barrel(final Block spigot, final byte sign, final BoundingBox bounds, @Nullable final Map<String, Object> items, final float time, final UUID id, final boolean isSmall) {
         super(spigot, sign, bounds);
         this.small = isSmall;
-        this.inventory = Bukkit.createInventory(this, this.isLarge() ? config.getBarrelInvSizeLarge() * 9 : config.getBarrelInvSizeSmall() * 9, lang.getEntry("Etc_Barrel"));
+        this.inventory = Bukkit.createInventory(this, this.isLarge() ? config.getBarrelInvSizeLarge() * 9 : config.getBarrelInvSizeSmall() * 9, getEtcBarrelTitle());
         if (items != null) {
             for (final var slot : items.keySet()) {
                 if (items.get(slot) instanceof ItemStack) {
@@ -112,7 +117,7 @@ public final class Barrel extends BarrelBody implements InventoryHolder {
     public Barrel(final Block spigot, final byte sign, final BoundingBox bounds, final ItemStack[] items, final float time, final UUID id, final boolean isSmall) {
         super(spigot, sign, bounds);
         this.small = isSmall;
-        this.inventory = Bukkit.createInventory(this, this.isLarge() ? config.getBarrelInvSizeLarge() * 9 : config.getBarrelInvSizeSmall() * 9, lang.getEntry("Etc_Barrel"));
+        this.inventory = Bukkit.createInventory(this, this.isLarge() ? config.getBarrelInvSizeLarge() * 9 : config.getBarrelInvSizeSmall() * 9, getEtcBarrelTitle());
         if (items != null) {
             for (var slot = 0; slot < items.length; slot++) {
                 if (items[slot] != null) {
@@ -133,7 +138,7 @@ public final class Barrel extends BarrelBody implements InventoryHolder {
         for (final var worldUuid : barrels.keySet()) {
             final var worldBarrels = barrels.get(worldUuid);
             final var numBarrels = worldBarrels.size();
-            if (checkCounters.getOrDefault(worldUuid, 0) == 0 && numBarrels > 0) {
+            if (numBarrels > 0 && !barrelCheckTasks.containsKey(worldUuid)) {
                 final var random = worldBarrels.get((int) Math.floor(Math.random() * numBarrels));
                 if (random != null) {
                     // You have been selected for a random search
@@ -147,8 +152,9 @@ public final class Barrel extends BarrelBody implements InventoryHolder {
                         randomInTheBack.checked = false;
                     }
                 }
-                final var barrelCheckHandle = new WrappedTask[1];
-                barrelCheckHandle[0] = BreweryPlugin.getScheduler().runTimer(new BarrelCheck(barrelCheckHandle), 1, 1);
+                // computeIfAbsent keeps this to one running check per world; the task removes itself when its round finishes
+                barrelCheckTasks.computeIfAbsent(worldUuid,
+                        uuid -> BreweryPlugin.getScheduler().runTimer(new BarrelCheck(uuid), 1, 20));
             }
         }
     }
@@ -347,10 +353,26 @@ public final class Barrel extends BarrelBody implements InventoryHolder {
     }
 
     /**
-     * unloads barrels that are in a unloading world
+     * unloads barrels that are in a unloading world.
+     * The removed barrels are kept in memory (not persisted again, they were already saved just before unload),
+     * so {@link #onLoad(World)} can restore them without hitting storage again if the world loads back.
      */
     public static void onUnload(final World world) {
-        barrels.remove(world.getUID());
+        final var removed = barrels.remove(world.getUID());
+        if (removed != null) {
+            unloadedBarrels.put(world.getUID(), removed);
+        }
+    }
+
+    /**
+     * Restores barrels for a world that has (re)loaded, from the in-memory barrels that were set aside
+     * when that world was previously unloaded via {@link #onUnload(World)}. Does not touch storage.
+     */
+    public static void onLoad(final World world) {
+        final var restored = unloadedBarrels.remove(world.getUID());
+        if (restored != null) {
+            barrels.put(world.getUID(), restored);
+        }
     }
 
     public static void registerBarrel(final Barrel barrel) {
@@ -358,8 +380,13 @@ public final class Barrel extends BarrelBody implements InventoryHolder {
                 .add(barrel);
     }
 
+    /**
+     * Every Barrel we know about, including those set aside by {@link #onUnload(World)}.
+     * <p>Barrels of unloaded worlds have to stay in here: the DataManager saves with a full rewrite,
+     * so anything missing from this list would be deleted from storage on the next autosave.
+     */
     public static List<Barrel> getAllBarrels() {
-        return barrels.values().stream()
+        return Stream.concat(barrels.values().stream(), unloadedBarrels.values().stream())
                 .flatMap(List::stream)
                 .filter(Objects::nonNull)
                 .toList();
@@ -399,7 +426,7 @@ public final class Barrel extends BarrelBody implements InventoryHolder {
      */
     public final void open(final Player player) {
         if (this.inventory == null) {
-            this.inventory = Bukkit.createInventory(this, this.isLarge() ? config.getBarrelInvSizeLarge() * 9 : config.getBarrelInvSizeSmall() * 9, lang.getEntry("Etc_Barrel"));
+            this.inventory = Bukkit.createInventory(this, this.isLarge() ? config.getBarrelInvSizeLarge() * 9 : config.getBarrelInvSizeSmall() * 9, getEtcBarrelTitle());
         } else {
             if (this.time > 0) {
                 // if nobody has the inventory opened
@@ -407,7 +434,8 @@ public final class Barrel extends BarrelBody implements InventoryHolder {
                     // if inventory contains potions
                     if (this.inventory.contains(Material.POTION)) {
                         final var wood = this.getWood();
-                        var loadTime = System.nanoTime();
+                        final var debug = config.isDebug();
+                        var loadTime = debug ? System.nanoTime() : 0L;
                         for (final var item : this.inventory.getContents()) {
                             if (item != null) {
                                 final var brew = Brew.get(item);
@@ -416,9 +444,11 @@ public final class Barrel extends BarrelBody implements InventoryHolder {
                                 }
                             }
                         }
-                        loadTime = System.nanoTime() - loadTime;
-                        final var ftime = (float) (loadTime / 1000000.0);
-                        Logging.debugLog("opening Barrel with potions (" + ftime + "ms)");
+                        if (debug) {
+                            loadTime = System.nanoTime() - loadTime;
+                            final var ftime = (float) (loadTime / 1000000.0);
+                            Logging.debugLog("opening Barrel with potions (" + ftime + "ms)");
+                        }
                     }
                 }
             }
@@ -564,56 +594,88 @@ public final class Barrel extends BarrelBody implements InventoryHolder {
         return BarrelAsset.isBarrelAsset(BarrelAsset.SIGN, this.spigot.getType());
     }
 
-    public static final class BarrelCheck implements Runnable {
-        private final WrappedTask[] handle;
+    /**
+     * Get the (cached) colored "Etc_Barrel" lang entry, used as the title for every Barrel's Inventory.
+     * Resolved once and reused, since coloring/looking up the lang entry on every Barrel construction is wasteful.
+     */
+    private static String getEtcBarrelTitle() {
+        if (etcBarrelTitle == null) {
+            etcBarrelTitle = lang.getEntry("Etc_Barrel");
+        }
+        return etcBarrelTitle;
+    }
 
-        public BarrelCheck(final WrappedTask[] handle) {
-            this.handle = handle;
+    /**
+     * Invalidate the cached "Etc_Barrel" title, so it picks up an updated lang file.
+     * Called from {@code /brewery reload}.
+     */
+    public static void invalidateEtcBarrelTitleCache() {
+        etcBarrelTitle = null;
+    }
+
+    public static final class BarrelCheck implements Runnable {
+        private final UUID worldUuid;
+
+        public BarrelCheck(final UUID worldUuid) {
+            this.worldUuid = worldUuid;
+        }
+
+        /**
+         * End this world's round, so {@link Barrel#onUpdate()} can start a fresh one later.
+         */
+        private void finishRound() {
+            checkCounters.remove(this.worldUuid);
+            final var task = barrelCheckTasks.remove(this.worldUuid);
+            if (task != null) {
+                task.cancel();
+            }
         }
 
         @Override
         public final void run() {
-            barrels.keySet()
-                    .forEach(worldUuid -> {
-                        // Folia doesn't fire 'WorldUnloadEvent' but Canvas does.
-                        if (MinecraftVersion.isFolia() && !MinecraftVersion.isCanvas() && Bukkit.getWorld(worldUuid) == null) {
-                            barrels.remove(worldUuid); // remove this world and assume that it was unloaded on Folia servers
-                            return;
-                        }
+            // Folia doesn't fire 'WorldUnloadEvent' but Canvas does.
+            if (MinecraftVersion.isFolia() && !MinecraftVersion.isCanvas() && Bukkit.getWorld(this.worldUuid) == null) {
+                barrels.remove(this.worldUuid); // remove this world and assume that it was unloaded on Folia servers
+                this.finishRound();
+                return;
+            }
 
-                        int counter = checkCounters.computeIfAbsent(worldUuid, ignored -> -1);
+            var counter = checkCounters.computeIfAbsent(this.worldUuid, ignored -> -1);
 
-                        final var worldBarrels = barrels.get(worldUuid);
-                        if (worldBarrels == null || worldBarrels.isEmpty()) {
-                            this.handle[0].cancel();
-                            return;
-                        }
+            final var worldBarrels = barrels.get(this.worldUuid);
+            if (worldBarrels == null || worldBarrels.isEmpty()) {
+                // Nothing (left) to check in this world, allow onUpdate to start a fresh round later
+                this.finishRound();
+                return;
+            }
 
-                        counter = (counter + 1) % worldBarrels.size();
-                        while (counter < worldBarrels.size()) {
-                            final var barrel = worldBarrels.get(counter++);
-                            if (barrel.checked) {
-                                continue;
-                            }
-                            BreweryPlugin.getScheduler().runAtLocationLater(barrel.getSpigot().getLocation(), () -> {
-                                final var broken = barrel.getBrokenBlock(false);
-                                if (broken != null) {
-                                    Logging.debugLog("Barrel at "
-                                            + broken.getWorld().getName() + "/" + broken.getX() + "/" + broken.getY() + "/" + broken.getZ()
-                                            + " has been destroyed unexpectedly, contents will drop");
-                                    // remove the barrel if it was destroyed
-                                    barrel.remove(broken, null, true);
-                                } else {
-                                    // Dont check this barrel again, its enough to check it once after every restart (and when randomly chosen)
-                                    // as now this is only the backup if we dont register the barrel breaking,
-                                    // for example when removing it with some world editor
-                                    barrel.checked = true;
-                                }
-                            }, 0);
-                            return;
-                        }
-                        this.handle[0].cancel();
-                    });
+            counter = (counter + 1) % worldBarrels.size();
+            while (counter < worldBarrels.size()) {
+                final var barrel = worldBarrels.get(counter++);
+                if (barrel.checked) {
+                    continue;
+                }
+                // Persist progress so the next tick (or a fresh task after a restart of this one) continues on
+                checkCounters.put(this.worldUuid, counter);
+                BreweryPlugin.getScheduler().runAtLocationLater(barrel.getSpigot().getLocation(), () -> {
+                    final var broken = barrel.getBrokenBlock(false);
+                    if (broken != null) {
+                        Logging.debugLog(() -> "Barrel at "
+                                + broken.getWorld().getName() + "/" + broken.getX() + "/" + broken.getY() + "/" + broken.getZ()
+                                + " has been destroyed unexpectedly, contents will drop");
+                        // remove the barrel if it was destroyed
+                        barrel.remove(broken, null, true);
+                    } else {
+                        // Dont check this barrel again, its enough to check it once after every restart (and when randomly chosen)
+                        // as now this is only the backup if we dont register the barrel breaking,
+                        // for example when removing it with some world editor
+                        barrel.checked = true;
+                    }
+                }, 0);
+                return;
+            }
+            // Every barrel in this world has been checked, allow onUpdate to start a fresh round later
+            this.finishRound();
         }
 
     }

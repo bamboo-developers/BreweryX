@@ -118,8 +118,8 @@ public final class FlatFileStorage extends DataManager {
         final var gson = this.getLazySerializerInstance().getGson();
 
         // Gson writes ints as doubles sometimes, but they seem to serialize back to ints just fine.
-        final var json = gson.toJson(map);
-        return gson.fromJson(json, type);
+        final var jsonElement = gson.toJsonTree(map);
+        return gson.fromJson(jsonElement, type);
     }
 
     @Override
@@ -145,13 +145,12 @@ public final class FlatFileStorage extends DataManager {
         }
 
         for (final var thing : serializableThings) {
-            this.saveGeneric(thing, table);
+            this.setGeneric(thing, table);
         }
         this.save();
     }
 
-    @Override
-    public final <T extends SerializableThing> void saveGeneric(final T serializableThing, final String table) {
+    private void setGeneric(final SerializableThing serializableThing, final String table) {
         final var path = table + "." + serializableThing.getId();
 
         final var gson = this.getLazySerializerInstance().getGson();
@@ -162,6 +161,11 @@ public final class FlatFileStorage extends DataManager {
         for (final var entry : map.entrySet()) {
             this.dataFile.set(path + "." + entry.getKey(), entry.getValue());
         }
+    }
+
+    @Override
+    public final <T extends SerializableThing> void saveGeneric(final T serializableThing, final String table) {
+        this.setGeneric(serializableThing, table);
         this.save();
     }
 
@@ -218,12 +222,12 @@ public final class FlatFileStorage extends DataManager {
     public void saveAllBarrels(final Collection<Barrel> barrels) {
         this.dataFile.set("barrels", null);
         for (final var barrel : barrels) {
-            this.saveBarrel(barrel);
+            this.setBarrel(barrel);
         }
+        this.save();
     }
 
-    @Override
-    public final void saveBarrel(final Barrel barrel) {
+    private void setBarrel(final Barrel barrel) {
         if (barrel.getBounds() == null) {
             return;
         }
@@ -234,6 +238,11 @@ public final class FlatFileStorage extends DataManager {
         this.dataFile.set(path + ".time", barrel.getTime());
         this.dataFile.set(path + ".sign", barrel.getSignoffset());
         this.dataFile.set(path + ".items", BukkitSerialization.itemStackArrayToBase64(barrel.getInventory().getContents()));
+    }
+
+    @Override
+    public final void saveBarrel(final Barrel barrel) {
+        this.setBarrel(barrel);
         this.save();
     }
 
@@ -280,17 +289,22 @@ public final class FlatFileStorage extends DataManager {
     public void saveAllCauldrons(final Collection<BCauldron> cauldrons) {
         this.dataFile.set("cauldrons", null);
         for (final var cauldron : cauldrons) {
-            this.saveCauldron(cauldron);
+            this.setCauldron(cauldron);
         }
+        this.save();
     }
 
-    @Override
-    public final void saveCauldron(final BCauldron cauldron) {
+    private void setCauldron(final BCauldron cauldron) {
         final var path = "cauldrons." + cauldron.getId();
 
         this.dataFile.set(path + ".block", serializeLocation(cauldron.getBlock().getLocation()));
         this.dataFile.set(path + ".ingredients", cauldron.getIngredients().serializeIngredients());
         this.dataFile.set(path + ".state", cauldron.getState());
+    }
+
+    @Override
+    public final void saveCauldron(final BCauldron cauldron) {
+        this.setCauldron(cauldron);
         this.save();
     }
 
@@ -335,17 +349,22 @@ public final class FlatFileStorage extends DataManager {
     public void saveAllPlayers(final Collection<BPlayer> players) {
         this.dataFile.set("players", null);
         for (final var player : players) {
-            this.savePlayer(player);
+            this.setPlayer(player);
         }
+        this.save();
     }
 
-    @Override
-    public final void savePlayer(final BPlayer player) {
+    private void setPlayer(final BPlayer player) {
         final var path = "players." + player.getUuid();
 
         this.dataFile.set(path + ".quality", player.getQuality());
         this.dataFile.set(path + ".drunkenness", player.getDrunkeness());
         this.dataFile.set(path + ".offlineDrunkenness", player.getOfflineDrunkeness());
+    }
+
+    @Override
+    public final void savePlayer(final BPlayer player) {
+        this.setPlayer(player);
         this.save();
     }
 
@@ -388,14 +407,19 @@ public final class FlatFileStorage extends DataManager {
     public void saveAllWakeups(final Collection<Wakeup> wakeups) {
         this.dataFile.set("wakeups", null);
         for (final var wakeup : wakeups) {
-            this.saveWakeup(wakeup);
+            this.setWakeup(wakeup);
         }
+        this.save();
+    }
+
+    private void setWakeup(final Wakeup wakeup) {
+        final var path = "wakeups." + wakeup.getId();
+        this.dataFile.set(path + ".location", serializeLocation(wakeup.getLoc(), true));
     }
 
     @Override
     public final void saveWakeup(final Wakeup wakeup) {
-        final var path = "wakeups." + wakeup.getId();
-        this.dataFile.set(path + ".location", serializeLocation(wakeup.getLoc(), true));
+        this.setWakeup(wakeup);
         this.save();
     }
 

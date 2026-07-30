@@ -61,16 +61,11 @@ config:
     -- Plugin Kompatiblität --
 
     Andere Plugins (wenn installiert) nach Rechten zum öffnen von Fässern checken [true]
-    Plugins 'Landlord' und 'Protection Stones' nutzen WorldGuard. 'ClaimChunk' wird nativ unterstützt.
   useVirtualChestPerms: |
     Beim Fass öffnen eine virtuelle Kiste nutzen um Rechte bei allen anderen Plugins abzufragen
     Könnte Anti-Cheat plugins verwirren aber sonst ok zu aktivieren
     Diese Option für das Plugin 'Residence' aktivieren, und andere Plugins, die nicht alle Fälle des PlayerInteractEvent checken
-  useLogBlock: "Änderungen an Fassinventaren mit LogBlock aufzeichen [true]"
   useOffhandForCauldron: "Ob Items in der Zweithand auch in den Kessel geworfen werden sollen [false]"
-  loadDataAsync: |
-    This option no longer does anything anymore, and will be removed in future releases of BreweryX.
-    BreweryX will load data asynchronously always, with the exception of server startup and shutdown.
   hangoverDays: "Zeit (in Tagen) die Trunkenheitsdaten nach offlinegehen eines Spielers im Speicher verbleiben, um z.B. Kater-Effekte anzuwenden. [7]"
   onlyAllowBrewsInBarrels: "If only Brewery drinks can be put into barrels [false]"
   colorInBarrels: "Färben der Iteminformationen je nach Qualität während sie sich 1. im Fass und/oder 2. im Braustand befinden [true, true]"

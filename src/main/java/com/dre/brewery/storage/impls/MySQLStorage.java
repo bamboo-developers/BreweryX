@@ -81,16 +81,26 @@ public final class MySQLStorage extends DataManager {
         this.serializer = new SQLDataSerializer();
 
         final var config = new HikariConfig();
+        config.setPoolName("BreweryX");
+        config.setMinimumIdle(0);
+        config.setMaxLifetime(1_800_000L); // 30 minutes
+        config.setConnectionTimeout(10_000L);
         switch (this.dialect) {
             case MYSQL -> {
                 config.setJdbcUrl("jdbc:mysql://" + record.getAddress() + "/" + record.getDatabase());
                 config.setUsername(record.getUsername());
                 config.setPassword(record.getPassword());
+                config.setMaximumPoolSize(4);
+                config.addDataSourceProperty("cachePrepStmts", "true");
+                config.addDataSourceProperty("prepStmtCacheSize", "250");
+                config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+                config.addDataSourceProperty("useServerPrepStmts", "true");
             }
             case POSTGRESQL -> {
                 config.setJdbcUrl("jdbc:postgresql://" + record.getAddress() + "/" + record.getDatabase());
                 config.setUsername(record.getUsername());
                 config.setPassword(record.getPassword());
+                config.setMaximumPoolSize(4);
             }
             case SQLITE -> {
                 final var rawFile = new File(plugin.getDataFolder(), record.getDatabase() + ".db");
@@ -140,8 +150,8 @@ public final class MySQLStorage extends DataManager {
     public boolean createTable(final String name, final int maxIdLength) {
         final var columnType = this.dialect == DataManagerType.MYSQL ? "LONGTEXT" : "TEXT";
         final var sql = "CREATE TABLE IF NOT EXISTS " + this.tablePrefix + name + " (id VARCHAR(" + maxIdLength + ") PRIMARY KEY, data " + columnType + ");";
-        try (final var connection = this.source.getConnection()) {
-            connection.prepareStatement(sql).execute();
+        try (final var connection = this.source.getConnection(); final var statement = connection.prepareStatement(sql)) {
+            statement.execute();
             return true;
         } catch (final SQLException e) {
             Logging.errorLog("Failed to create table: " + name + " due to a database exception!", e);
@@ -152,8 +162,8 @@ public final class MySQLStorage extends DataManager {
     @Override
     public boolean dropTable(final String name) {
         final var sql = "DROP TABLE IF EXISTS " + this.tablePrefix + name;
-        try (final var connection = this.source.getConnection()) {
-            connection.prepareStatement(sql).execute();
+        try (final var connection = this.source.getConnection(); final var statement = connection.prepareStatement(sql)) {
+            statement.execute();
             return true;
         } catch (final SQLException e) {
             Logging.errorLog("Failed to drop table: " + name + " due to a database exception!", e);

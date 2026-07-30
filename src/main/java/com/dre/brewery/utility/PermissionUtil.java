@@ -159,7 +159,6 @@ public final class PermissionUtil {
      * Brewery Permissions of _only_ the Commands
      */
     public enum BPermission {
-        // PLAYER("brewery.cmd.player"),
         SEAL("brewery.cmd.seal"),
         UNLABEL("brewery.cmd.unlabel"),
 

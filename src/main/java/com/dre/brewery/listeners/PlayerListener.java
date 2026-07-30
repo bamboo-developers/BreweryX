@@ -117,7 +117,7 @@ public final class PlayerListener implements Listener {
         }
 
         // Allow Waxing and Scraping of copper barrels when sneaking
-        if (clickedBlock.getType().name().toUpperCase().contains("CUT_COPPER") && player.isSneaking()) {
+        if (BarrelWoodType.CUT_COPPER_MATERIALS.contains(clickedBlock.getType()) && player.isSneaking()) {
             return;
         }
 
@@ -216,7 +216,7 @@ public final class PlayerListener implements Listener {
                     event.setCancelled(true);
                 }
             }
-        } else if (BUtil.getMaterialMap(config.getDrainItems()).containsKey(item.getType())) {
+        } else if (BUtil.getDrainItemMap().containsKey(item.getType())) {
             final var bplayer = BPlayer.get(player);
             if (bplayer != null) {
                 bplayer.drainByItem(player, item.getType());

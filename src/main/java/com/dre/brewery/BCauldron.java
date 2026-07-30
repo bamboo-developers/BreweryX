@@ -149,7 +149,7 @@ public final class BCauldron {
 
         for (final var cauldron : bcauldrons.values()) {
             if (ThreadLocalRandom.current().nextFloat() < chance) {
-                BreweryPlugin.getScheduler().runAtLocationLater(cauldron.block.getLocation(), cauldron::cookEffect, 0);
+                cauldron.cookEffect();
             }
         }
     }

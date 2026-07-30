@@ -24,8 +24,6 @@ Brew_Brewer: 'Brewer: &v1'
 CMD_Copy_Error: '&6&v1 &cTränke haben nicht mehr in das Inventar gepasst'
 CMD_Info_Drunk: '&v1 ist &6&v2% &fbetrunken, mit einer Qualität von &6&v3'
 CMD_Info_NotDrunk: '&v1 ist nicht betrunken'
-CMD_Player: '&a&v1 ist nun &6&v2% &abetrunken, mit einer Qualität von &6&v3'
-CMD_Player_Error: '&cDie Qualität muss zwischen 1 und 10 liegen!'
 CMD_Reload: '&aConfig wurde neu eingelesen'
 CMD_Created: '&aTrank erstellt'
 CMD_Configname: '&aName für Config ist: &f&v1'
@@ -38,7 +36,6 @@ CMD_DrinkOther: '&a&v1 trinkt &v2'
 CMD_Set: '&a&v1''s Trunkenheit wurde erfolgreich auf &v2 gesetzt. Mit einer Qualität von &v3.'
 
 # Error
-Error_ConfigUpdate: 'Unbekannte Brewery Config Version: v&v1, Config wurde nicht geupdated!'
 Error_ItemNotPotion: '&cDas Item in deiner Hand konnte nicht als Trank identifiziert werden'
 Error_SealingTableDisabled: '&cDer Trankversiegler ist deaktiviert'
 Error_SealedAlwaysStatic: 'Versiegelte Tränke sind immer unveränderlich!'
@@ -47,10 +44,8 @@ Error_NoBarrelAccess: '&cDu hast keine Rechte dieses Fass zu öffnen!'
 Error_NoBrewName: '&cKein Rezept mit Namen: "&v1&c" gefunden!'
 Error_NoPermissions: '&cDu hast keine Rechte dies zu tun!'
 Error_PlayerCommand: '&cDieser Befehl kann nur als Spieler ausgeführt werden'
-Error_Recipeload: '&cEs konnten nicht alle Rezepte wiederhergesellt werden: Siehe Serverlog!'
 Error_ShowHelp: 'Benutze &6/brew help &fum die Hilfe anzuzeigen'
 Error_UnknownCommand: Unbekannter Befehl
-Error_YmlRead: 'config.yml konnte nicht gelesen werden, ist die Datei im korrekten yml-Format (korrekte Leerzeichen, Strings mit '' '' usw.)?'
 Error_NoPlayer: '&cSpieler &v1 nicht gefunden'
 Error_MissingBarrelType: '&cInvalid BarrelType'
 
@@ -60,8 +55,6 @@ Etc_Usage: 'Benutzung:'
 Etc_Barrel: Fass
 Etc_SealingTable: Trankversiegler
 Etc_NewRelease: '&rA new release of BreweryX is available! &2&v1 &r-> &2&v2&r Download&7: &2&v3'
-Etc_LandsFlag_Title: 'Fasszugriff'
-Etc_LandsFlag_Description: '&r&7Erlaubt das Öffnen\n&r&7von BreweryX-Fässern.'
 
 # Help
 Help_Copy: '&6/brew Copy [Anzahl]&9 Kopiert den Trank in deiner Hand'
@@ -88,7 +81,6 @@ Help_Drink: '&6/brew drink <Rezept> [Qualität] [Spieler] &9Simuliert das Trinke
 
 # Permission
 Perms_NoBarrelCreate: '&cDu hast keine Rechte Fässer zu erstellen!'
-Perms_NoSmallBarrelCreate: '&cDu kast keine Rechte kleine Fässer zu erstellen!'
 Perms_NoBigBarrelCreate: '&cDu kast keine Rechte große Fässer zu erstellen!'
 Perms_NoCauldronInsert: '&cDu hast keine Rechte Zutaten in Bottiche zu tun!'
 Perms_NoCauldronFill: '&cDu hast keine Rechte Flaschen von diesem Bottich abzufüllen!'
@@ -116,6 +108,5 @@ Player_WakeNoCheck: '&cEs läuft kein Aufwachpunkte-Check'
 Player_WakeNoPoints: '&cEs wurden noch keine Aufwachpunkte erstellt!'
 Player_WakeNotExist: '&cDer Aufwachpunkt mit der id: &6&v1 &cexistiert nicht!'
 Player_WakeTeleport: 'Teleport zu Aufwachpunkt mit der id: &6&v1&f An Position: &6&v2 &v3, &v4, &v5'
-Player_ShopSealBrew: '&eBrewery Tränke sollten vor dem verkaufen versiegelt werden'
 Player_Drunkeness: 'Betrunkenheit: '
 Player_Hangover: 'Dein Kater'

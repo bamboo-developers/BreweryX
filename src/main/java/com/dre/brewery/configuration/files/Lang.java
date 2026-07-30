@@ -174,10 +174,6 @@ public final class Lang extends AbstractOkaeriConfigFile {
     private String cmdMissingIngredients;
     @CustomKey("CMD_NonStatic")
     private String cmdNonStatic;
-    @CustomKey("CMD_Player")
-    private String cmdPlayer;
-    @CustomKey("CMD_Player_Error")
-    private String cmdPlayerError;
     @CustomKey("CMD_Reload")
     private String cmdReload;
     @CustomKey("CMD_Set")
@@ -193,8 +189,6 @@ public final class Lang extends AbstractOkaeriConfigFile {
     @Comment("Error")
     @CustomKey("Error_AlreadyUnlabeled")
     private String errorAlreadyUnlabeled;
-    @CustomKey("Error_ConfigUpdate")
-    private String errorConfigUpdate;
     @CustomKey("Error_InvalidAmount")
     private String errorInvalidAmount;
     @CustomKey("Error_InvalidMaterial")
@@ -215,8 +209,6 @@ public final class Lang extends AbstractOkaeriConfigFile {
     private String errorNoPlayer;
     @CustomKey("Error_PlayerCommand")
     private String errorPlayerCommand;
-    @CustomKey("Error_Recipeload")
-    private String errorRecipeload;
     @CustomKey("Error_SealedAlwaysStatic")
     private String errorSealedAlwaysStatic;
     @CustomKey("Error_SealingTableDisabled")
@@ -225,15 +217,9 @@ public final class Lang extends AbstractOkaeriConfigFile {
     private String errorShowHelp;
     @CustomKey("Error_UnknownCommand")
     private String errorUnknownCommand;
-    @CustomKey("Error_YmlRead")
-    private String errorYmlRead;
     @Comment("Etc")
     @CustomKey("Etc_Barrel")
     private String etcBarrel;
-    @CustomKey("Etc_LandsFlag_Description")
-    private String etcLandsFlagDescription;
-    @CustomKey("Etc_LandsFlag_Title")
-    private String etcLandsFlagTitle;
     @CustomKey("Etc_NewRelease")
     private String etcNewRelease;
     @CustomKey("Etc_Page")
@@ -314,8 +300,6 @@ public final class Lang extends AbstractOkaeriConfigFile {
     private String permsNoCauldronFill;
     @CustomKey("Perms_NoCauldronInsert")
     private String permsNoCauldronInsert;
-    @CustomKey("Perms_NoSmallBarrelCreate")
-    private String permsNoSmallBarrelCreate;
     @Comment("Player")
     @CustomKey("Player_BarrelCreated")
     private String playerBarrelCreated;
@@ -337,8 +321,6 @@ public final class Lang extends AbstractOkaeriConfigFile {
     private String playerLoginDeny;
     @CustomKey("Player_LoginDenyLong")
     private String playerLoginDenyLong;
-    @CustomKey("Player_ShopSealBrew")
-    private String playerShopSealBrew;
     @CustomKey("Player_TriedToSay")
     private String playerTriedToSay;
     @CustomKey("Player_Wake")

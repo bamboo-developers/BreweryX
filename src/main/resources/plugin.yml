@@ -48,7 +48,6 @@ permissions:
       brewery.cmd.seal: true
       brewery.cmd.puke: true
       brewery.cmd.pukeOther: true
-      brewery.cmd.player: true
       brewery.cmd.create: true
       brewery.cmd.drink: true
       brewery.cmd.drinkOther: true
@@ -83,8 +82,6 @@ permissions:
     description: Make yourself puke
   brewery.cmd.pukeOther:
     description: Make other Players puke
-  brewery.cmd.player:
-    description: Set Player-values
   brewery.cmd.wakeup:
     description: Set, Check and Remove Wakeup Points
   brewery.cmd.create:

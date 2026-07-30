@@ -69,6 +69,9 @@ public enum BarrelWoodType {
             .map(s -> s.replace(' ', '_'))
             .toList();
 
+    // Precomputed set of every Cut Copper related Material, for cheap membership checks on hot paths (block change events)
+    public static final Set<Material> CUT_COPPER_MATERIALS = Collections.unmodifiableSet(BarrelAsset.getMaterialsOf(CUT_COPPER));
+
     private final String formattedName;
     private final int index;
 
@@ -134,7 +137,16 @@ public enum BarrelWoodType {
         return ANY;
     }
 
-    public static BarrelWoodType fromMaterial(final Material material) {
+    private static final Map<Material, BarrelWoodType> MATERIAL_TO_TYPE = new EnumMap<>(Material.class);
+
+    static {
+        for (final var material : Material.values()) {
+            MATERIAL_TO_TYPE.put(material, computeFromMaterial(material));
+        }
+    }
+
+    // Original, order-dependent lookup logic. Used once per Material to precompute MATERIAL_TO_TYPE.
+    private static BarrelWoodType computeFromMaterial(final Material material) {
         for (final var type : values()) {
             if (material.name().toUpperCase().startsWith(type.name().toUpperCase())) {
                 return type;
@@ -148,6 +160,10 @@ public enum BarrelWoodType {
             }
         }
         return ANY;
+    }
+
+    public static BarrelWoodType fromMaterial(final Material material) {
+        return MATERIAL_TO_TYPE.getOrDefault(material, ANY);
     }
 
     public static BarrelWoodType fromAny(final Object intOrString) {

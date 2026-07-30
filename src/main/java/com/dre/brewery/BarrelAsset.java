@@ -32,6 +32,8 @@ public enum BarrelAsset {
 
 
     private static final Map<BarrelWoodType, Map<BarrelAsset, Set<Material>>> barrelAssetListMap = new HashMap<>();
+    // Flat lookup, mirroring barrelAssetListMap but without the per-wood-type nesting, for fast isBarrelAsset checks
+    private static final Map<BarrelAsset, EnumSet<Material>> flatAssetMap = new EnumMap<>(BarrelAsset.class);
 
     public static void addBarrelAsset(final BarrelWoodType type, final BarrelAsset asset, final Material... materials) {
         if (materials == null) {
@@ -42,6 +44,10 @@ public enum BarrelAsset {
                         .computeIfAbsent(asset, ignored -> new HashSet<>()),
                 Arrays.stream(materials).filter(Objects::nonNull).toArray(Material[]::new)
         );
+        Collections.addAll(
+                flatAssetMap.computeIfAbsent(asset, ignored -> EnumSet.noneOf(Material.class)),
+                Arrays.stream(materials).filter(Objects::nonNull).toArray(Material[]::new)
+        );
     }
 
     public static boolean isBarrelAsset(final BarrelAsset assetType, final Material material) {
@@ -49,9 +55,8 @@ public enum BarrelAsset {
             return false;
         }
 
-        return barrelAssetListMap.values().stream()
-                .map((b) -> b.getOrDefault(assetType, Set.of()))
-                .anyMatch((materialSet) -> materialSet.contains(material));
+        final var materialSet = flatAssetMap.get(assetType);
+        return materialSet != null && materialSet.contains(material);
     }
 
     public static Set<Material> getMaterialsOf(final BarrelWoodType type) {

@@ -32,11 +32,15 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public final class PlaceholderAPIManager extends PlaceholderExpansion {
 
     private static final BreweryPlugin plugin = BreweryPlugin.getInstance();
     private static final Map<String, Placeholder> placeholders = new HashMap<>();
+    // Shared, never-registered instance used for players that aren't drunk, to avoid allocating a fresh
+    // BPlayer for every placeholder request (scoreboard plugins may call onRequest ~20x/s per player).
+    private static final BPlayer EMPTY_BPLAYER = new BPlayer(new UUID(0, 0));
 
     public PlaceholderAPIManager() {
         placeholders.put("drunkenness", new DrunkennessPlaceholder());
@@ -68,7 +72,7 @@ public final class PlaceholderAPIManager extends PlaceholderExpansion {
     @Override
     public final String onRequest(final OfflinePlayer player, @NotNull final String params) {
         var bPlayer = BPlayer.get(player);
-        if (bPlayer == null) bPlayer = new BPlayer(player.getUniqueId());
+        if (bPlayer == null) bPlayer = EMPTY_BPLAYER;
 
         final var args = params.split("_");
 

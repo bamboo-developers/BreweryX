@@ -57,10 +57,7 @@ public final class InventoryListener implements Listener {
         if (item == null || item.getType().isAir()) {
             return false;
         }
-        if (item.getItemMeta() instanceof final PotionMeta potionMeta) {
-            return Brew.get(potionMeta) != null;
-        }
-        return false;
+        return Brew.isBrew(item);
     }
 
     /**

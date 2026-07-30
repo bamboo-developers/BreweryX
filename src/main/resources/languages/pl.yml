@@ -26,8 +26,6 @@ CMD_Copy_Error: '&6&v1 &cWięcej mikstur nie zmieściło się w twoim ekwipunku'
 CMD_Info_Drunk: '&v1 jest &6&v2% &fpijany, jakość naparu: &6&v3'
 CMD_Info_NotDrunk: '&v1 nie jest pijany'
 CMD_NonStatic: '&eMikstura nie jest już statyczna i będzie normalnie dojrzewać w beczkach.'
-CMD_Player: '&a&v1 jest teraz &6&v2% &apijany, jakość: &6&v3'
-CMD_Player_Error: '&cJakość musi wynosić od 1 do 10!'
 CMD_Reload: '&aKonfiguracja została przeładowana pomyślnie!'
 CMD_Created: '&aNapar stworzony!'
 CMD_Configname: '&aNazwa dla Konfiguracji to: &f&v1'
@@ -98,7 +96,6 @@ Defect_NoRecipesRegistered:
   - 'Ten wszechświat nie wspiera warzenia...'
 
 # Error
-Error_ConfigUpdate: 'Nieznana wersja konfiguracji Brewery: v&v1, config nie został zaktualizowany!'
 Error_ItemNotPotion: '&cPrzedmiot w twojej ręce nie został rozpoznany jako mikstura!'
 Error_SealingTableDisabled: '&cStół do Pieczętowania jest wyłączony'
 Error_SealedAlwaysStatic: 'Opieczętowane Napary są zawsze statyczne!'
@@ -107,10 +104,8 @@ Error_NoBarrelAccess: '&cNie masz uprawnień, aby otworzyć tę beczkę!'
 Error_NoBrewName: '&cNie znaleziono przepisu o nazwie: ''&v1&c''!'
 Error_NoPermissions: '&cNie masz uprawnień, aby to zrobić!'
 Error_PlayerCommand: '&cTa komenda może być wykonana tylko przez gracza!'
-Error_Recipeload: '&cNie wszystkie przepisy mogły zostać przywrócone: Więcej informacji w logach serwera!'
 Error_ShowHelp: Użyj &6/brew help &faby wyświetlić pomoc
 Error_UnknownCommand: Nieznana Komenda
-Error_YmlRead: 'Nie można odczytać pliku config.yml, upewnij się, że plik ma poprawny format yml (poprawne spacje, użycie '' '' itp.)'
 Error_NoPlayer: '&cGracz nie znaleziony: &v1'
 Error_InvalidAmount: '&cNieprawidłowa ilość: &v1'
 Error_InvalidPluginItem: '&cNie można znaleźć przedmiotu pluginu: &v1'
@@ -123,8 +118,6 @@ Etc_Page: Strona
 Etc_Usage: 'Użycie:'
 Etc_SealingTable: Stół do Pieczętowania Naparów
 Etc_NewRelease: '&rDostępna jest nowa wersja BreweryX! &2&v1 &r-> &2&v2&r Pobierz&7: &2&v3'
-Etc_LandsFlag_Title: 'Dostęp do Beczek'
-Etc_LandsFlag_Description: '&r&7Pozwala na otwieranie\n&r&7beczek BreweryX.'
 
 # Help
 Help_Copy: '&6/brew copy [Ilość]&9 Kopiuje miksturę trzymaną w ręce'
@@ -164,7 +157,6 @@ Perms_NoBarrelCreate: '&cNie masz uprawnień do tworzenia beczek!'
 Perms_NoBigBarrelCreate: '&cNie masz uprawnień do tworzenia dużych beczek!'
 Perms_NoCauldronFill: '&cNie masz uprawnień do napełniania butelek z tego kotła!'
 Perms_NoCauldronInsert: '&cNie masz uprawnień do wkładania składników do kotłów!'
-Perms_NoSmallBarrelCreate: '&cNie masz uprawnień do tworzenia małych beczek!'
 
 # Player
 Player_BarrelCreated: Beczka stworzona
@@ -189,6 +181,5 @@ Player_WakeNoCheck: '&cŻadne sprawdzanie Punktów Przebudzenia nie jest aktywne
 Player_WakeNoPoints: '&cNie ma żadnych Punktów Przebudzenia!'
 Player_WakeNotExist: '&cPunkt Przebudzenia o id: &6&v1 &cnie istnieje!'
 Player_WakeTeleport: 'Teleportacja do Punktu Przebudzenia o id: &6&v1&f Na pozycji: &6&v2 &v3, &v4, &v5'
-Player_ShopSealBrew: '&eZaleca się handlować/sprzedawać &6opieczętowane &eNapary'
 Player_Drunkeness: 'Upicie: '
 Player_Hangover: 'Twój Kac'

@@ -28,6 +28,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.Supplier;
+
 public final class Logging {
 
     private static final Config config = ConfigManager.getConfig(Config.class);
@@ -60,8 +62,14 @@ public final class Logging {
     }
 
     public static void debugLog(final String msg) {
-        if (ConfigManager.getConfig(Config.class).isDebug()) {
+        if (config.isDebug()) {
             msg(Bukkit.getConsoleSender(), "&2[Debug] &f" + msg);
+        }
+    }
+
+    public static void debugLog(final Supplier<String> msg) {
+        if (config.isDebug()) {
+            msg(Bukkit.getConsoleSender(), "&2[Debug] &f" + msg.get());
         }
     }
 

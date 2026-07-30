@@ -70,16 +70,11 @@ config:
     -- Compatibilidad de plugins --
 
     Activa para comprobar otros plugins (si instalados) por permisos de tonel [true]
-    Los plugins 'Landlord' y 'Protection Stones' usan WorldGuard Flag. 'ClaimChunk' es soportado nativamente.
   useVirtualChestPerms: |
     Usa un cofre al abrir un tonel para contrastar con el resto de plugins de protección
     Esto podría confundir plugins anti-trampas, pero aparte de eso, es seguro utilizarlo
     Utiliza esto para el plugin 'Residence' y otros que no comprueben todos los casos en el evento PlayerInteractEvent
-  useLogBlock: "Activa el registro de los inventarios de tonel a LogBlock [true]"
   useOffhandForCauldron: "Si los objetos en la mano secundaria deberían añadirse al caldero también [false]"
-  loadDataAsync: |
-    Esta opción ya no hace nada, y se eliminará en futuras versiones de BreweryX.
-    BreweryX siempre carga los datos de forma asíncrona, con las excepciones del inicio y el apagado del servidor.
   hangoverDays: "Tiempo (en días) por el que se guarda los datos de borrachera en la memoria después de que un jugador se desconecte, para aplicar resaca. [7]"
   onlyAllowBrewsInBarrels: "If only Brewery drinks can be put into barrels [false]"
   colorInBarrels-Brewer: "Colorea la información (lore) de un objeto dependiendo de su calidad mientras está A) en un tonel y/o B) en un estante de pociones [true, true]"

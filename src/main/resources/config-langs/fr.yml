@@ -72,18 +72,11 @@ config:
     -- Compatibilité entre plug-ins --
 
     Activer la vérification des autres plug-ins (si installés) pour les permissions des tonneaux. [true]
-    Les plug-ins « Landlord » et « Protection Stones » utilisent l’option « WorldGuard ».  « ClaimChunk » est pris en charge nativement.
   useVirtualChestPerms: |
     Si un coffre « virtuel » ou imaginaire est utilisé pour vérifier avec tous autres plug-ins de protection.
     Ceci pourrait peut-être confondre certains plug-ins anti-tirche.  À part ça, c’est bon et sûr à y utiliser.
     Utilisez-le pour les plug-ins types « résidence » et ceux qui ne vérifient pas tous les cas « PlayerInteractEvent ».
-  useLogBlock: "Activer l’historique du contenu des tonneaux avec LogBlock [true]"
   useOffhandForCauldron: "Si les objets tenus par la main secondaire (Offhand) devraient être mis dans le chaudron [false]"
-  loadDataAsync: |
-    AVERTISSEMENT : Cette option ne fais plus rien.  BreweryX prendra toujours les données en charge
-    de manière asynchrone sauf en cas du démarrage et de l’arrêt du serveur.  Cela sera supprimé avec les nouvelles versions du plug-in.
-    Ancienne description:
-    Si les données des fûts et des chaudrons peuvent être chargés de manière asynchrone ou en arrière-plan [true]
   hangoverDays: "Temps (en jours) pour que les données d’ivresse restent sauvergardées lorsque le joueur est déconnecté, pour appliquer les effets. [7]"
   onlyAllowBrewsInBarrels: "If only Brewery drinks can be put into barrels [false]"
   colorInBarrels-Brewer: "Colorer les informations d’objets (lore) au dépend de la qualité dans un tonneau et/ou dans un stand de brassage (l’alambic) [true, true]"

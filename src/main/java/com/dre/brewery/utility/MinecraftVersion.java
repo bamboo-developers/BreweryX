@@ -20,7 +20,6 @@
 
 package com.dre.brewery.utility;
 
-import com.google.common.base.Preconditions;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.Nullable;
@@ -95,7 +94,6 @@ public enum MinecraftVersion {
         if (!matcher.find()) {
             throw new IllegalStateException("Could not parse Minecraft version from: " + rawVersion);
         }
-        Preconditions.checkState(matcher.groupCount() == 3 || matcher.groupCount() == 2, "Unexpected Minecraft version format: " + rawVersionParsed);
 
         belowMinimum = isBelowMinimum(matcher.group(1), matcher.group(2), matcher.group(3));
         return get(matcher.group(1), matcher.group(2), matcher.group(3));
@@ -128,10 +126,6 @@ public enum MinecraftVersion {
 
     public boolean isOrLater(final MinecraftVersion version) {
         return this.ordinal() >= version.ordinal();
-    }
-
-    public boolean isOrEarlier(final MinecraftVersion version) {
-        return this.ordinal() <= version.ordinal();
     }
 
     public String getVersion() {

@@ -20,9 +20,6 @@
 
 package com.dre.brewery.utility;
 
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
 public final class OptionalFloat {
     private static final OptionalFloat EMPTY = new OptionalFloat();
     private final float value;
@@ -46,13 +43,6 @@ public final class OptionalFloat {
         return EMPTY;
     }
 
-    public float getAsFloat() {
-        if (!this.isPresent) {
-            throw new IllegalStateException("No value present");
-        }
-        return this.value;
-    }
-
     public boolean isPresent() {
         return this.isPresent;
     }
@@ -61,33 +51,8 @@ public final class OptionalFloat {
         return !this.isPresent;
     }
 
-    public void ifPresent(final Consumer<Float> action) {
-        if (this.isPresent) {
-            action.accept(this.value);
-        }
-    }
-
-    public void ifPresentOrElse(final Consumer<Float> action, final Runnable emptyAction) {
-        if (this.isPresent) {
-            action.accept(this.value);
-        } else {
-            emptyAction.run();
-        }
-    }
-
     public final float orElse(final float other) {
         return this.isPresent ? this.value : other;
-    }
-
-    public float orElseGet(final Supplier<Float> other) {
-        return this.isPresent ? this.value : other.get();
-    }
-
-    public <X extends Throwable> float orElseThrow(final Supplier<X> exceptionSupplier) throws X {
-        if (this.isPresent) {
-            return this.value;
-        }
-        throw exceptionSupplier.get();
     }
 
     public final String toString() {

@@ -39,13 +39,14 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Getter
 public abstract class DataManager {
 
     protected static final BreweryPlugin plugin = BreweryPlugin.getInstance();
-    protected static long lastAutoSave = System.currentTimeMillis();
-    protected static final Set<ExternallyAutoSavable> autoSavabales = new HashSet<>();
+    protected static volatile long lastAutoSave = System.currentTimeMillis();
+    protected static final Set<ExternallyAutoSavable> autoSavabales = ConcurrentHashMap.newKeySet();
 
     private final DataManagerType type;
 
@@ -280,9 +281,9 @@ public abstract class DataManager {
 
     public final void saveAll(final boolean async, final Runnable callback) {
         final Collection<Barrel> barrels = Barrel.getAllBarrels();
-        final var cauldrons = BCauldron.getBcauldrons().values();
-        final var bPlayers = BPlayer.getPlayers().values();
-        final Collection<Wakeup> wakeups = Wakeup.getWakeups();
+        final var cauldrons = List.copyOf(BCauldron.getBcauldrons().values());
+        final var bPlayers = List.copyOf(BPlayer.getPlayers().values());
+        final Collection<Wakeup> wakeups = List.copyOf(Wakeup.getWakeups());
 
         if (async) {
             BreweryPlugin.getScheduler().runLaterAsync(() -> {

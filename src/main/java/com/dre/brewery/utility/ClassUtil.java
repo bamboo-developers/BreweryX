@@ -27,26 +27,6 @@ public final class ClassUtil {
     }
 
 
-    public static boolean methodExists(final String className, final String methodName, final Class<?>... methodParams) {
-        try {
-            final var clazz = Class.forName(className);
-            clazz.getMethod(methodName, methodParams);
-            return true;
-        } catch (final ClassNotFoundException | NoSuchMethodException e) {
-            return false;
-        }
-    }
-
-    public static boolean fieldExists(final String className, final String fieldName) {
-        try {
-            final var clazz = Class.forName(className);
-            clazz.getField(fieldName);
-            return true;
-        } catch (final ClassNotFoundException | NoSuchFieldException e) {
-            return false;
-        }
-    }
-
     public static boolean exists(final String className) {
         try {
             Class.forName(className);

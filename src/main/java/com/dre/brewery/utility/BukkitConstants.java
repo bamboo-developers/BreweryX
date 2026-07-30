@@ -29,14 +29,8 @@ import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.*;
-
-@SuppressWarnings("unchecked")
 public final class BukkitConstants {
 
-    private static final Map<String, Keyed> MAPPED_VALUES = new HashMap<>();
     // More constants can be added as required, these are just the ones Brewery currently uses
     public static final PotionEffectType HUNGER = potionEffectType("hunger");
     public static final PotionEffectType NAUSEA = potionEffectType("nausea");
@@ -72,20 +66,6 @@ public final class BukkitConstants {
     public static final PotionType POTION_HARMING = potionType("harming");
     public static final PotionType POTION_INVISIBILITY = potionType("invisibility");
 
-    static {
-        try {
-            for (final var field : BukkitConstants.class.getDeclaredFields()) {
-                if (!Modifier.isStatic(field.getModifiers()) || !Keyed.class.isAssignableFrom(field.getType())) {
-                    continue;
-                }
-                final var obj = (Keyed) field.get(null);
-                MAPPED_VALUES.put(obj.getKey().getKey(), obj);
-            }
-        } catch (final IllegalAccessException e) {
-            Logging.errorLog("BukkitConstants failed to initialize mapped values", e);
-        }
-    }
-
     private BukkitConstants() {
     }
 
@@ -113,40 +93,6 @@ public final class BukkitConstants {
         }
         return value;
     }
-
-    @Nullable
-    public static <T extends Keyed> T getMappedValue(final String key, final Class<T> type) {
-        final var keyed = MAPPED_VALUES.get(key);
-        if (keyed == null) {
-            return null;
-        }
-        if (!type.isAssignableFrom(keyed.getClass())) {
-            return null;
-        }
-        return type.cast(keyed);
-    }
-
-    // I don't really like this but whatever
-
-    public static <T extends Keyed> Collection<T> getMappedValues(final Class<T> type) {
-        final List<T> list = new ArrayList<>();
-        for (final var keyed : MAPPED_VALUES.values()) {
-            if (type.isAssignableFrom(keyed.getClass())) {
-                list.add(type.cast(keyed));
-            }
-        }
-        return list;
-    }
-
-    @Nullable
-    public static Keyed getMappedValue(final String key) {
-        return MAPPED_VALUES.get(key);
-    }
-
-    public static Collection<Keyed> getMappedValues() {
-        return MAPPED_VALUES.values();
-    }
-
 
     @Getter
     @AllArgsConstructor

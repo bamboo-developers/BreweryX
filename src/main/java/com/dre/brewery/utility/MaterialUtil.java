@@ -24,7 +24,6 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.block.data.Lightable;
-import org.bukkit.block.data.type.Stairs;
 import org.jetbrains.annotations.Nullable;
 
 public final class MaterialUtil {
@@ -39,11 +38,10 @@ public final class MaterialUtil {
 
     @Nullable
     public static Material getMaterialSafely(final String name) {
-        try {
-            return Material.matchMaterial(name);
-        } catch (final IllegalArgumentException e) {
+        if (name == null) {
             return null;
         }
+        return Material.matchMaterial(name);
     }
 
     public static boolean isCauldronHeatSource(final Block block) {
@@ -66,10 +64,6 @@ public final class MaterialUtil {
                 || type == Material.EXPERIENCE_BOTTLE
                 || type == Material.DRAGON_BREATH
                 || type == Material.HONEY_BOTTLE;
-    }
-
-    public static boolean areStairsInverted(final Block block) {
-        return block.getBlockData() instanceof final Stairs stairs && stairs.getHalf() == Stairs.Half.TOP;
     }
 
     /**
