@@ -18,133 +18,116 @@
  * along with BreweryX. If not, see <http://www.gnu.org/licenses/gpl-3.0.html>.
  */
 
-import org.apache.tools.ant.filters.ReplaceTokens
-import java.nio.charset.Charset
-
 plugins {
-    id("java-library")
-    id("maven-publish")
-    id("com.gradleup.shadow") version "9.4.1"
+    `java-library`
+    `maven-publish`
+    alias(libs.plugins.shadow)
 }
 
-group = "com.dre.brewery"
-version = "3.7.0"
+group = properties["plugin_group"]!!
+version = properties["plugin_version"]!!
 
-val langVersion: Int = 21
-val encoding: String = "UTF-8"
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
 
-repositories {
-    mavenCentral()
-    maven("https://maven.enginehub.org/repo/") // WorldEdit, WorldGuard
-    maven("https://repo.extendedclip.com/content/repositories/placeholderapi/") // PlaceholderAPI
-    maven("https://storehouse.okaeri.eu/repository/maven-public/") // Okaeri Config
-    maven("https://repo.papermc.io/repository/maven-public/") // PaperLib
-    maven("https://repo.tcoded.com/releases") // FoliaLib
+    if (System.getProperty("sources")?.toBoolean() == true) {
+        withSourcesJar()
+    }
 }
 
 dependencies {
     // Spigot
-    compileOnly("org.spigotmc:spigot-api:1.21.11-R0.1-SNAPSHOT") {
+    compileOnly(libs.spigot.api) {
         exclude("com.google.code.gson", "gson") // Implemented manually
     }
     // Paper Lib, performance improvements on Paper-based servers and async teleporting on Folia
-    implementation("io.papermc:paperlib:1.0.8")
+    implementation(libs.paperlib)
     // Scheduler abstraction across Bukkit/Paper/Folia
-    implementation("com.tcoded:FoliaLib:0.5.2")
+    implementation(libs.folialib)
 
     // Database source implementation
-    implementation("com.zaxxer:HikariCP:7.0.2") {
+    implementation(libs.hikaricp) {
         exclude("org.slf4j", "slf4j-api")
     }
     // PostgreSQL JDBC driver (MySQL/SQLite drivers are provided by the server at runtime)
-    implementation("org.postgresql:postgresql:42.7.13")
+    implementation(libs.postgresql)
     // Implemented manually mainly due to older server versions implementing versions of GSON
     // which don't support records.
-    implementation("com.google.code.gson:gson:2.11.0")
+    implementation(libs.gson)
     // Nice annotations, I prefer these to Lombok's, https://www.jetbrains.com/help/idea/annotating-source-code.html
-    compileOnly("org.jetbrains:annotations:26.0.1")
+    compileOnly(libs.annotations)
 
     // Lombok
-    compileOnly("org.projectlombok:lombok:1.18.30")
-    annotationProcessor("org.projectlombok:lombok:1.18.30")
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
 
     // Okaeri configuration
-    implementation("eu.okaeri:okaeri-configs-yaml-snakeyaml:5.0.5") {
+    implementation(libs.okaeri.configs.yaml) {
         exclude("org.yaml", "snakeyaml")
     }
     constraints {
-        implementation("org.yaml:snakeyaml") {
+        implementation(libs.snakeyaml) {
             version {
-                require("2.3")
+                require(libs.versions.snakeyaml.get())
                 reject("1.33")
             }
         }
     }
 
-    // Plugin Compatability
-    compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.0-SNAPSHOT") // https://dev.bukkit.org/projects/worldedit/files
-    compileOnly("com.sk89q.worldedit:worldedit-core:7.3.0-SNAPSHOT") // https://dev.bukkit.org/projects/worldguard/files
-    compileOnly("me.clip:placeholderapi:2.11.5") // https://www.spigotmc.org/resources/placeholderapi.6245/history
+    // Plugin compatibility
+    compileOnly(libs.worldedit.bukkit)
+    compileOnly(libs.worldedit.core)
+    compileOnly(libs.placeholderapi)
 }
 
-tasks {
+tasks.withType<JavaCompile>().configureEach {
+    options.encoding = "UTF-8"
+}
 
-    build {
-        dependsOn(shadowJar)
-    }
-    jar {
-        enabled = false // Shadow produces our jar files
-    }
-    withType<JavaCompile>().configureEach {
-        options.encoding = encoding
-    }
+tasks.processResources {
+    filteringCharset = "UTF-8"
 
-    processResources {
-        outputs.upToDateWhen { false }
-        filter<ReplaceTokens>(
-            mapOf(
-                "tokens" to mapOf("version" to "${project.version}"),
-                "beginToken" to "\${",
-                "endToken" to "}"
-            )
-        ).filteringCharset = encoding
-    }
+    val pluginVersion = project.version.toString()
+    inputs.property("version", pluginVersion)
 
-    shadowJar {
-        val pack = "com.dre.brewery.depend"
-        fun relocate(pkg: String) = relocate(pkg, "$pack.$pkg")
-
-        relocate("com.google.gson")
-        relocate("com.google.errorprone")
-        relocate("eu.okaeri")
-        relocate("org.bson")
-        relocate("io.papermc.lib")
-        relocate("com.zaxxer.hikari")
-        relocate("com.tcoded.folialib")
-        relocate("org.postgresql")
-
-        archiveClassifier.set("")
+    filesMatching("plugin.yml") {
+        expand("version" to pluginVersion)
     }
 }
 
-java {
-    toolchain.languageVersion = JavaLanguageVersion.of(langVersion)
-    val b = System.getProperty("sources")
-    if (b != null && b.toBoolean()) {
-        withSourcesJar()
-    }
+tasks.jar {
+    enabled = false // Shadow produces our jar files
 }
 
+tasks.assemble {
+    dependsOn(tasks.shadowJar)
+}
+
+tasks.shadowJar {
+    archiveFileName.set("${rootProject.name}-$version.jar")
+    mergeServiceFiles()
+
+    fun relocate(pkg: String) = relocate(pkg, "${project.group}.depend.$pkg")
+    relocate("com.google.gson")
+    relocate("com.google.errorprone")
+    relocate("eu.okaeri")
+    relocate("org.bson")
+    relocate("io.papermc.lib")
+    relocate("com.zaxxer.hikari")
+    relocate("com.tcoded.folialib")
+    relocate("org.postgresql")
+}
 
 publishing {
     val repoUrl = System.getenv("REPO_URL") ?: "https://repo.jsinco.dev/releases"
     val user = System.getenv("REPO_USERNAME")
     val pass = System.getenv("REPO_SECRET")
 
+    if (user == null || pass == null) {
+        return@publishing
+    }
+
     repositories {
-        if (user == null || pass == null) {
-            return@repositories
-        }
         maven {
             url = uri(repoUrl)
             credentials(PasswordCredentials::class) {
@@ -158,16 +141,11 @@ publishing {
     }
 
     publications {
-        if (user == null || pass == null) {
-            return@publications
-        }
         create<MavenPublication>("maven") {
             groupId = project.group.toString()
             artifactId = project.name
             version = project.version.toString()
-            artifact(tasks.shadowJar.get().archiveFile) {
-                builtBy(tasks.shadowJar)
-            }
+            artifact(tasks.shadowJar)
         }
     }
 }

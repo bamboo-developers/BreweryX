@@ -1,0 +1,39 @@
+[versions]
+shadow = "9.4.1"
+
+spigot-api = "1.21.11-R0.1-SNAPSHOT"
+paperlib = "1.0.8"
+folialib = "0.5.2"
+
+hikaricp = "7.0.2"
+postgresql = "42.7.13"
+gson = "2.11.0"
+snakeyaml = "2.3"
+okaeri-configs = "5.0.5"
+
+annotations = "26.0.1"
+lombok = "1.18.30"
+
+worldedit = "7.3.0-SNAPSHOT"
+placeholderapi = "2.11.5"
+
+[plugins]
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+
+[libraries]
+spigot-api = { module = "org.spigotmc:spigot-api", version.ref = "spigot-api" }
+paperlib = { module = "io.papermc:paperlib", version.ref = "paperlib" }
+folialib = { module = "com.tcoded:FoliaLib", version.ref = "folialib" }
+
+hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
+okaeri-configs-yaml = { module = "eu.okaeri:okaeri-configs-yaml-snakeyaml", version.ref = "okaeri-configs" }
+
+annotations = { module = "org.jetbrains:annotations", version.ref = "annotations" }
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+
+worldedit-bukkit = { module = "com.sk89q.worldedit:worldedit-bukkit", version.ref = "worldedit" }
+worldedit-core = { module = "com.sk89q.worldedit:worldedit-core", version.ref = "worldedit" }
+placeholderapi = { module = "me.clip:placeholderapi", version.ref = "placeholderapi" }
